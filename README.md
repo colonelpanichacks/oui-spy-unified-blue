@@ -6,6 +6,14 @@ One device. Four firmware modes. Select from a boot menu, reboot, and go.
 
 ---
 
+## Quick Connect
+
+On first boot, connect to the selector AP to pick a firmware mode:
+
+> **SSID:** `oui-spy` | **Password:** `ouispy123` | **Dashboard:** `192.168.4.1`
+
+---
+
 ## Modes
 
 ### Mode 1: Detector
