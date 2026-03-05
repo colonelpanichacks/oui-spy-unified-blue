@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
-import { postEmpty, postForm } from "../../api/client";
 import type { APConfig, GPSData, Module, SystemStatus } from "../../api/client";
+import { postEmpty, postForm } from "../../api/client";
 import { usePoll } from "../../hooks/use-poll";
 import { Button } from "../shared/button";
 import { Card } from "../shared/card";

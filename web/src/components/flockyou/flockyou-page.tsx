@@ -1,5 +1,5 @@
-import { fetchJSON } from "../../api/client";
 import type { FlockyouDetection, FlockyouStats, Module } from "../../api/client";
+import { fetchJSON } from "../../api/client";
 import { usePoll } from "../../hooks/use-poll";
 import { Button } from "../shared/button";
 import { DeviceCard, Tag } from "../shared/device-card";

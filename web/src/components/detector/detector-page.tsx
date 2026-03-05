@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
-import { postForm } from "../../api/client";
 import type { DetectorDevice, DetectorFilter, Module } from "../../api/client";
+import { postForm } from "../../api/client";
 import { usePoll } from "../../hooks/use-poll";
 import { Button } from "../shared/button";
 import { Card } from "../shared/card";

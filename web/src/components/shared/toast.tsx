@@ -1,5 +1,5 @@
-import { createContext } from "preact";
 import type { ComponentChildren } from "preact";
+import { createContext } from "preact";
 import { useCallback, useContext, useRef, useState } from "preact/hooks";
 
 type ToastType = "success" | "error" | "info";

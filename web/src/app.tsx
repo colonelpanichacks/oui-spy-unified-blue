@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { fetchJSON } from "./api/client";
 import type { GPSData } from "./api/client";
+import { fetchJSON } from "./api/client";
 import { DetectorPage } from "./components/detector/detector-page";
 import { FlockyouPage } from "./components/flockyou/flockyou-page";
 import { FoxhunterPage } from "./components/foxhunter/foxhunter-page";

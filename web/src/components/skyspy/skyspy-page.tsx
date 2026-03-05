@@ -1,5 +1,5 @@
-import { postEmpty } from "../../api/client";
 import type { Module, SkyspyDrone, SkyspyStatus } from "../../api/client";
+import { postEmpty } from "../../api/client";
 import { usePoll } from "../../hooks/use-poll";
 import { Button } from "../shared/button";
 import { Card } from "../shared/card";
