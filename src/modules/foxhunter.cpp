@@ -5,6 +5,7 @@
 #include "../hal/notify.h"
 #include "../storage/nvs_store.h"
 #include "../web/routes.h"
+#include "../web/ws_broadcast.h"
 
 // ============================================================================
 // Foxhunter Module: Single-target RSSI proximity tracker
@@ -48,9 +49,19 @@ void FoxhunterModule::loop() {
     if (_targetDetected && (now - _lastTargetSeen < 5000)) {
         hal::buzzerSetProximity(true, _currentRSSI);
 
-        // RSSI serial output every 2s
-        if (now - _lastRSSIPrint >= 2000) {
-            Serial.printf("{\"module\":\"foxhunter\",\"rssi\":%d}\n", _currentRSSI);
+        // RSSI serial + WS output every 100ms
+        if (now - _lastRSSIPrint >= 100) {
+            if (now - _lastRSSIPrint >= 2000) {
+                Serial.printf("{\"module\":\"foxhunter\",\"rssi\":%d}\n", _currentRSSI);
+            }
+            // Push fox/status over WS at 100ms for real-time RSSI meter
+            {
+                char json[128];
+                snprintf(json, sizeof(json),
+                         "{\"target\":\"%s\",\"detected\":true,\"rssi\":%d,\"lastSeen\":%lu}",
+                         _targetMAC.c_str(), _currentRSSI, _lastTargetSeen);
+                ws::enqueue("fox/status", json);
+            }
             _lastRSSIPrint = now;
         }
     } else if (_targetDetected && (now - _lastTargetSeen >= 5000)) {
@@ -58,6 +69,13 @@ void FoxhunterModule::loop() {
         _targetDetected = false;
         hal::buzzerSetProximity(false);
         Serial.println("{\"module\":\"foxhunter\",\"status\":\"target_lost\"}");
+        {
+            char json[128];
+            snprintf(json, sizeof(json),
+                     "{\"target\":\"%s\",\"detected\":false,\"rssi\":%d,\"lastSeen\":%lu}",
+                     _targetMAC.c_str(), _currentRSSI, _lastTargetSeen);
+            ws::enqueue("fox/status", json);
+        }
     }
 }
 

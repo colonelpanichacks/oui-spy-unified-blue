@@ -3,6 +3,7 @@
 #include "../hal/notify.h"
 #include "../hal/wifi_mgr.h"
 #include "../web/routes.h"
+#include "../web/ws_broadcast.h"
 #include "odid_wifi.h"
 #include "opendroneid.h"
 #include <freertos/FreeRTOS.h>
@@ -47,6 +48,18 @@ void SkySpyModule::sendJSON(const SSUavData* uav) {
                   "\"pilot_lat\":%.6f,\"pilot_long\":%.6f,\"basic_id\":\"%s\"}\n",
                   macStr, uav->rssi, uav->latD, uav->longD, uav->altitudeMsl, uav->baseLatD,
                   uav->baseLongD, uav->uavId);
+
+    // Push drone detection over WS
+    {
+        char json[384];
+        snprintf(json, sizeof(json),
+                 "{\"mac\":\"%s\",\"rssi\":%d,\"drone_lat\":%.6f,\"drone_long\":%.6f,"
+                 "\"altitude\":%d,\"height\":%d,\"speed\":%d,\"heading\":%d,"
+                 "\"pilot_lat\":%.6f,\"pilot_long\":%.6f,\"uav_id\":\"%s\",\"op_id\":\"%s\"}",
+                 macStr, uav->rssi, uav->latD, uav->longD, uav->altitudeMsl, uav->heightAgl,
+                 uav->speed, uav->heading, uav->baseLatD, uav->baseLongD, uav->uavId, uav->opId);
+        ws::enqueue("ss/drone", json);
+    }
 }
 
 void SkySpyModule::extractFromODID(SSUavData* uav) {
@@ -208,10 +221,29 @@ void SkySpyModule::loop() {
 
     unsigned long now = millis();
 
-    // Status heartbeat every 60s
+    // Status heartbeat every 60s (serial) / 5s (WS)
     if (now - _lastStatus > 60000UL) {
         Serial.println("{\"module\":\"skyspy\",\"status\":\"scanning\"}");
         _lastStatus = now;
+    }
+
+    // Push ss/status over WS every 5s
+    static unsigned long lastWsPush = 0;
+    if (now - lastWsPush >= 5000) {
+        int droneCount = 0;
+        bool inRange = _deviceInRange;
+        if (_mutex && xSemaphoreTake(_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            for (int i = 0; i < SS_MAX_UAVS; i++) {
+                if (_uavs[i].mac[0] != 0 && (now - _uavs[i].lastSeen) < 7000)
+                    droneCount++;
+            }
+            xSemaphoreGive(_mutex);
+        }
+        char json[64];
+        snprintf(json, sizeof(json), "{\"in_range\":%s,\"count\":%d}",
+                 inRange ? "true" : "false", droneCount);
+        ws::enqueue("ss/status", json);
+        lastWsPush = now;
     }
 
     // Heartbeat pulse if drone in range

@@ -4,6 +4,7 @@
 #include "../hal/notify.h"
 #include "../web/http_helpers.h"
 #include "../web/routes.h"
+#include "../web/ws_broadcast.h"
 #include "flockyou_logic.h"
 #include <LittleFS.h>
 #include <NimBLEDevice.h>
@@ -139,8 +140,23 @@ int FlockyouModule::addDetection(const char* mac, const char* detName, int rssi,
         d.isRaven = isRaven;
         strncpy(d.ravenFW, ravenFW ? ravenFW : "", sizeof(d.ravenFW) - 1);
         attachGPS(d);
+        // Copy name out before releasing mutex (d.name was sanitized above)
+        char safeName[sizeof(d.name)];
+        strlcpy(safeName, d.name, sizeof(safeName));
         int idx = _detCount++;
         xSemaphoreGive(_mutex);
+
+        // Push new detection over WS (outside mutex — enqueue uses spinlock)
+        {
+            char json[256];
+            snprintf(json, sizeof(json),
+                     "{\"mac\":\"%s\",\"name\":\"%s\",\"rssi\":%d,\"method\":\"%s\","
+                     "\"count\":1,\"raven\":%s,\"fw\":\"%s\"}",
+                     mac, safeName, rssi, method, isRaven ? "true" : "false",
+                     ravenFW ? ravenFW : "");
+            ws::enqueue("fy/detection", json);
+        }
+
         return idx;
     }
 
@@ -292,6 +308,19 @@ void FlockyouModule::loop() {
             _triggered = false;
             hal::notify(hal::NOTIFY_FY_IDLE);
         }
+    }
+
+    // Push fy/stats over WS every 2.5s
+    static unsigned long lastStatsPush = 0;
+    if (millis() - lastStatsPush >= 2500) {
+        const hal::GPSData& g = hal::gpsGet();
+        char json[128];
+        const char* gpsSrc = g.hwFix ? "hw" : (hal::gpsIsFresh() ? "phone" : "none");
+        snprintf(json, sizeof(json),
+                 "{\"count\":%d,\"gps_src\":\"%s\",\"gps_sats\":%d,\"gps_hw_detected\":%s}",
+                 _detCount, gpsSrc, g.satellites, g.hwDetected ? "true" : "false");
+        ws::enqueue("fy/stats", json);
+        lastStatsPush = millis();
     }
 
     // Auto-save

@@ -3,6 +3,7 @@
 #include "../hal/notify.h"
 #include "../storage/nvs_store.h"
 #include "../web/routes.h"
+#include "../web/ws_broadcast.h"
 #include "detector_logic.h"
 #include <algorithm>
 
@@ -179,6 +180,17 @@ void DetectorModule::loop() {
         Serial.printf("{\"module\":\"detector\",\"mac\":\"%s\",\"alias\":\"%s\",\"rssi\":%d,"
                       "\"type\":\"%s\"}\n",
                       mac, alias.c_str(), rssi, type);
+
+        // Push detection event over WS (escape user-supplied alias)
+        {
+            char safeAlias[72];
+            ws::jsonEscape(safeAlias, sizeof(safeAlias), alias.c_str());
+            char json[256];
+            snprintf(json, sizeof(json),
+                     "{\"mac\":\"%s\",\"alias\":\"%s\",\"rssi\":%d,\"type\":\"%s\"}", mac,
+                     safeAlias, rssi, type);
+            ws::enqueue("det/match", json);
+        }
     }
 
     // Auto-save every 10s

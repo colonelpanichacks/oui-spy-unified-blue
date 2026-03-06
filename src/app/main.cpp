@@ -12,6 +12,7 @@
  */
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <nvs_flash.h>
 
 // HAL
@@ -40,6 +41,7 @@
 
 // Web
 #include "web/server.h"
+#include "web/ws_broadcast.h"
 
 // ============================================================================
 // Module Instances
@@ -267,9 +269,48 @@ static void loopNormalMode() {
     // Heartbeat (5s interval)
     static unsigned long lastHB = 0;
     if (millis() - lastHB > 5000) {
-        Serial.printf("[HEARTBEAT] uptime=%lums heap=%u clients=%d\n", millis(), ESP.getFreeHeap(),
-                      WiFi.softAPgetStationNum());
+        Serial.printf("[HEARTBEAT] uptime=%lums heap=%u clients=%d ws=%d\n", millis(),
+                      ESP.getFreeHeap(), WiFi.softAPgetStationNum(), ws::clientCount());
         Serial.flush();
+
+        // Push sys/status over WS
+        {
+            JsonDocument doc;
+            doc["uptime"] = millis() / 1000;
+            doc["heap"] = ESP.getFreeHeap();
+            doc["psram"] = ESP.getFreePsram();
+            doc["buzzer"] = hal::buzzerIsEnabled();
+            ws::enqueueDoc("sys/status", doc);
+        }
+
+        // Push sys/gps over WS
+        {
+            const hal::GPSData& g = hal::gpsGet();
+            JsonDocument doc;
+            doc["valid"] = g.valid;
+            doc["lat"] = serialized(String(g.lat, 8));
+            doc["lon"] = serialized(String(g.lon, 8));
+            doc["acc"] = serialized(String(g.accuracy, 1));
+            doc["hardware"] = g.isHardware;
+            doc["hw_detected"] = g.hwDetected;
+            doc["hw_fix"] = g.hwFix;
+            doc["sats"] = g.satellites;
+            doc["fresh"] = hal::gpsIsFresh();
+            ws::enqueueDoc("sys/gps", doc);
+        }
+
+        // Push sys/modules over WS
+        {
+            JsonDocument doc;
+            JsonArray arr = doc.to<JsonArray>();
+            for (int i = 0; i < MODULE_COUNT; i++) {
+                JsonObject obj = arr.add<JsonObject>();
+                obj["name"] = modules[i]->name();
+                obj["enabled"] = modules[i]->isEnabled();
+            }
+            ws::enqueueDoc("sys/modules", doc);
+        }
+
         lastHB = millis();
     }
 

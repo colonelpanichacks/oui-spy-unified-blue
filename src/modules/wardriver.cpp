@@ -4,6 +4,7 @@
 #include "../hal/wifi_mgr.h"
 #include "../storage/nvs_store.h"
 #include "../web/routes.h"
+#include "../web/ws_broadcast.h"
 #include "wardriver_logic.h"
 #include <LittleFS.h>
 #include <WiFi.h>
@@ -179,6 +180,25 @@ void WardriverModule::loop() {
         }
     }
 
+    // Push wd/status over WS every 2s when session active
+    static unsigned long lastWsPush = 0;
+    if (now - lastWsPush >= 2000) {
+        bool gpsFresh = hal::gpsIsFresh();
+        int unique = 0;
+        if (_mutex && xSemaphoreTake(_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            unique = wardriver_logic::dedupCount(_dedupSet, WD_DEDUP_CAPACITY);
+            xSemaphoreGive(_mutex);
+        }
+        char json[256];
+        snprintf(json, sizeof(json),
+                 "{\"active\":true,\"wifi\":%d,\"ble\":%d,\"unique\":%d,"
+                 "\"gps_fresh\":%s,\"has_csv\":%s,\"csv_size\":%u}",
+                 _wifiCount, _bleCount, unique, gpsFresh ? "true" : "false",
+                 hasCsvFile() ? "true" : "false", (unsigned)csvFileSize());
+        ws::enqueue("wd/status", json);
+        lastWsPush = now;
+    }
+
     // Auto-save watchlist devices
     if (now - _lastSave >= WD_SAVE_INTERVAL_MS) {
         saveDevices();
@@ -327,6 +347,17 @@ void WardriverModule::addRecent(const String& mac, const String& ssid, const Str
     _recentHead = (_recentHead + 1) % WD_RECENT_SIZE;
     if (_recentCount < WD_RECENT_SIZE)
         _recentCount++;
+
+    // Push sighting over WS (escape user-supplied SSID)
+    {
+        char safeSsid[72];
+        ws::jsonEscape(safeSsid, sizeof(safeSsid), ssid.c_str());
+        char json[256];
+        snprintf(json, sizeof(json),
+                 "{\"mac\":\"%s\",\"ssid\":\"%s\",\"type\":\"%s\",\"rssi\":%d,\"channel\":%d}",
+                 mac.c_str(), safeSsid, type.c_str(), rssi, channel);
+        ws::enqueue("wd/sighting", json);
+    }
 }
 
 void WardriverModule::getRecentSightings(std::vector<WDRecentSighting>& out) const {
