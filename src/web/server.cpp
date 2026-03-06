@@ -9,6 +9,7 @@
 #include "dashboard_gz.h"
 #include "http_helpers.h"
 #include "welcome_html.h"
+#include "ws_broadcast.h"
 #include <ArduinoJson.h>
 #include <esp_https_server.h>
 
@@ -104,6 +105,19 @@ static esp_err_t handleModuleToggle(httpd_req_t* req) {
         if (name == _modules[i]->name()) {
             _modules[i]->setEnabled(en);
             storage::setModuleEnabled(name.c_str(), en);
+
+            // Push module list update over WS
+            {
+                JsonDocument mDoc;
+                JsonArray arr = mDoc.to<JsonArray>();
+                for (int j = 0; j < _moduleCount; j++) {
+                    JsonObject obj = arr.add<JsonObject>();
+                    obj["name"] = _modules[j]->name();
+                    obj["enabled"] = _modules[j]->isEnabled();
+                }
+                ws::enqueueDoc("sys/modules", mDoc);
+            }
+
             return sendJSON(req, 200, "{\"ok\":true}");
         }
     }
@@ -218,7 +232,7 @@ void serverInit() {
     httpsConfig.prvtkey_pem = DEV_KEY_PEM;
     httpsConfig.prvtkey_len = DEV_KEY_PEM_LEN;
     httpsConfig.httpd.max_uri_handlers = 55;
-    httpsConfig.httpd.max_open_sockets = 4; // Concurrent TLS sessions for connection reuse
+    httpsConfig.httpd.max_open_sockets = 2; // Keep low — each TLS session holds ~16-30KB
     httpsConfig.httpd.stack_size = 10240;   // TLS handshake needs more stack than plain HTTP
     httpsConfig.httpd.lru_purge_enable = true;
 
@@ -229,12 +243,13 @@ void serverInit() {
         Serial.printf("[WEB] HTTPS start failed: %s\n", esp_err_to_name(ret));
     }
 
-    // --- HTTP Server on :80 ---
+    // --- HTTP Server on :80 (also hosts WebSocket endpoint) ---
     httpd_config_t httpConfig = HTTPD_DEFAULT_CONFIG();
     httpConfig.ctrl_port = 32769; // Must differ from HTTPS server's ctrl_port (32768)
     httpConfig.max_uri_handlers = 55;
     httpConfig.stack_size = 8192;
     httpConfig.lru_purge_enable = true;
+    httpConfig.global_transport_ctx = nullptr;
 
     ret = httpd_start(&_httpServer, &httpConfig);
     if (ret == ESP_OK) {
@@ -305,6 +320,9 @@ void registerSystemRoutes(IModule** modules, int count) {
 }
 
 void serverBegin() {
+    // Initialize WebSocket broadcast on HTTP server
+    ws::init(_httpServer);
+
     // Servers already started in serverInit()
     Serial.println("[WEB] All routes registered");
     Serial.println("[WEB] HTTPS: https://192.168.4.1 | HTTP: http://192.168.4.1");
