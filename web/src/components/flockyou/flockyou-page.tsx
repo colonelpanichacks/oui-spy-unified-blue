@@ -1,6 +1,7 @@
 import type { FlockyouDetection, FlockyouStats, Module } from "../../api/client";
 import { fetchJSON } from "../../api/client";
 import { usePoll } from "../../hooks/use-poll";
+import { topic } from "../../store/ws-store";
 import { Button } from "../shared/button";
 import { DeviceCard, Tag } from "../shared/device-card";
 import { EmptyState } from "../shared/empty-state";
@@ -16,8 +17,14 @@ export function FlockyouPage() {
     refresh,
     loading,
   } = usePoll<FlockyouDetection[]>("/api/flockyou/detections", 2500);
-  const { data: stats } = usePoll<FlockyouStats>("/api/flockyou/stats", 2500);
-  const { data: modules } = usePoll<Module[]>("/api/modules", 10000);
+
+  const wsStats = topic<FlockyouStats>("fy/stats").value;
+  const { data: pollStats } = usePoll<FlockyouStats>("/api/flockyou/stats", 2500);
+  const stats = wsStats ?? pollStats;
+
+  const wsModules = topic<Module[]>("sys/modules").value;
+  const { data: pollModules } = usePoll<Module[]>("/api/modules", 10000);
+  const modules = wsModules ?? pollModules;
 
   const moduleEnabled = modules?.find((m) => m.name === "flockyou")?.enabled ?? true;
 

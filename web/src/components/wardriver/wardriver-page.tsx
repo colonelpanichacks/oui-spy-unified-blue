@@ -7,6 +7,7 @@ import type {
 } from "../../api/client";
 import { postEmpty, postForm } from "../../api/client";
 import { usePoll } from "../../hooks/use-poll";
+import { topic } from "../../store/ws-store";
 import { Button } from "../shared/button";
 import { Card } from "../shared/card";
 import { DeviceCard, Tag } from "../shared/device-card";
@@ -27,7 +28,11 @@ function formatSize(bytes: number): string {
 
 export function WardriverPage() {
   const { toast } = useToast();
-  const { data: status } = usePoll<WardriverStatus>("/api/wardriver/status", 2000);
+
+  const wsStatus = topic<WardriverStatus>("wd/status").value;
+  const { data: pollStatus } = usePoll<WardriverStatus>("/api/wardriver/status", 2000);
+  const status = wsStatus ?? pollStatus;
+
   const { data: recent } = usePoll<WardriverSighting[]>("/api/wardriver/recent", 3000);
   const { data: filters } = usePoll<WardriverFilter[]>("/api/wardriver/filters", 10000);
   const { data: devicesResp } = usePoll<DevicesResponse>("/api/wardriver/devices", 3000);
