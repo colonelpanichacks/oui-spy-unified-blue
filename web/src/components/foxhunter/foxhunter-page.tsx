@@ -1,8 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import type { FoxhunterStatus, Module } from "../../api/client";
 import { postEmpty, postForm } from "../../api/client";
-import { usePoll } from "../../hooks/use-poll";
-import { topic } from "../../store/ws-store";
+import { useWsTopic } from "../../hooks/use-ws-topic";
+import { FOX_STATUS, SYS_MODULES } from "../../store/ws-topics";
 import { Button } from "../shared/button";
 import { Card } from "../shared/card";
 import { ModuleBadge } from "../shared/module-badge";
@@ -18,17 +18,13 @@ const MAC_RE =
 export function FoxhunterPage() {
   const { toast } = useToast();
 
-  const wsFox = topic<FoxhunterStatus>("fox/status").value;
-  const {
-    data: pollFox,
-    refresh,
-    loading,
-  } = usePoll<FoxhunterStatus>("/api/foxhunter/status", 500);
-  const data = wsFox ?? pollFox;
+  const { data, refresh, loading } = useWsTopic<FoxhunterStatus>(
+    FOX_STATUS,
+    "/api/foxhunter/status",
+    500,
+  );
 
-  const wsModules = topic<Module[]>("sys/modules").value;
-  const { data: pollModules } = usePoll<Module[]>("/api/modules", 10000);
-  const modules = wsModules ?? pollModules;
+  const { data: modules } = useWsTopic<Module[]>(SYS_MODULES, "/api/modules", 10000);
 
   const [mac, setMac] = useState("");
   const [macLoaded, setMacLoaded] = useState(false);

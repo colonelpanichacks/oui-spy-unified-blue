@@ -55,12 +55,12 @@ void FoxhunterModule::loop() {
                 Serial.printf("{\"module\":\"foxhunter\",\"rssi\":%d}\n", _currentRSSI);
             }
             // Push fox/status over WS at 100ms for real-time RSSI meter
-            {
+            if (ws::hasClients()) {
                 char json[128];
                 snprintf(json, sizeof(json),
                          "{\"target\":\"%s\",\"detected\":true,\"rssi\":%d,\"lastSeen\":%lu}",
                          _targetMAC.c_str(), _currentRSSI, _lastTargetSeen);
-                ws::enqueue("fox/status", json);
+                ws::enqueue(ws::topic::FOX_STATUS, json);
             }
             _lastRSSIPrint = now;
         }
@@ -74,7 +74,7 @@ void FoxhunterModule::loop() {
             snprintf(json, sizeof(json),
                      "{\"target\":\"%s\",\"detected\":false,\"rssi\":%d,\"lastSeen\":%lu}",
                      _targetMAC.c_str(), _currentRSSI, _lastTargetSeen);
-            ws::enqueue("fox/status", json);
+            ws::enqueue(ws::topic::FOX_STATUS, json);
         }
     }
 }

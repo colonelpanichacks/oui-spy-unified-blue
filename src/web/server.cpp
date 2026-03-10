@@ -107,16 +107,7 @@ static esp_err_t handleModuleToggle(httpd_req_t* req) {
             storage::setModuleEnabled(name.c_str(), en);
 
             // Push module list update over WS
-            {
-                JsonDocument mDoc;
-                JsonArray arr = mDoc.to<JsonArray>();
-                for (int j = 0; j < _moduleCount; j++) {
-                    JsonObject obj = arr.add<JsonObject>();
-                    obj["name"] = _modules[j]->name();
-                    obj["enabled"] = _modules[j]->isEnabled();
-                }
-                ws::enqueueDoc("sys/modules", mDoc);
-            }
+            ws::pushModuleList(_modules, _moduleCount);
 
             return sendJSON(req, 200, "{\"ok\":true}");
         }

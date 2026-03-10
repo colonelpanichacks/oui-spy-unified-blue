@@ -195,7 +195,7 @@ void WardriverModule::loop() {
                  "\"gps_fresh\":%s,\"has_csv\":%s,\"csv_size\":%u}",
                  _wifiCount, _bleCount, unique, gpsFresh ? "true" : "false",
                  hasCsvFile() ? "true" : "false", (unsigned)csvFileSize());
-        ws::enqueue("wd/status", json);
+        ws::enqueue(ws::topic::WD_STATUS, json);
         lastWsPush = now;
     }
 
@@ -356,7 +356,7 @@ void WardriverModule::addRecent(const String& mac, const String& ssid, const Str
         snprintf(json, sizeof(json),
                  "{\"mac\":\"%s\",\"ssid\":\"%s\",\"type\":\"%s\",\"rssi\":%d,\"channel\":%d}",
                  mac.c_str(), safeSsid, type.c_str(), rssi, channel);
-        ws::enqueue("wd/sighting", json);
+        ws::enqueue(ws::topic::WD_SIGHTING, json);
     }
 }
 

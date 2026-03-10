@@ -40,9 +40,6 @@ build:
 upload:
     pio run -t upload
 
-monitor:
-    pio device monitor
-
 clean:
     pio run -t clean
 
@@ -96,6 +93,9 @@ flash-release tag="":
 
 flash-batch:
     uv run python scripts/flash.py --batch
+
+monitor *args="":
+    uv run python scripts/monitor.py {{args}}
 
 # ---------------------------------------------------------------------------
 # Docker targets — run inside the devcontainer image, no local env needed

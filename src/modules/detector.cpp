@@ -189,7 +189,7 @@ void DetectorModule::loop() {
             snprintf(json, sizeof(json),
                      "{\"mac\":\"%s\",\"alias\":\"%s\",\"rssi\":%d,\"type\":\"%s\"}", mac,
                      safeAlias, rssi, type);
-            ws::enqueue("det/match", json);
+            ws::enqueue(ws::topic::DET_MATCH, json);
         }
     }
 

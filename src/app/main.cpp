@@ -12,7 +12,6 @@
  */
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 #include <nvs_flash.h>
 
 // HAL
@@ -273,43 +272,33 @@ static void loopNormalMode() {
                       ESP.getFreeHeap(), WiFi.softAPgetStationNum(), ws::clientCount());
         Serial.flush();
 
-        // Push sys/status over WS
+        // Push sys/status over WS (snprintf — no heap alloc)
         {
-            JsonDocument doc;
-            doc["uptime"] = millis() / 1000;
-            doc["heap"] = ESP.getFreeHeap();
-            doc["psram"] = ESP.getFreePsram();
-            doc["buzzer"] = hal::buzzerIsEnabled();
-            ws::enqueueDoc("sys/status", doc);
+            char json[128];
+            snprintf(json, sizeof(json),
+                     "{\"uptime\":%lu,\"heap\":%u,\"psram\":%u,\"buzzer\":%s}", millis() / 1000,
+                     ESP.getFreeHeap(), ESP.getFreePsram(),
+                     hal::buzzerIsEnabled() ? "true" : "false");
+            ws::enqueue(ws::topic::SYS_STATUS, json);
         }
 
-        // Push sys/gps over WS
+        // Push sys/gps over WS (snprintf — no heap alloc)
         {
             const hal::GPSData& g = hal::gpsGet();
-            JsonDocument doc;
-            doc["valid"] = g.valid;
-            doc["lat"] = serialized(String(g.lat, 8));
-            doc["lon"] = serialized(String(g.lon, 8));
-            doc["acc"] = serialized(String(g.accuracy, 1));
-            doc["hardware"] = g.isHardware;
-            doc["hw_detected"] = g.hwDetected;
-            doc["hw_fix"] = g.hwFix;
-            doc["sats"] = g.satellites;
-            doc["fresh"] = hal::gpsIsFresh();
-            ws::enqueueDoc("sys/gps", doc);
+            char json[256];
+            snprintf(json, sizeof(json),
+                     "{\"valid\":%s,\"lat\":%.8f,\"lon\":%.8f,\"acc\":%.1f,"
+                     "\"hardware\":%s,\"hw_detected\":%s,\"hw_fix\":%s,"
+                     "\"sats\":%d,\"fresh\":%s}",
+                     g.valid ? "true" : "false", g.lat, g.lon, g.accuracy,
+                     g.isHardware ? "true" : "false", g.hwDetected ? "true" : "false",
+                     g.hwFix ? "true" : "false", g.satellites,
+                     hal::gpsIsFresh() ? "true" : "false");
+            ws::enqueue(ws::topic::SYS_GPS, json);
         }
 
         // Push sys/modules over WS
-        {
-            JsonDocument doc;
-            JsonArray arr = doc.to<JsonArray>();
-            for (int i = 0; i < MODULE_COUNT; i++) {
-                JsonObject obj = arr.add<JsonObject>();
-                obj["name"] = modules[i]->name();
-                obj["enabled"] = modules[i]->isEnabled();
-            }
-            ws::enqueueDoc("sys/modules", doc);
-        }
+        ws::pushModuleList(modules, MODULE_COUNT);
 
         lastHB = millis();
     }

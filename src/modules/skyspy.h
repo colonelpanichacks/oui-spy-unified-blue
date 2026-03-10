@@ -74,8 +74,11 @@ class SkySpyModule : public IModule, public hal::BLEListener {
     unsigned long _lastHeartbeat = 0;
     unsigned long _lastStatus = 0;
 
+    char _pendingWsJson[384] = {};
+
     SSUavData* nextUav(const uint8_t* mac);
     void sendJSON(const SSUavData* uav);
+    void flushPendingWs();
     void extractFromODID(SSUavData* uav);
     void triggerDetection();
 };

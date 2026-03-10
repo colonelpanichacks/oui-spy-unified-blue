@@ -49,16 +49,20 @@ void SkySpyModule::sendJSON(const SSUavData* uav) {
                   macStr, uav->rssi, uav->latD, uav->longD, uav->altitudeMsl, uav->baseLatD,
                   uav->baseLongD, uav->uavId);
 
-    // Push drone detection over WS
-    {
-        char json[384];
-        snprintf(json, sizeof(json),
-                 "{\"mac\":\"%s\",\"rssi\":%d,\"drone_lat\":%.6f,\"drone_long\":%.6f,"
-                 "\"altitude\":%d,\"height\":%d,\"speed\":%d,\"heading\":%d,"
-                 "\"pilot_lat\":%.6f,\"pilot_long\":%.6f,\"uav_id\":\"%s\",\"op_id\":\"%s\"}",
-                 macStr, uav->rssi, uav->latD, uav->longD, uav->altitudeMsl, uav->heightAgl,
-                 uav->speed, uav->heading, uav->baseLatD, uav->baseLongD, uav->uavId, uav->opId);
-        ws::enqueue("ss/drone", json);
+    // Copy fields needed for WS push (will be sent outside mutex by caller)
+    _pendingWsJson[0] = '\0';
+    snprintf(_pendingWsJson, sizeof(_pendingWsJson),
+             "{\"mac\":\"%s\",\"rssi\":%d,\"drone_lat\":%.6f,\"drone_long\":%.6f,"
+             "\"altitude\":%d,\"height\":%d,\"speed\":%d,\"heading\":%d,"
+             "\"pilot_lat\":%.6f,\"pilot_long\":%.6f,\"uav_id\":\"%s\",\"op_id\":\"%s\"}",
+             macStr, uav->rssi, uav->latD, uav->longD, uav->altitudeMsl, uav->heightAgl,
+             uav->speed, uav->heading, uav->baseLatD, uav->baseLongD, uav->uavId, uav->opId);
+}
+
+void SkySpyModule::flushPendingWs() {
+    if (_pendingWsJson[0] != '\0') {
+        ws::enqueue(ws::topic::SS_DRONE, _pendingWsJson);
+        _pendingWsJson[0] = '\0';
     }
 }
 
@@ -158,6 +162,7 @@ void SkySpyModule::handleWiFiFrame(const uint8_t* payload, int length, int rssi)
                 sendJSON(stored);
             }
             xSemaphoreGive(_mutex);
+            flushPendingWs();
         }
     }
     // Beacon frames with vendor-specific ODID IEs
@@ -191,6 +196,7 @@ void SkySpyModule::handleWiFiFrame(const uint8_t* payload, int length, int rssi)
                         triggerDetection();
                         sendJSON(stored);
                         xSemaphoreGive(_mutex);
+                        flushPendingWs();
                     }
                 }
             }
@@ -239,10 +245,11 @@ void SkySpyModule::loop() {
             }
             xSemaphoreGive(_mutex);
         }
-        char json[64];
-        snprintf(json, sizeof(json), "{\"in_range\":%s,\"count\":%d}",
+        char json[96];
+        snprintf(json, sizeof(json),
+                 "{\"in_range\":%s,\"active_drones\":%d,\"wifi_scanning\":false}",
                  inRange ? "true" : "false", droneCount);
-        ws::enqueue("ss/status", json);
+        ws::enqueue(ws::topic::SS_STATUS, json);
         lastWsPush = now;
     }
 
@@ -330,6 +337,7 @@ void SkySpyModule::onBLEAdvertisement(const NimBLEAdvertisedDevice* device) {
     triggerDetection();
     sendJSON(uav);
     xSemaphoreGive(_mutex);
+    flushPendingWs();
 }
 
 // ============================================================================

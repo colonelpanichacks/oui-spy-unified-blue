@@ -31,6 +31,9 @@ const GPSData& gpsGet();
 // Is GPS data fresh (< 30s old)?
 bool gpsIsFresh();
 
+// GPS source as a short string: "hw", "phone", or "none"
+const char* gpsSourceStr();
+
 // Get formatted GPS time for CSV timestamps (YYYY-MM-DD HH:MM:SS)
 // Returns boot-relative timestamp if no GPS time available.
 String gpsGetTime();

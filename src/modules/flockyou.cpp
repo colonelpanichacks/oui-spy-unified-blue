@@ -154,7 +154,7 @@ int FlockyouModule::addDetection(const char* mac, const char* detName, int rssi,
                      "\"count\":1,\"raven\":%s,\"fw\":\"%s\"}",
                      mac, safeName, rssi, method, isRaven ? "true" : "false",
                      ravenFW ? ravenFW : "");
-            ws::enqueue("fy/detection", json);
+            ws::enqueue(ws::topic::FY_DETECTION, json);
         }
 
         return idx;
@@ -314,12 +314,24 @@ void FlockyouModule::loop() {
     static unsigned long lastStatsPush = 0;
     if (millis() - lastStatsPush >= 2500) {
         const hal::GPSData& g = hal::gpsGet();
-        char json[128];
-        const char* gpsSrc = g.hwFix ? "hw" : (hal::gpsIsFresh() ? "phone" : "none");
+        int ravenCount = 0, gpsTagged = 0;
+        if (_mutex && xSemaphoreTake(_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            for (int i = 0; i < _detCount; i++) {
+                if (_det[i].isRaven)
+                    ravenCount++;
+                if (_det[i].hasGPS)
+                    gpsTagged++;
+            }
+            xSemaphoreGive(_mutex);
+        }
+        char json[192];
         snprintf(json, sizeof(json),
-                 "{\"count\":%d,\"gps_src\":\"%s\",\"gps_sats\":%d,\"gps_hw_detected\":%s}",
-                 _detCount, gpsSrc, g.satellites, g.hwDetected ? "true" : "false");
-        ws::enqueue("fy/stats", json);
+                 "{\"total\":%d,\"raven\":%d,\"ble\":\"active\","
+                 "\"gps_valid\":%s,\"gps_tagged\":%d,"
+                 "\"gps_src\":\"%s\",\"gps_sats\":%d,\"gps_hw_detected\":%s}",
+                 _detCount, ravenCount, hal::gpsIsFresh() ? "true" : "false", gpsTagged,
+                 hal::gpsSourceStr(), g.satellites, g.hwDetected ? "true" : "false");
+        ws::enqueue(ws::topic::FY_STATS, json);
         lastStatsPush = millis();
     }
 

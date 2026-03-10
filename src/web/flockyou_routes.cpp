@@ -30,11 +30,7 @@ static esp_err_t handleFYStats(httpd_req_t* req) {
         xSemaphoreGive(mtx);
     }
     const hal::GPSData& g = hal::gpsGet();
-    const char* gpsSrc = "none";
-    if (g.isHardware && g.hwFix)
-        gpsSrc = "hw";
-    else if (hal::gpsIsFresh())
-        gpsSrc = "phone";
+    const char* gpsSrc = hal::gpsSourceStr();
     JsonDocument doc;
     doc["total"] = _fyMod->detectionCount();
     doc["raven"] = raven;

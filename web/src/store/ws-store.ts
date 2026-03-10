@@ -27,9 +27,23 @@ export function sendCommand(action: string, params?: Record<string, string>): vo
   ws.send(JSON.stringify(msg));
 }
 
-/** Connect to the WS endpoint. Call once at app startup. */
-export function connect(): void {
-  if (ws) return;
+/** Disconnect and stop reconnecting. */
+export function disconnect(): void {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  if (ws) {
+    ws.onclose = null; // Prevent reconnect
+    ws.close();
+    ws = null;
+    connected.value = false;
+  }
+}
+
+/** Connect to the WS endpoint. Call once at app startup. Returns disconnect fn. */
+export function connect(): () => void {
+  if (ws) return disconnect;
 
   const proto = "ws:";
   const host = location.host;
@@ -68,6 +82,8 @@ export function connect(): void {
   ws.onerror = () => {
     // onclose will fire after onerror
   };
+
+  return disconnect;
 }
 
 function scheduleReconnect() {

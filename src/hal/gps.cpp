@@ -73,6 +73,14 @@ bool gpsIsFresh() {
     return _data.valid && (millis() - _data.lastUpdate < GPS_STALE_MS);
 }
 
+const char* gpsSourceStr() {
+    if (_data.hwFix)
+        return "hw";
+    if (gpsIsFresh())
+        return "phone";
+    return "none";
+}
+
 String gpsGetTime() {
     // Use GPS time if date and time are valid
     if (_parser.date.isValid() && _parser.time.isValid() && _parser.date.year() >= 2020) {

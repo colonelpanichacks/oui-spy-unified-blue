@@ -47,6 +47,16 @@ just docker-quality       # all checks in devcontainer image
 - **Web tests:** `web/src/**/*.test.{ts,tsx}` — Vitest + jsdom + Testing Library.
 - **Coverage:** `scripts/native_coverage.py` adds gcov flags (Linux only, Apple Clang lacks libgcov).
 
+## Debugging
+
+`scripts/monitor.py` — lightweight serial monitor that works without a TTY (unlike `pio device monitor`). Works in headless environments and Claude Code sessions.
+
+```bash
+just monitor                  # auto-detect port, stream forever
+just monitor --timeout 10     # capture 10 seconds
+just monitor --port /dev/...  # explicit port
+```
+
 ## Key Conventions
 
 - Modules default to DISABLED on first boot (`getModuleEnabled` default=false).

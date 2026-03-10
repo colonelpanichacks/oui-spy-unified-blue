@@ -1,6 +1,5 @@
-// Typed API client generated from OpenAPI schema
-import createClient from "openapi-fetch";
-import type { components, paths } from "./schema";
+// Typed API client — manual fetch helpers + schema-derived types
+import type { components } from "./schema";
 
 // Schema-derived type aliases for component use
 export type SystemStatus = components["schemas"]["SystemStatus"];
@@ -20,15 +19,6 @@ export type WardriverSighting = components["schemas"]["WardriverSighting"];
 export type WardriverConfig = components["schemas"]["WardriverConfig"];
 export type WardriverFilter = components["schemas"]["WardriverFilter"];
 export type WardriverDevice = components["schemas"]["WardriverDevice"];
-
-export const api = createClient<paths>({
-  baseUrl: "",
-  bodySerializer: (body) =>
-    new URLSearchParams(body as unknown as Record<string, string>).toString(),
-  headers: { "Content-Type": "application/x-www-form-urlencoded" },
-});
-
-// Lightweight fetch helper for polling (avoids openapi-fetch overhead per poll)
 export async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`API ${res.status}: ${url}`);

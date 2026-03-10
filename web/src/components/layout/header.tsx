@@ -1,13 +1,11 @@
 import type { SystemStatus } from "../../api/client";
-import { usePoll } from "../../hooks/use-poll";
-import { connected, topic } from "../../store/ws-store";
+import { useWsTopic } from "../../hooks/use-ws-topic";
+import { connected } from "../../store/ws-store";
+import { SYS_STATUS } from "../../store/ws-topics";
 
 export function Header() {
-  const wsStatus = topic<SystemStatus>("sys/status").value;
-  const { data: pollStatus, connectionLost: httpLost } = usePoll<SystemStatus>("/api/status", 5000);
-
-  const data = wsStatus ?? pollStatus;
-  const isDisconnected = !connected.value && httpLost;
+  const { data } = useWsTopic<SystemStatus>(SYS_STATUS, "/api/status", 5000);
+  const isDisconnected = !connected.value && !data;
 
   const uptimeText = data
     ? (() => {

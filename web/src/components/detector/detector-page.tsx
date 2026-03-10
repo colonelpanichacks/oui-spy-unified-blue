@@ -2,7 +2,9 @@ import { useEffect, useState } from "preact/hooks";
 import type { DetectorDevice, DetectorFilter, Module } from "../../api/client";
 import { postForm } from "../../api/client";
 import { usePoll } from "../../hooks/use-poll";
-import { topic } from "../../store/ws-store";
+import { useWsTopic } from "../../hooks/use-ws-topic";
+import { connected } from "../../store/ws-store";
+import { SYS_MODULES } from "../../store/ws-topics";
 import { Button } from "../shared/button";
 import { Card } from "../shared/card";
 import { DeviceCard, Tag } from "../shared/device-card";
@@ -30,12 +32,18 @@ function countInvalid(text: string, re: RegExp): number {
 
 export function DetectorPage() {
   const { toast } = useToast();
-  const { data: filters, loading } = usePoll<DetectorFilter[]>("/api/detector/filters", 10000);
-  const { data: devicesResp } = usePoll<DevicesResponse>("/api/detector/devices", 3000);
+  const { data: filters, loading } = usePoll<DetectorFilter[]>(
+    "/api/detector/filters",
+    10000,
+    !connected.value,
+  );
+  const { data: devicesResp } = usePoll<DevicesResponse>(
+    "/api/detector/devices",
+    3000,
+    !connected.value,
+  );
 
-  const wsModules = topic<Module[]>("sys/modules").value;
-  const { data: pollModules } = usePoll<Module[]>("/api/modules", 10000);
-  const modules = wsModules ?? pollModules;
+  const { data: modules } = useWsTopic<Module[]>(SYS_MODULES, "/api/modules", 10000);
 
   const [ouis, setOuis] = useState("");
   const [macs, setMacs] = useState("");

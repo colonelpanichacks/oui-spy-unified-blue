@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@preact/signals": "^2.8.1",
-    "openapi-fetch": "^0.17.0",
     "preact": "^10.25.4"
   },
   "devDependencies": {

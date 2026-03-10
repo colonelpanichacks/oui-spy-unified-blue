@@ -1,4 +1,5 @@
 #include "ws_broadcast.h"
+#include "../modules/module.h"
 #include <esp_timer.h>
 
 // ============================================================================
@@ -134,6 +135,30 @@ int clientCount() {
     return count;
 }
 
+bool hasClients() {
+    portENTER_CRITICAL_SAFE(&_mux);
+    bool found = false;
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (_clientFds[i] >= 0) {
+            found = true;
+            break;
+        }
+    }
+    portEXIT_CRITICAL_SAFE(&_mux);
+    return found;
+}
+
+void pushModuleList(IModule** modules, int count) {
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+    for (int i = 0; i < count; i++) {
+        JsonObject obj = arr.add<JsonObject>();
+        obj["name"] = modules[i]->name();
+        obj["enabled"] = modules[i]->isEnabled();
+    }
+    enqueueDoc(topic::SYS_MODULES, doc);
+}
+
 // ============================================================================
 // WS Handler — open/close/text frames
 // ============================================================================
@@ -245,6 +270,13 @@ static void drainTimerCb(void* arg) {
 }
 
 static void drainWork(void* arg) {
+    // Snapshot client fds once (stable for the duration of this drain)
+    int fds[MAX_CLIENTS];
+    portENTER_CRITICAL_SAFE(&_mux);
+    for (int i = 0; i < MAX_CLIENTS; i++)
+        fds[i] = _clientFds[i];
+    portEXIT_CRITICAL_SAFE(&_mux);
+
     // Drain all pending slots and broadcast to clients
     while (true) {
         portENTER_CRITICAL_SAFE(&_mux);
@@ -258,13 +290,6 @@ static void drainWork(void* arg) {
         char payload[SLOT_SIZE];
         memcpy(payload, _slots[idx].payload, len);
         _readHead = (idx + 1) % SLOT_COUNT;
-        portEXIT_CRITICAL_SAFE(&_mux);
-
-        // Snapshot client fds under lock
-        int fds[MAX_CLIENTS];
-        portENTER_CRITICAL_SAFE(&_mux);
-        for (int i = 0; i < MAX_CLIENTS; i++)
-            fds[i] = _clientFds[i];
         portEXIT_CRITICAL_SAFE(&_mux);
 
         // Broadcast to all connected clients
@@ -288,6 +313,7 @@ static void drainWork(void* arg) {
                         _clientFds[j] = -1;
                 }
                 portEXIT_CRITICAL_SAFE(&_mux);
+                fds[i] = -1; // Don't retry this fd for remaining slots
             }
         }
     }

@@ -11,7 +11,7 @@ interface UsePollResult<T> {
 
 const MAX_CONSECUTIVE_ERRORS = 5;
 
-export function usePoll<T>(url: string, intervalMs: number): UsePollResult<T> {
+export function usePoll<T>(url: string, intervalMs: number, enabled = true): UsePollResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +41,11 @@ export function usePoll<T>(url: string, intervalMs: number): UsePollResult<T> {
   }, [url]);
 
   useEffect(() => {
+    if (!enabled) {
+      clearInterval(timerRef.current);
+      return;
+    }
+
     doFetch();
     timerRef.current = setInterval(doFetch, intervalMs);
 
@@ -58,7 +63,7 @@ export function usePoll<T>(url: string, intervalMs: number): UsePollResult<T> {
       clearInterval(timerRef.current);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [intervalMs, doFetch]);
+  }, [intervalMs, doFetch, enabled]);
 
   return { data, error, loading, connectionLost, refresh: doFetch };
 }
