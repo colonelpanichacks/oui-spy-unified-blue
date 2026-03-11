@@ -194,9 +194,13 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
         result = subprocess.run(cmd)
         if result.returncode == 0:
             print("\n  Done! Device will reboot into the new firmware.")
+            if sys.platform == "darwin":
+                subprocess.Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])
             return True
         else:
             print(f"\n  esptool exited with code {result.returncode}")
+            if sys.platform == "darwin":
+                subprocess.Popen(["afplay", "/System/Library/Sounds/Basso.aiff"])
             return False
     except FileNotFoundError:
         print("  esptool not found. Install it:\n")

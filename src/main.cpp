@@ -189,9 +189,11 @@ function saveBZ(on){fetch('/buzzer?on='+(on?'1':'0'))}
 // Boot Jingle for Selector - Zelda "Secret Discovered" Style
 // ============================================================================
 static void playNote(int freq, int duration) {
-    tone(BUZZER_PIN, freq, duration);
+    ledcAttach(BUZZER_PIN, freq, 8);
+    ledcWriteTone(BUZZER_PIN, freq);
     delay(duration);
-    noTone(BUZZER_PIN);
+    ledcWriteTone(BUZZER_PIN, 0);
+    ledcDetach(BUZZER_PIN);
 }
 
 static void selectorBeep() {
