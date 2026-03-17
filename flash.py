@@ -35,6 +35,8 @@ if sys.platform == "win32":
 
 # -- Config ----------------------------------------------------------------
 # XIAO ESP32-C5: RISC-V, dual-band WiFi 6, different flash settings from S3
+BOOT_OFFSET   = "0x0"
+PART_OFFSET   = "0x8000"
 APP_OFFSET    = "0x10000"
 BAUD          = "115200"
 CHIP          = "esp32c5"
@@ -161,12 +163,19 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
     """Flash a single board. Returns True on success."""
     size_kb = os.path.getsize(firmware) / 1024
     label = f"  Board #{board_num}" if board_num else "  Target"
+
+    # Look for bootloader + partitions alongside the app binary
+    fw_dir = os.path.dirname(firmware)
+    bootloader = os.path.join(fw_dir, "bootloader.bin")
+    partitions = os.path.join(fw_dir, "partitions.bin")
+    has_full = os.path.isfile(bootloader) and os.path.isfile(partitions)
+
     print(f"""
 {label}
   Port:       {port}
   Firmware:   {os.path.basename(firmware)}  ({size_kb:.0f} KB)
   Chip:       {CHIP}
-  Offset:     {APP_OFFSET}
+  Full flash: {"YES (bootloader + partitions + app)" if has_full else "APP ONLY"}
   Baud:       {BAUD}
 """)
 
@@ -187,8 +196,11 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
         "--flash_mode", "dio",
         "--flash_freq", "80m",
         "--flash_size", "detect",
-        APP_OFFSET, firmware,
     ]
+
+    if has_full:
+        cmd += [BOOT_OFFSET, bootloader, PART_OFFSET, partitions]
+    cmd += [APP_OFFSET, firmware]
 
     try:
         result = subprocess.run(cmd)
