@@ -35,8 +35,9 @@ if sys.platform == "win32":
 
 # -- Config ----------------------------------------------------------------
 # XIAO ESP32-C5: RISC-V, dual-band WiFi 6, different flash settings from S3
-BOOT_OFFSET   = "0x0"
+BOOT_OFFSET   = "0x2000"       # ESP32-C5 bootloader starts at 0x2000 (not 0x0 like S3)
 PART_OFFSET   = "0x8000"
+OTA_OFFSET    = "0xe000"
 APP_OFFSET    = "0x10000"
 BAUD          = "115200"
 CHIP          = "esp32c5"
@@ -169,10 +170,11 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
     size_kb = os.path.getsize(firmware) / 1024
     label = f"  Board #{board_num}" if board_num else "  Target"
 
-    # Look for bootloader + partitions alongside the app binary
+    # Look for bootloader + partitions + OTA data alongside the app binary
     fw_dir = os.path.dirname(firmware)
     bootloader = os.path.join(fw_dir, "bootloader.bin")
     partitions = os.path.join(fw_dir, "partitions.bin")
+    ota_data = os.path.join(fw_dir, "boot_app0.bin")
     has_full = os.path.isfile(bootloader) and os.path.isfile(partitions)
 
     print(f"""
@@ -198,13 +200,15 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
         "--after", "hard-reset",
         "write-flash",
         "-z",
-        "--flash-mode", "qio",
+        "--flash-mode", "dio",
         "--flash-freq", "80m",
         "--flash-size", "detect",
     ]
 
     if has_full:
         cmd += [BOOT_OFFSET, bootloader, PART_OFFSET, partitions]
+        if os.path.isfile(ota_data):
+            cmd += [OTA_OFFSET, ota_data]
     cmd += [APP_OFFSET, firmware]
 
     try:
