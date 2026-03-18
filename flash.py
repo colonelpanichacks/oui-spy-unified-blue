@@ -130,9 +130,14 @@ def find_firmware(path_arg=None):
         print(f"\n  File not found: {path_arg}")
         sys.exit(1)
 
-    # Look in firmware/ folder
+    # Look in firmware/ folder (exclude bootloader/partitions — flash_one handles those)
+    SUPPORT_BINS = {"bootloader.bin", "partitions.bin", "boot_app0.bin"}
     if os.path.isdir(FIRMWARE_DIR):
-        bins = sorted(glob.glob(os.path.join(FIRMWARE_DIR, "*.bin")), key=os.path.getmtime, reverse=True)
+        bins = sorted(
+            [b for b in glob.glob(os.path.join(FIRMWARE_DIR, "*.bin"))
+             if os.path.basename(b).lower() not in SUPPORT_BINS],
+            key=os.path.getmtime, reverse=True,
+        )
         if len(bins) == 1:
             return bins[0]
         if len(bins) > 1:
@@ -189,13 +194,13 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
         "--chip", CHIP,
         "--port", port,
         "--baud", BAUD,
-        "--before", "default_reset",
-        "--after", "hard_reset",
-        "write_flash",
+        "--before", "default-reset",
+        "--after", "hard-reset",
+        "write-flash",
         "-z",
-        "--flash_mode", "dio",
-        "--flash_freq", "80m",
-        "--flash_size", "detect",
+        "--flash-mode", "qio",
+        "--flash-freq", "80m",
+        "--flash-size", "detect",
     ]
 
     if has_full:
@@ -228,7 +233,7 @@ def erase(port):
         "--chip", CHIP,
         "--port", port,
         "--baud", BAUD,
-        "erase_flash",
+        "erase-flash",
     ]
     subprocess.run(cmd)
     print()
