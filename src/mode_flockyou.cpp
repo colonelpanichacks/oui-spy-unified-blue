@@ -9,6 +9,7 @@
 // All includes from flock-you (outside namespace for proper linkage)
 #include <Arduino.h>
 #include <WiFi.h>
+#include <DNSServer.h>
 #include <NimBLEDevice.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>

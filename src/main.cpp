@@ -13,6 +13,7 @@
 #include <nvs_flash.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <DNSServer.h>
 #include <Preferences.h>
 #include "modes.h"
 
@@ -36,6 +37,7 @@
 
 static Preferences prefs;
 static AsyncWebServer selectorServer(80);
+static DNSServer selectorDNS;
 static int currentMode = 0;
 
 // AP configuration (loaded from NVS, user-configurable via web UI)
@@ -310,7 +312,11 @@ static void startSelector() {
     Serial.print("[SELECTOR] AP IP: ");
     Serial.println(WiFi.softAPIP());
     Serial.flush();
-    
+
+    // Captive portal DNS - redirect all DNS queries to our AP IP
+    selectorDNS.start(53, "*", WiFi.softAPIP());
+    Serial.println("[SELECTOR] Captive portal DNS started");
+
     // Selector page - inject current AP config into template
     selectorServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         prefs.begin("unified-mode", false);
@@ -410,6 +416,11 @@ static void startSelector() {
         ESP.restart();
     });
     
+    // Captive portal catch-all: redirect any unknown URL to root
+    selectorServer.onNotFound([](AsyncWebServerRequest *request) {
+        request->redirect("http://192.168.4.1/");
+    });
+
     Serial.println("[SELECTOR] Starting web server...");
     Serial.flush();
     selectorServer.begin();
@@ -598,6 +609,7 @@ void loop() {
         case 5: skyspy_loop(); break;
         default:
             // Selector mode - web server handles everything
+            selectorDNS.processNextRequest();  // Captive portal DNS
             // LED breathing animation
             {
                 static unsigned long lastLed = 0;

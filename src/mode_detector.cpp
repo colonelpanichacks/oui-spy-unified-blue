@@ -9,6 +9,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <DNSServer.h>
 #include <Preferences.h>
 #include <NimBLEDevice.h>
 #include <esp_log.h>

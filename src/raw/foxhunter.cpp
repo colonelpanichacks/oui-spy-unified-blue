@@ -32,6 +32,7 @@ enum OperatingMode {
 // Global variables
 OperatingMode currentMode = CONFIG_MODE;
 AsyncWebServer server(80);
+DNSServer foxhunterDNS;
 Preferences preferences;
 NimBLEScan* pBLEScan;
 
@@ -760,6 +761,10 @@ void startConfigMode() {
     Serial.println("✓ Access Point created successfully!");
     Serial.println("AP IP address: " + WiFi.softAPIP().toString());
     Serial.println("Config portal: http://" + WiFi.softAPIP().toString());
+
+    // Captive portal DNS - redirect all DNS queries to our AP IP
+    foxhunterDNS.start(53, "*", WiFi.softAPIP());
+    Serial.println("Captive portal DNS started");
     Serial.println("==============================\n");
     
     // Web server routes
@@ -876,6 +881,11 @@ void startConfigMode() {
         deviceResetScheduled = millis() + 1000; // 1 second delay
     });
     
+    // Captive portal catch-all: redirect any unknown URL to root
+    server.onNotFound([](AsyncWebServerRequest *request) {
+        request->redirect("http://192.168.4.1/");
+    });
+
     server.begin();
     Serial.println("Web server started!");
 }
@@ -914,7 +924,8 @@ void startTrackingMode() {
     sessionFirstDetection = true;
     firstDetection = true;
     
-    // Stop the web server
+    // Stop the web server and captive portal DNS
+    foxhunterDNS.stop();
     server.end();
     
     Serial.println("\n==============================");
@@ -1035,6 +1046,7 @@ void loop() {
     }
     
     if (currentMode == CONFIG_MODE) {
+        foxhunterDNS.processNextRequest();  // Captive portal DNS
         // Check for config timeout only if no recent activity AND no connected clients
         int connectedClients = WiFi.softAPgetStationNum();
         if (currentTime - lastConfigActivity > CONFIG_TIMEOUT && connectedClients == 0) {

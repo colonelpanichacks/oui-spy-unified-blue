@@ -145,6 +145,7 @@ static unsigned long fyLastDetTime = 0;
 static unsigned long fyLastHB = 0;
 static NimBLEScan* fyBLEScan = NULL;
 static AsyncWebServer fyServer(80);
+static DNSServer flockyouDNS;
 
 // Phone GPS state (updated via browser Geolocation API -> /api/gps)
 static double fyGPSLat = 0;
@@ -939,6 +940,11 @@ static void fySetupServer() {
         printf("[FLOCK-YOU] All detections cleared (session saved)\n");
     });
 
+    // Captive portal catch-all: redirect any unknown URL to root
+    fyServer.onNotFound([](AsyncWebServerRequest *r) {
+        r->redirect("http://192.168.4.1/");
+    });
+
     fyServer.begin();
     printf("[FLOCK-YOU] Web server started on port 80\n");
 }
@@ -1000,6 +1006,10 @@ void setup() {
     printf("[FLOCK-YOU] AP: %s / %s\n", FY_AP_SSID, FY_AP_PASS);
     printf("[FLOCK-YOU] IP: %s\n", WiFi.softAPIP().toString().c_str());
 
+    // Captive portal DNS - redirect all DNS queries to our AP IP
+    flockyouDNS.start(53, "*", WiFi.softAPIP());
+    printf("[FLOCK-YOU] Captive portal DNS started\n");
+
     // Start web dashboard
     fySetupServer();
 
@@ -1009,6 +1019,7 @@ void setup() {
 }
 
 void loop() {
+    flockyouDNS.processNextRequest();  // Captive portal DNS
     // BLE scanning cycle
     if (millis() - fyLastBleScan >= BLE_SCAN_INTERVAL && !fyBLEScan->isScanning()) {
         fyBLEScan->start(BLE_SCAN_DURATION * 1000);

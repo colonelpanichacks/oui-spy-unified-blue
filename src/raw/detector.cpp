@@ -62,6 +62,7 @@ enum OperatingMode {
 // ================================
 OperatingMode currentMode = CONFIG_MODE;
 AsyncWebServer server(80);
+DNSServer detectorDNS;
 Preferences preferences;
 NimBLEScan* pBLEScan;
 unsigned long configStartTime = 0;
@@ -1596,6 +1597,10 @@ void startConfigMode() {
     IPAddress IP = WiFi.softAPIP();
     Serial.println("AP IP address: " + IP.toString());
     Serial.println("Config portal: http://" + IP.toString());
+
+    // Captive portal DNS - redirect all DNS queries to our AP IP
+    detectorDNS.start(53, "*", IP);
+    Serial.println("Captive portal DNS started");
     Serial.println("==============================\n");
     
     // NOW start the countdown - AP is fully ready and visible
@@ -2172,8 +2177,13 @@ void startConfigMode() {
         normalRestartScheduled = millis() + 3000;
     });
     
+    // Captive portal catch-all: redirect any unknown URL to root
+    server.onNotFound([](AsyncWebServerRequest *request) {
+        request->redirect("http://192.168.4.1/");
+    });
+
     server.begin();
-    
+
     if (isSerialConnected()) {
         Serial.println("Web server started!");
     }
@@ -2270,7 +2280,8 @@ class MyAdvertisedDeviceCallbacks: public NimBLEScanCallbacks {
 void startScanningMode() {
     currentMode = SCANNING_MODE;
     
-    // Stop web server and WiFi
+    // Stop web server, captive portal DNS, and WiFi
+    detectorDNS.stop();
     server.end();
     WiFi.softAPdisconnect(true);
     WiFi.mode(WIFI_OFF);
@@ -2451,6 +2462,7 @@ void loop() {
     unsigned long currentMillis = millis();
     
     if (currentMode == CONFIG_MODE) {
+        detectorDNS.processNextRequest();  // Captive portal DNS
         // Check for scheduled normal restart (from burn-in config)
         if (normalRestartScheduled > 0 && currentMillis >= normalRestartScheduled) {
             if (isSerialConnected()) {
