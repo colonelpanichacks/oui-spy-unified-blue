@@ -191,8 +191,11 @@ static bool fySpiffsReady = false;
 
 static void fyBeep(int freq, int dur) {
     if (!fyBuzzerOn) return;
-    tone(BUZZER_PIN, freq, dur);
-    delay(dur + 50);
+    ledcSetup(0, freq, 8);
+    ledcWrite(0, 127);  // 50% duty cycle
+    delay(dur);
+    ledcWrite(0, 0);
+    delay(50);
 }
 
 // Crow caw: harsh descending sweep with warble texture
@@ -207,10 +210,11 @@ static void fyCaw(int startFreq, int endFreq, int durationMs, int warbleHz) {
             f += ((i % 6 < 3) ? warbleHz : -warbleHz);
         }
         if (f < 100) f = 100;
-        tone(BUZZER_PIN, f, 10);
+        ledcSetup(0, f, 8);
+        ledcWrite(0, 127);
         delay(8);
     }
-    noTone(BUZZER_PIN);
+    ledcWrite(0, 0);
 }
 
 static void fyBootBeep() {
@@ -231,9 +235,8 @@ static void fyBootBeep() {
     delay(80);
 
     // Quick staccato ending "kk-kk"
-    tone(BUZZER_PIN, 600, 25); delay(40);
-    tone(BUZZER_PIN, 550, 25); delay(40);
-    noTone(BUZZER_PIN);
+    ledcSetup(0, 600, 8); ledcWrite(0, 127); delay(25); ledcWrite(0, 0); delay(15);
+    ledcSetup(0, 550, 8); ledcWrite(0, 127); delay(25); ledcWrite(0, 0);
 
     printf("[FLOCK-YOU] *caw caw caw*\n");
 }
@@ -846,7 +849,7 @@ function refresh(){fetch('/api/detections').then(r=>r.json()).then(d=>{D=d;rende
 function render(){const el=document.getElementById('dL');if(!D.length){el.innerHTML='<div class="empty">Scanning for surveillance devices...<br>BLE active on all channels</div>';return;}
 D.sort((a,b)=>b.last-a.last);el.innerHTML=D.map(card).join('');}
 function stats(){document.getElementById('sT').textContent=D.length;document.getElementById('sR').textContent=D.filter(d=>d.raven).length;
-fetch('/api/stats').then(r=>r.json()).then(s=>{let g=document.getElementById('sG'),gl=document.getElementById('sGL');if(s.gps_src==='hw'){g.textContent=s.gps_sats+'sat';g.style.color='#22c55e';gl.textContent='HW GPS';}else if(s.gps_src==='phone'){g.textContent=s.gps_tagged+'/'+s.total;g.style.color='#22c55e';gl.textContent='PHONE';}else if(s.gps_hw_detected){g.textContent=s.gps_sats+'sat';g.style.color='#facc15';gl.textContent='NO FIX';}else{g.textContent='TAP';g.style.color='#ef4444';gl.textContent='GPS';}}).catch(()=>{});}
+fetch('/api/stats').then(r=>r.json()).then(s=>{let g=document.getElementById('sG'),gl=document.getElementById('sGL');if(s.gps_src==='hw'){g.textContent=s.gps_sats+'sat';g.style.color='#22c55e';gl.textContent='HW GPS';}else if(s.gps_src==='phone'){gl.textContent='PHONE';/* let sendGPS control the main indicator */}else if(s.gps_hw_detected){g.textContent=s.gps_sats+'sat';g.style.color='#facc15';gl.textContent='NO FIX';}else if(!_gTried){g.textContent='TAP';g.style.color='#ef4444';gl.textContent='GPS';}else{gl.textContent='GPS';}}).catch(()=>{});}
 function card(d){return '<div class="det"><div class="mac">'+d.mac+(d.name?'<span class="nm">'+d.name+'</span>':'')+'</div><div class="inf"><span>RSSI: '+d.rssi+'</span><span>'+d.method+'</span><span style="color:#ec4899;font-weight:bold">&times;'+d.count+'</span>'+(d.raven?'<span class="rv">RAVEN '+d.fw+'</span>':'')+(d.gps?'<span style="color:#22c55e">&#9673; '+d.gps.lat.toFixed(5)+','+d.gps.lon.toFixed(5)+'</span>':'<span style="color:#666">no gps</span>')+'</div></div>';}
 function loadHistory(){fetch('/api/history').then(r=>r.json()).then(d=>{H=d;let el=document.getElementById('hL');if(!H.length){el.innerHTML='<div class="empty">No prior session data</div>';return;}
 H.sort((a,b)=>b.last-a.last);el.innerHTML='<div style="font-size:11px;color:#8b5cf6;margin-bottom:8px">'+H.length+' detections from prior session</div>'+H.map(card).join('');window._hL=1;}).catch(()=>{document.getElementById('hL').innerHTML='<div class="empty">No prior session data</div>';});}
@@ -857,26 +860,88 @@ h+='<div class="pg"><h3>BLE Manufacturer IDs ('+p.mfr.length+')</h3><div class="
 h+='<div class="pg"><h3>Raven UUIDs ('+p.raven.length+')</h3><div class="it">'+p.raven.map(u=>'<span style="font-size:8px">'+u+'</span>').join('')+'</div></div>';
 document.getElementById('pC').innerHTML=h;window._pL=1;}).catch(()=>{});}
 // GPS from phone -> ESP32 (wardriving)
-// NOTE: Geolocation API needs secure context (HTTPS) on most browsers.
-// HTTP works on: Android Chrome (local IPs), some Android browsers.
+// Robust GPS with auto-restart, health monitoring, and GrapheneOS support.
+// HTTP works on: Android Chrome with chrome://flags "Insecure origins treated as secure".
 // Won't work on: iOS Safari (needs HTTPS always).
-// We only request on user tap (gesture) for best permission prompt chance.
-let _gW=null,_gOk=false,_gTried=false;
-function sendGPS(p){_gOk=true;let g=document.getElementById('sG');g.textContent='OK';g.style.color='#22c55e';
-fetch('/api/gps?lat='+p.coords.latitude+'&lon='+p.coords.longitude+'&acc='+(p.coords.accuracy||0)).catch(()=>{});}
-function gpsErr(e){_gOk=false;let g=document.getElementById('sG');
-var msg='ERR';if(e.code===1){msg='DENIED';g.style.color='#ef4444';alert('GPS permission denied. On iPhone, GPS requires HTTPS which this device cannot provide. On Android Chrome, tap the lock/info icon in the address bar and allow Location.');}
-else if(e.code===2){msg='N/A';g.style.color='#ef4444';}
-else if(e.code===3){msg='WAIT';g.style.color='#facc15';}
-g.textContent=msg;}
-function startGPS(){if(!navigator.geolocation){return false;}
-if(_gW!==null){navigator.geolocation.clearWatch(_gW);_gW=null;}
-let g=document.getElementById('sG');g.textContent='...';g.style.color='#facc15';
-_gW=navigator.geolocation.watchPosition(sendGPS,gpsErr,{enableHighAccuracy:true,maximumAge:5000,timeout:15000});return true;}
-function reqGPS(){if(!navigator.geolocation){alert('GPS not available in this browser.');return;}
-if(_gOk){return;}
-if(!window.isSecureContext){alert('GPS requires a secure context (HTTPS). This HTTP page may not get GPS permission.\\n\\nAndroid Chrome: try chrome://flags and enable "Insecure origins treated as secure", add http://192.168.4.1\\n\\niPhone: GPS will not work over HTTP.');}
-startGPS();_gTried=true;}
+let _gW=null,_gOk=false,_gTried=false,_gLastFix=0,_gDenied=false,_gSendFails=0;
+const GPS_HEALTH_MS=10000;   // check GPS health every 10s
+const GPS_STALE_JS=20000;    // restart watch if no fix for 20s (must be < ESP32 GPS_STALE_MS of 30s)
+const GPS_MAX_AGE=15000;     // accept cached positions up to 15s old (GrapheneOS can be slow)
+const GPS_TIMEOUT=30000;     // allow 30s for position (GrapheneOS device-only GPS needs time)
+
+function sendGPS(p){
+  _gOk=true;_gLastFix=Date.now();_gSendFails=0;
+  let g=document.getElementById('sG');g.style.color='#22c55e';
+  g.textContent=p.coords.accuracy<50?'OK':'~'+Math.round(p.coords.accuracy)+'m';
+  fetch('/api/gps?lat='+p.coords.latitude+'&lon='+p.coords.longitude+'&acc='+(p.coords.accuracy||0))
+    .then(r=>{if(!r.ok)_gSendFails++;})
+    .catch(()=>{_gSendFails++;if(_gSendFails>3){g.textContent='SEND';g.style.color='#facc15';}});
+}
+
+function gpsErr(e){
+  let g=document.getElementById('sG');
+  if(e.code===1){
+    _gDenied=true;_gOk=false;g.textContent='DENIED';g.style.color='#ef4444';
+    alert('GPS permission denied.\n\nAndroid Chrome: tap the lock/info icon in the address bar and allow Location.\n\nAlso check chrome://flags -> "Insecure origins treated as secure" includes http://192.168.4.1\n\niPhone: GPS will not work over HTTP.');
+  } else if(e.code===2){
+    g.textContent='N/A';g.style.color='#ef4444';
+  } else if(e.code===3){
+    // Timeout — don't panic, watch continues. Show waiting state.
+    g.textContent='WAIT';g.style.color='#facc15';
+    // If watch has been silent too long, force restart
+    if(_gLastFix>0 && Date.now()-_gLastFix>GPS_STALE_JS){restartGPS();}
+  }
+}
+
+function startGPS(){
+  if(!navigator.geolocation||_gDenied)return false;
+  if(_gW!==null){navigator.geolocation.clearWatch(_gW);_gW=null;}
+  let g=document.getElementById('sG');g.textContent='...';g.style.color='#facc15';
+  _gW=navigator.geolocation.watchPosition(sendGPS,gpsErr,{
+    enableHighAccuracy:true,
+    maximumAge:GPS_MAX_AGE,
+    timeout:GPS_TIMEOUT
+  });
+  return true;
+}
+
+function restartGPS(){
+  if(_gDenied)return;
+  if(_gW!==null){navigator.geolocation.clearWatch(_gW);_gW=null;}
+  _gOk=false;
+  startGPS();
+}
+
+// Health monitor: runs on the poll interval, restarts watch if stale
+function checkGPSHealth(){
+  if(!_gTried||_gDenied)return;
+  let g=document.getElementById('sG');
+  // If we had a fix but it went stale, restart the watch
+  if(_gLastFix>0 && Date.now()-_gLastFix>GPS_STALE_JS){
+    g.textContent='LOST';g.style.color='#facc15';
+    restartGPS();
+  }
+  // If watch was started but never delivered a fix after 45s, restart
+  if(!_gOk && _gTried && _gW!==null && _gLastFix===0){
+    let age=Date.now()-(_gStartTime||Date.now());
+    if(age>45000){restartGPS();}
+  }
+}
+
+let _gStartTime=0;
+function reqGPS(){
+  if(!navigator.geolocation){alert('GPS not available in this browser.');return;}
+  if(_gDenied){alert('GPS was denied. Reload the page and allow location permission when prompted.');return;}
+  // Allow re-tap even if _gOk, so user can force restart if GPS seems stuck
+  if(!window.isSecureContext&&!_gTried){
+    alert('GPS requires a secure context.\n\nAndroid Chrome: go to chrome://flags and enable "Insecure origins treated as secure", then add http://192.168.4.1 and relaunch.\n\niPhone: GPS will not work over HTTP.');
+  }
+  _gStartTime=Date.now();
+  startGPS();_gTried=true;
+}
+
+// Run GPS health check alongside the existing stats poll
+setInterval(checkGPSHealth,GPS_HEALTH_MS);
 refresh();setInterval(refresh,2500);
 </script></body></html>
 )rawliteral";
@@ -1128,6 +1193,11 @@ void setup() {
 
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW);
+
+    // Init LEDC for buzzer (channel 0, 2kHz default, 8-bit resolution)
+    ledcSetup(0, 2000, 8);
+    ledcAttachPin(BUZZER_PIN, 0);
+    ledcWrite(0, 0);  // Start silent
 
     // Init NeoPixel
     fyPixel.begin();
