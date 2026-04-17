@@ -64,86 +64,174 @@ volatile bool trigger_detection_beep = false;
 volatile bool trigger_heartbeat_beep = false;
 static portMUX_TYPE buzzerMux = portMUX_INITIALIZER_UNLOCKED;
 
+// Mutex guarding the uavs[] array. BLE and WiFi promiscuous callbacks both
+// write here from different tasks; without this the large struct copies and
+// strncpy calls can produce torn reads or stale trailing bytes.
+static SemaphoreHandle_t uavsMutex = NULL;
+
 static QueueHandle_t printQueue;
 
+// Find an existing UAV slot by MAC, or allocate a free one.
+// If the array is full, evicts the slot with the oldest last_seen (LRU) and
+// zeroes it so strncpy writes don't leave stale trailing bytes.
+// Caller must hold uavsMutex.
 id_data* next_uav(uint8_t* mac) {
+  static const uint8_t EMPTY_MAC[6] = {0, 0, 0, 0, 0, 0};
+  // 1. Match existing slot by MAC
   for (int i = 0; i < MAX_UAVS; i++) {
-    if (memcmp(uavs[i].mac, mac, 6) == 0)
+    if (memcmp(uavs[i].mac, mac, 6) == 0 &&
+        memcmp(uavs[i].mac, EMPTY_MAC, 6) != 0) {
       return &uavs[i];
+    }
   }
+  // 2. Take a free slot (all-zero MAC means empty)
   for (int i = 0; i < MAX_UAVS; i++) {
-    if (uavs[i].mac[0] == 0)
+    if (memcmp(uavs[i].mac, EMPTY_MAC, 6) == 0) {
       return &uavs[i];
+    }
   }
-  return &uavs[0];
+  // 3. Full -- evict the oldest (LRU) and zero it for clean reuse
+  uint32_t oldest_seen = UINT32_MAX;
+  int oldest_idx = 0;
+  for (int i = 0; i < MAX_UAVS; i++) {
+    if (uavs[i].last_seen < oldest_seen) {
+      oldest_seen = uavs[i].last_seen;
+      oldest_idx = i;
+    }
+  }
+  memset(&uavs[oldest_idx], 0, sizeof(uavs[oldest_idx]));
+  return &uavs[oldest_idx];
 }
 
 class MyAdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbacks {
 public:
+  // Helper: decode and store a single ODID message into UAV. Returns true if
+  // anything useful was extracted. Called from both the single-message path
+  // and the Message Pack (0xF0) container path.
+  static bool decodeOneODIDMessage(id_data* UAV, uint8_t* msg, size_t remaining) {
+    if (remaining < ODID_MESSAGE_SIZE) return false;
+    switch (msg[0] & 0xF0) {
+      case 0x00: {
+        ODID_BasicID_data basic;
+        decodeBasicIDMessage(&basic, (ODID_BasicID_encoded*) msg);
+        strncpy(UAV->uav_id, (char*) basic.UASID, ODID_ID_SIZE);
+        UAV->uav_id[ODID_ID_SIZE] = '\0';
+        return true;
+      }
+      case 0x10: {
+        ODID_Location_data loc;
+        decodeLocationMessage(&loc, (ODID_Location_encoded*) msg);
+        UAV->lat_d = loc.Latitude;
+        UAV->long_d = loc.Longitude;
+        UAV->altitude_msl = (int) loc.AltitudeGeo;
+        UAV->height_agl = (int) loc.Height;
+        UAV->speed = (int) loc.SpeedHorizontal;
+        UAV->heading = (int) loc.Direction;
+        return true;
+      }
+      case 0x40: {
+        ODID_System_data sys;
+        decodeSystemMessage(&sys, (ODID_System_encoded*) msg);
+        UAV->base_lat_d = sys.OperatorLatitude;
+        UAV->base_long_d = sys.OperatorLongitude;
+        return true;
+      }
+      case 0x50: {
+        ODID_OperatorID_data op;
+        decodeOperatorIDMessage(&op, (ODID_OperatorID_encoded*) msg);
+        strncpy(UAV->op_id, (char*) op.OperatorId, ODID_ID_SIZE);
+        UAV->op_id[ODID_ID_SIZE] = '\0';
+        return true;
+      }
+      default:
+        // 0x20 Auth, 0x30 Self-ID: not currently stored but not errors.
+        return false;
+    }
+  }
+
   void onResult(NimBLEAdvertisedDevice* device) override {
     int len = device->getPayloadLength();
     if (len <= 0) return;
-      
+
     uint8_t* payload = device->getPayload();
-    if (len > 5 && payload[1] == 0x16 && payload[2] == 0xFA && 
-        payload[3] == 0xFF && payload[4] == 0x0D) {
-      uint8_t* mac = (uint8_t*) device->getAddress().getNative();
-      id_data* UAV = next_uav(mac);
-      UAV->last_seen = millis();
-      UAV->rssi = device->getRSSI();
-      memcpy(UAV->mac, mac, 6);
-      
-      uint8_t* odid = &payload[6];
-      switch (odid[0] & 0xF0) {
-        case 0x00: {
-          ODID_BasicID_data basic;
-          decodeBasicIDMessage(&basic, (ODID_BasicID_encoded*) odid);
-          strncpy(UAV->uav_id, (char*) basic.UASID, ODID_ID_SIZE);
-          break;
+    // Need at least: length(1) + AD-type(1) + UUID(2) + AD-type(1) + first
+    // ODID byte(1) + header byte of first message = 6 bytes minimum before
+    // we dereference payload[6].
+    if (len < 7) return;
+    // Match ODID service-data advertisement: AD-type 0x16, UUID 0xFFFA,
+    // ODID app code 0x0D.
+    if (!(payload[1] == 0x16 && payload[2] == 0xFA &&
+          payload[3] == 0xFF && payload[4] == 0x0D)) return;
+
+    uint8_t* mac = (uint8_t*) device->getAddress().getNative();
+    uint8_t* odid = &payload[6];
+    size_t odid_len = (size_t)(len - 6);
+
+    // Dispatch under the uavs mutex -- both the slot lookup and the write
+    // need to be atomic relative to the WiFi promiscuous callback.
+    if (!uavsMutex || xSemaphoreTake(uavsMutex, pdMS_TO_TICKS(20)) != pdTRUE) return;
+
+    id_data* UAV = next_uav(mac);
+    UAV->last_seen = millis();
+    UAV->rssi = device->getRSSI();
+    memcpy(UAV->mac, mac, 6);
+
+    bool got_data = false;
+    if ((odid[0] & 0xF0) == 0xF0) {
+      // Message Pack container -- walks the pack and dispatches each message.
+      // Uses the library's pack-processor which populates the global UAS_data,
+      // then we snapshot the interesting fields.
+      ODID_UAS_Data local;
+      memset(&local, 0, sizeof(local));
+      if (odid_message_process_pack(&local, odid, odid_len) == 0) {
+        if (local.BasicIDValid[0]) {
+          strncpy(UAV->uav_id, (char*)local.BasicID[0].UASID, ODID_ID_SIZE);
+          UAV->uav_id[ODID_ID_SIZE] = '\0';
+          got_data = true;
         }
-        case 0x10: {
-          ODID_Location_data loc;
-          decodeLocationMessage(&loc, (ODID_Location_encoded*) odid);
-          UAV->lat_d = loc.Latitude;
-          UAV->long_d = loc.Longitude;
-          UAV->altitude_msl = (int) loc.AltitudeGeo;
-          UAV->height_agl = (int) loc.Height;
-          UAV->speed = (int) loc.SpeedHorizontal;
-          UAV->heading = (int) loc.Direction;
-          break;
+        if (local.LocationValid) {
+          UAV->lat_d = local.Location.Latitude;
+          UAV->long_d = local.Location.Longitude;
+          UAV->altitude_msl = (int) local.Location.AltitudeGeo;
+          UAV->height_agl = (int) local.Location.Height;
+          UAV->speed = (int) local.Location.SpeedHorizontal;
+          UAV->heading = (int) local.Location.Direction;
+          got_data = true;
         }
-        case 0x40: {
-          ODID_System_data sys;
-          decodeSystemMessage(&sys, (ODID_System_encoded*) odid);
-          UAV->base_lat_d = sys.OperatorLatitude;
-          UAV->base_long_d = sys.OperatorLongitude;
-          break;
+        if (local.SystemValid) {
+          UAV->base_lat_d = local.System.OperatorLatitude;
+          UAV->base_long_d = local.System.OperatorLongitude;
+          got_data = true;
         }
-        case 0x50: {
-          ODID_OperatorID_data op;
-          decodeOperatorIDMessage(&op, (ODID_OperatorID_encoded*) odid);
-          strncpy(UAV->op_id, (char*) op.OperatorId, ODID_ID_SIZE);
-          break;
+        if (local.OperatorIDValid) {
+          strncpy(UAV->op_id, (char*)local.OperatorID.OperatorId, ODID_ID_SIZE);
+          UAV->op_id[ODID_ID_SIZE] = '\0';
+          got_data = true;
         }
       }
-      UAV->flag = 1;
-      
-      // Trigger buzzer alert (thread-safe, non-blocking)
-      portENTER_CRITICAL_ISR(&buzzerMux);
-      if (!device_in_range) {
-        trigger_detection_beep = true;
-        device_in_range = true;
-        last_heartbeat = millis();
-      }
-      portEXIT_CRITICAL_ISR(&buzzerMux);
-      
-      {
-        id_data tmp = *UAV;
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xQueueSendFromISR(printQueue, &tmp, &xHigherPriorityTaskWoken);
-        if (xHigherPriorityTaskWoken) portYIELD_FROM_ISR();
-      }
+    } else {
+      got_data = decodeOneODIDMessage(UAV, odid, odid_len);
     }
+
+    if (got_data) UAV->flag = 1;
+
+    id_data tmp = *UAV;  // snapshot for the print queue
+    xSemaphoreGive(uavsMutex);
+
+    if (!got_data) return;  // no useful payload, don't beep or enqueue
+
+    // Trigger buzzer alert (thread-safe, non-blocking)
+    portENTER_CRITICAL(&buzzerMux);
+    if (!device_in_range) {
+      trigger_detection_beep = true;
+      device_in_range = true;
+      last_heartbeat = millis();
+    }
+    portEXIT_CRITICAL(&buzzerMux);
+
+    // BLE callback runs on the NimBLE host task (not a hardware ISR) so the
+    // non-ISR variant of xQueueSend is correct here.
+    xQueueSend(printQueue, &tmp, 0);
   }
 };
 
@@ -225,13 +313,19 @@ void wifiProcessTask(void *parameter) {
 
 void callback(void *buffer, wifi_promiscuous_pkt_type_t type) {
   if (type != WIFI_PKT_MGMT) return;
-  
+
   wifi_promiscuous_pkt_t *packet = (wifi_promiscuous_pkt_t *)buffer;
   uint8_t *payload = packet->payload;
   int length = packet->rx_ctrl.sig_len;
-  
+  // Minimum 802.11 mgmt frame header we care about reads payload[0..9] (frame
+  // control + duration + DA). Anything shorter is malformed -- drop it before
+  // touching memory.
+  if (length < 10 || !payload) return;
+
   static const uint8_t nan_dest[6] = {0x51, 0x6f, 0x9a, 0x01, 0x00, 0x00};
   if (memcmp(nan_dest, &payload[4], 6) == 0) {
+    // NAN action frame -- need at least up to the source MAC (bytes 10..15).
+    if (length < 16) return;
     char nan_mac[6] = {0};  // receive buffer for source MAC (library writes to this)
     if (odid_wifi_receive_message_pack_nan_action_frame(&UAS_data, nan_mac, payload, length) == 0) {
       id_data UAV;
@@ -239,9 +333,10 @@ void callback(void *buffer, wifi_promiscuous_pkt_type_t type) {
       memcpy(UAV.mac, &payload[10], 6);
       UAV.rssi = packet->rx_ctrl.rssi;
       UAV.last_seen = millis();
-      
+
       if (UAS_data.BasicIDValid[0]) {
         strncpy(UAV.uav_id, (char *)UAS_data.BasicID[0].UASID, ODID_ID_SIZE);
+        UAV.uav_id[ODID_ID_SIZE] = '\0';
       }
       if (UAS_data.LocationValid) {
         UAV.lat_d = UAS_data.Location.Latitude;
@@ -257,50 +352,55 @@ void callback(void *buffer, wifi_promiscuous_pkt_type_t type) {
       }
       if (UAS_data.OperatorIDValid) {
         strncpy(UAV.op_id, (char *)UAS_data.OperatorID.OperatorId, ODID_ID_SIZE);
+        UAV.op_id[ODID_ID_SIZE] = '\0';
       }
-      
+
+      if (!uavsMutex || xSemaphoreTake(uavsMutex, pdMS_TO_TICKS(20)) != pdTRUE) return;
       id_data* storedUAV = next_uav(UAV.mac);
       *storedUAV = UAV;
       storedUAV->flag = 1;
-      
-      // Trigger buzzer alert (thread-safe, non-blocking)
-      portENTER_CRITICAL_ISR(&buzzerMux);
+      id_data tmp = *storedUAV;
+      xSemaphoreGive(uavsMutex);
+
+      portENTER_CRITICAL(&buzzerMux);
       if (!device_in_range) {
         trigger_detection_beep = true;
         device_in_range = true;
         last_heartbeat = millis();
       }
-      portEXIT_CRITICAL_ISR(&buzzerMux);
-      
-      {
-        id_data tmp = *storedUAV;
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xQueueSendFromISR(printQueue, &tmp, &xHigherPriorityTaskWoken);
-        if (xHigherPriorityTaskWoken) portYIELD_FROM_ISR();
-      }
+      portEXIT_CRITICAL(&buzzerMux);
+
+      xQueueSend(printQueue, &tmp, 0);
     }
   }
   else if (payload[0] == 0x80) {
+    // Beacon frame. Tagged parameters start after the fixed 36-byte header
+    // (MAC hdr 24 + timestamp 8 + beacon interval 2 + capability 2).
+    // Need at least the first 5 bytes of the first vendor tag we test.
+    if (length < 41) return;
     int offset = 36;
-    while (offset < length) {
+    while (offset + 2 <= length) {            // need at least typ+len bytes
       int typ = payload[offset];
       int len = payload[offset + 1];
-      if ((typ == 0xdd) &&
-          (((payload[offset + 2] == 0x90 && payload[offset + 3] == 0x3a && payload[offset + 4] == 0xe6)) ||
-           ((payload[offset + 2] == 0xfa && payload[offset + 3] == 0x0b && payload[offset + 4] == 0xbc)))) {
+      if (offset + 2 + len > length) break;   // tag claims bytes past frame end
+      if (typ == 0xdd && len >= 3 && (offset + 7) <= length &&
+          ((payload[offset + 2] == 0x90 && payload[offset + 3] == 0x3a && payload[offset + 4] == 0xe6) ||
+           (payload[offset + 2] == 0xfa && payload[offset + 3] == 0x0b && payload[offset + 4] == 0xbc))) {
         int j = offset + 7;
-        if (j < length) {
+        int available = length - j;
+        if (available > 0) {
           memset(&UAS_data, 0, sizeof(UAS_data));
-          odid_message_process_pack(&UAS_data, &payload[j], length - j);
-          
+          odid_message_process_pack(&UAS_data, &payload[j], (size_t)available);
+
           id_data UAV;
           memset(&UAV, 0, sizeof(UAV));
           memcpy(UAV.mac, &payload[10], 6);
           UAV.rssi = packet->rx_ctrl.rssi;
           UAV.last_seen = millis();
-          
+
           if (UAS_data.BasicIDValid[0]) {
             strncpy(UAV.uav_id, (char *)UAS_data.BasicID[0].UASID, ODID_ID_SIZE);
+            UAV.uav_id[ODID_ID_SIZE] = '\0';
           }
           if (UAS_data.LocationValid) {
             UAV.lat_d = UAS_data.Location.Latitude;
@@ -316,27 +416,25 @@ void callback(void *buffer, wifi_promiscuous_pkt_type_t type) {
           }
           if (UAS_data.OperatorIDValid) {
             strncpy(UAV.op_id, (char *)UAS_data.OperatorID.OperatorId, ODID_ID_SIZE);
+            UAV.op_id[ODID_ID_SIZE] = '\0';
           }
-          
+
+          if (!uavsMutex || xSemaphoreTake(uavsMutex, pdMS_TO_TICKS(20)) != pdTRUE) return;
           id_data* storedUAV = next_uav(UAV.mac);
           *storedUAV = UAV;
           storedUAV->flag = 1;
-          
-          // Trigger buzzer alert (thread-safe, non-blocking)
-          portENTER_CRITICAL_ISR(&buzzerMux);
+          id_data tmp = *storedUAV;
+          xSemaphoreGive(uavsMutex);
+
+          portENTER_CRITICAL(&buzzerMux);
           if (!device_in_range) {
             trigger_detection_beep = true;
             device_in_range = true;
             last_heartbeat = millis();
           }
-          portEXIT_CRITICAL_ISR(&buzzerMux);
-          
-          {
-            id_data tmp = *storedUAV;
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-            xQueueSendFromISR(printQueue, &tmp, &xHigherPriorityTaskWoken);
-            if (xHigherPriorityTaskWoken) portYIELD_FROM_ISR();
-          }
+          portEXIT_CRITICAL(&buzzerMux);
+
+          xQueueSend(printQueue, &tmp, 0);
         }
       }
       offset += len + 2;
@@ -414,7 +512,10 @@ void setup() {
   playCloseEncounters();
   
   nvs_flash_init();
-  
+
+  // Create the uavs[] array mutex BEFORE any callbacks get installed.
+  uavsMutex = xSemaphoreCreateMutex();
+
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   

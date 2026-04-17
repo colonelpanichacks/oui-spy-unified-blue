@@ -1,5 +1,8 @@
-# Name,   Type, SubType,  Offset,   Size,     Flags
-nvs,      data, nvs,     0x9000,   0x5000,
-otadata,  data, ota,     0xe000,   0x2000,
-app0,     app,  ota_0,   0x10000,  0x600000,
-spiffs,   data, spiffs,  0x610000, 0x1F0000,
+# Name,    Type, SubType,  Offset,    Size,      Flags
+# Layout: 8 MB flash, single-app (factory), no OTA.
+# Bootloader at 0x0000, partition table at 0x8000.
+# 0xe000..0x10000 left unused (8 KB gap for alignment).
+# 'storage' is a SPIFFS partition (subtype is spiffs for arduino-esp32 compat).
+nvs,       data, nvs,      0x9000,    0x5000,
+app0,      app,  factory,  0x10000,   0x600000,
+storage,   data, spiffs,   0x610000,  0x1F0000,

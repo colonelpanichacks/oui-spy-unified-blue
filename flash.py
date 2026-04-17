@@ -38,7 +38,6 @@ if sys.platform == "win32":
 # Flash layout matches PlatformIO exactly (pio run -e seeed_xiao_esp32s3 -t upload -v)
 BOOT_OFFSET   = "0x0000"       # ESP32-S3 bootloader starts at 0x0 (C5 uses 0x2000)
 PART_OFFSET   = "0x8000"
-OTA_OFFSET    = "0xe000"
 APP_OFFSET    = "0x10000"
 BAUD          = "921600"
 CHIP          = "esp32s3"
@@ -107,6 +106,9 @@ def find_port(auto_pick=False):
         # In batch mode, ONLY use Espressif native USB ports (303A)
         # This prevents flashing random UART adapters on the desk
         native = [p for p in candidates if p.vid and f"{p.vid:04X}" == "303A"]
+        if len(native) > 1:
+            print(f"\n  WARNING: {len(native)} native USB devices found, flashing {native[0].device}")
+            print(f"  Unplug other ESP32 boards to avoid flashing the wrong one.\n")
         if len(native) >= 1:
             return native[0].device
         return None
@@ -159,7 +161,9 @@ def find_firmware(path_arg=None):
         print(f"\n  File not found: {path_arg}")
         sys.exit(1)
 
-    # Look in firmware/ folder (exclude support bins -- flash_one handles those)
+    # Look in firmware/ folder (exclude support bins -- flash_one handles bootloader
+    # and partitions; boot_app0 is kept in the exclusion list so leftover copies
+    # from older builds don't accidentally get offered as app firmware).
     SUPPORT_BINS = {"bootloader.bin", "partitions.bin", "boot_app0.bin"}
     if os.path.isdir(FIRMWARE_DIR):
         bins = sorted(
@@ -198,21 +202,19 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
     size_kb = os.path.getsize(firmware) / 1024
     label = f"  Board #{board_num}" if board_num else "  Target"
 
-    # Look for bootloader + partitions + OTA data alongside the app binary
+    # Look for bootloader + partitions alongside the app binary.
+    # No boot_app0.bin: this is a single-app (factory) layout, no OTA data partition.
     fw_dir = os.path.dirname(firmware)
     bootloader = os.path.join(fw_dir, "bootloader.bin")
     partitions = os.path.join(fw_dir, "partitions.bin")
-    ota_data = os.path.join(fw_dir, "boot_app0.bin")
     has_boot = os.path.isfile(bootloader)
     has_part = os.path.isfile(partitions)
-    has_ota = os.path.isfile(ota_data)
-    has_full = has_boot and has_part and has_ota
+    has_full = has_boot and has_part
 
     if not has_full:
         missing = []
         if not has_boot: missing.append("bootloader.bin")
         if not has_part: missing.append("partitions.bin")
-        if not has_ota:  missing.append("boot_app0.bin")
         print(f"\n  WARNING: Missing support bins: {', '.join(missing)}")
         print(f"  Flash may not boot correctly without all support files.")
         print(f"  Build with PlatformIO first to generate them.\n")
@@ -223,7 +225,7 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
   Firmware:   {os.path.basename(firmware)}  ({size_kb:.0f} KB)
   Chip:       {CHIP}
   Flash mode: {FLASH_MODE} / {FLASH_FREQ} / {FLASH_SIZE}
-  Full flash: {"YES (bootloader + partitions + OTA + app)" if has_full else "PARTIAL -- see warning above"}
+  Full flash: {"YES (bootloader + partitions + app)" if has_full else "PARTIAL -- see warning above"}
   Baud:       {BAUD}
 """)
 
@@ -252,8 +254,6 @@ def flash_one(port, firmware, do_erase=False, board_num=None):
         cmd += [BOOT_OFFSET, bootloader]
     if has_part:
         cmd += [PART_OFFSET, partitions]
-    if has_ota:
-        cmd += [OTA_OFFSET, ota_data]
     cmd += [APP_OFFSET, firmware]
 
     try:
@@ -319,38 +319,41 @@ def batch_mode(firmware, do_erase=False):
     fail_count = 0
     last_port = None
 
-    while True:
-        # If we just flashed a board, wait for it to be unplugged
-        if last_port:
-            print("  Waiting for board to be unplugged...", end="", flush=True)
-            if wait_for_disconnect(last_port, timeout=120):
-                print(" unplugged.")
+    try:
+        while True:
+            # If we just flashed a board, wait for it to be unplugged
+            if last_port:
+                print("  Waiting for board to be unplugged...", end="", flush=True)
+                if wait_for_disconnect(last_port, timeout=120):
+                    print(" unplugged.")
+                else:
+                    print(" timeout -- unplug the board and try again.")
+                    continue
+                # Brief settle time after disconnect
+                time.sleep(0.5)
+
+            # Wait for a new board -- never give up, just keep polling
+            port = None
+            while not port:
+                port = wait_for_port(timeout=60, auto_pick=True)
+                if not port:
+                    print("  Still waiting... plug in a board (Ctrl+C to quit).")
+
+            # Give the port a moment to stabilize (Windows especially needs this)
+            time.sleep(1.5)
+
+            board_num += 1
+            ok = flash_one(port, firmware, do_erase=do_erase, board_num=board_num)
+            if ok:
+                success_count += 1
             else:
-                print(" timeout -- unplug the board and try again.")
-                continue
-            # Brief settle time after disconnect
-            time.sleep(0.5)
+                fail_count += 1
 
-        # Wait for a new board -- never give up, just keep polling
-        port = None
-        while not port:
-            port = wait_for_port(timeout=60, auto_pick=True)
-            if not port:
-                print("  Still waiting... plug in a board (Ctrl+C to quit).")
-
-        # Give the port a moment to stabilize (Windows especially needs this)
-        time.sleep(1.5)
-
-        board_num += 1
-        ok = flash_one(port, firmware, do_erase=do_erase, board_num=board_num)
-        if ok:
-            success_count += 1
-        else:
-            fail_count += 1
-
-        last_port = port
-        print(f"\n  -- Score: {success_count} flashed, {fail_count} failed --")
-        print(f"  Unplug this board and plug in the next one.")
+            last_port = port
+            print(f"\n  -- Score: {success_count} flashed, {fail_count} failed --")
+            print(f"  Unplug this board and plug in the next one.")
+    except KeyboardInterrupt:
+        pass
 
     print(f"""
   +==========================================+
@@ -391,7 +394,7 @@ def main():
   Setup:
     pip install esptool pyserial
     mkdir firmware
-    # drop bootloader.bin, partitions.bin, boot_app0.bin, and your app .bin
+    # drop bootloader.bin, partitions.bin, and your app .bin
     python flash.py
 """)
             sys.exit(0)

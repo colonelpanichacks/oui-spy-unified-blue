@@ -76,6 +76,12 @@ int detectedRSSI = 0;
 String matchedFilter = "";
 String matchType = "";  // "NEW", "RE-3s", "RE-30s"
 
+// Mutex guarding the `devices` vector. BLE callback pushes into it (which
+// can reallocate the backing array and invalidate iterators) while loop()
+// iterates it from saveDetectedDevices() and the web handlers. Without this
+// the firmware crashes under BLE scan load.
+static SemaphoreHandle_t devicesMutex = NULL;
+
 // Persistent settings
 bool buzzerEnabled = true;
 bool ledEnabled = true;
@@ -88,7 +94,10 @@ struct DeviceInfo {
     unsigned long lastSeen;
     bool inCooldown;
     unsigned long cooldownUntil;
-    const char* matchedFilter;
+    // matchedFilter was previously a const char* pointing at a caller's
+    // String::c_str() -- which dangled the moment the caller's String went
+    // out of scope. Using String here makes ownership explicit.
+    String matchedFilter;
     String filterDescription;  // Store filter description for persistence
 };
 
@@ -171,7 +180,6 @@ void singleBeep() {
     delay(BEEP_DURATION);
     if (buzzerEnabled) {
         ledcWrite(0, 0);
-        digitalBeep(BEEP_DURATION);
     }
     ledOff();
 }
@@ -584,25 +592,28 @@ void setDeviceAlias(const String& macAddress, const String& alias) {
 // Persistent Device Storage Functions
 // ================================
 void saveDetectedDevices() {
+    if (devicesMutex && xSemaphoreTake(devicesMutex, pdMS_TO_TICKS(200)) != pdTRUE) return;
+
     preferences.begin("ouispy", false);
-    
+
     // Limit to 100 most recent devices to avoid NVS overflow
     int deviceCount = min((int)devices.size(), 100);
     preferences.putInt("deviceCount", deviceCount);
-    
+
     for (int i = 0; i < deviceCount; i++) {
         String keyMac = "dev_mac_" + String(i);
         String keyRssi = "dev_rssi_" + String(i);
         String keyTime = "dev_time_" + String(i);
         String keyFilt = "dev_filt_" + String(i);
-        
+
         preferences.putString(keyMac.c_str(), devices[i].macAddress);
         preferences.putInt(keyRssi.c_str(), devices[i].rssi);
         preferences.putULong(keyTime.c_str(), devices[i].lastSeen);
         preferences.putString(keyFilt.c_str(), devices[i].filterDescription);
     }
-    
+
     preferences.end();
+    if (devicesMutex) xSemaphoreGive(devicesMutex);
 }
 
 void loadDetectedDevices() {
@@ -625,7 +636,7 @@ void loadDetectedDevices() {
         device.firstSeen = device.lastSeen;
         device.inCooldown = false;
         device.cooldownUntil = 0;
-        device.matchedFilter = nullptr;
+        device.matchedFilter = "";  // default empty String
         
         if (device.macAddress.length() > 0) {
             devices.push_back(device);
@@ -1833,38 +1844,41 @@ void startConfigMode() {
     // API endpoint to get detected devices
     server.on("/api/devices", HTTP_GET, [](AsyncWebServerRequest *request) {
         lastConfigActivity = millis();
-        
+
         String json = "{\"devices\":[";
-        
+
         unsigned long currentTime = millis();
-        
-        for (size_t i = 0; i < devices.size(); i++) {
-            if (i > 0) json += ",";
-            
-            String alias = getDeviceAlias(devices[i].macAddress);
-            String filterDesc = devices[i].filterDescription;
-            if (filterDesc.length() == 0 && devices[i].matchedFilter) {
-                filterDesc = String(devices[i].matchedFilter);
+
+        if (devicesMutex && xSemaphoreTake(devicesMutex, pdMS_TO_TICKS(200)) == pdTRUE) {
+            for (size_t i = 0; i < devices.size(); i++) {
+                if (i > 0) json += ",";
+
+                String alias = getDeviceAlias(devices[i].macAddress);
+                String filterDesc = devices[i].filterDescription;
+                if (filterDesc.length() == 0 && devices[i].matchedFilter.length() > 0) {
+                    filterDesc = devices[i].matchedFilter;
+                }
+
+                // Calculate time since last seen
+                unsigned long timeSince = (currentTime >= devices[i].lastSeen) ?
+                                         (currentTime - devices[i].lastSeen) : 0;
+
+                json += "{";
+                json += "\"mac\":\"" + devices[i].macAddress + "\",";
+                json += "\"rssi\":" + String(devices[i].rssi) + ",";
+                json += "\"filter\":\"" + filterDesc + "\",";
+                json += "\"alias\":\"" + alias + "\",";
+                json += "\"lastSeen\":" + String(devices[i].lastSeen) + ",";
+                json += "\"timeSince\":" + String(timeSince);
+                json += "}";
             }
-            
-            // Calculate time since last seen
-            unsigned long timeSince = (currentTime >= devices[i].lastSeen) ? 
-                                     (currentTime - devices[i].lastSeen) : 0;
-            
-            json += "{";
-            json += "\"mac\":\"" + devices[i].macAddress + "\",";
-            json += "\"rssi\":" + String(devices[i].rssi) + ",";
-            json += "\"filter\":\"" + filterDesc + "\",";
-            json += "\"alias\":\"" + alias + "\",";
-            json += "\"lastSeen\":" + String(devices[i].lastSeen) + ",";
-            json += "\"timeSince\":" + String(timeSince);
-            json += "}";
+            xSemaphoreGive(devicesMutex);
         }
-        
+
         json += "],";
         json += "\"currentTime\":" + String(currentTime);
         json += "}";
-        
+
         request->send(200, "application/json", json);
     });
     
@@ -2182,83 +2196,76 @@ void startConfigMode() {
 class MyAdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
         if (currentMode != SCANNING_MODE) return;
-        
+
         String mac = advertisedDevice->getAddress().toString().c_str();
         int rssi = advertisedDevice->getRSSI();
         unsigned long currentMillis = millis();
 
         String matchedDescription;
         bool matchFound = matchesTargetFilter(mac, matchedDescription);
-        
-        if (matchFound) {
-            bool known = false;
-            for (auto& dev : devices) {
-                if (dev.macAddress == mac) {
-                    known = true;
+        if (!matchFound) return;
 
-                    if (dev.inCooldown && currentMillis < dev.cooldownUntil) {
-                        return;
-                    }
+        // Decision state computed inside the critical section. We beep AFTER
+        // releasing the mutex because beeps block for hundreds of ms and
+        // holding the mutex that long would stall saveDetectedDevices() and
+        // every concurrent web request.
+        enum Signal { NONE, NEW_DEV, RE3, RE30 };
+        Signal signal = NONE;
 
-                    if (dev.inCooldown && currentMillis >= dev.cooldownUntil) {
-                        dev.inCooldown = false;
-                    }
+        if (!devicesMutex || xSemaphoreTake(devicesMutex, pdMS_TO_TICKS(50)) != pdTRUE) return;
 
-                    unsigned long timeSinceLastSeen = currentMillis - dev.lastSeen;
-
-                    if (timeSinceLastSeen >= 30000) {
-                        // Store data for main loop to process
-                        detectedMAC = mac;
-                        detectedRSSI = rssi;
-                        matchedFilter = matchedDescription;
-                        matchType = "RE-30s";
-                        newMatchFound = true;
-                        
-                        threeBeeps();
-                        dev.inCooldown = true;
-                        dev.cooldownUntil = currentMillis + 10000;
-                    } else if (timeSinceLastSeen >= 3000) {
-                        // Store data for main loop to process
-                        detectedMAC = mac;
-                        detectedRSSI = rssi;
-                        matchedFilter = matchedDescription;
-                        matchType = "RE-3s";
-                        newMatchFound = true;
-                        
-                        twoBeeps();
-                        dev.inCooldown = true;
-                        dev.cooldownUntil = currentMillis + 3000;
-                    }
-
-                    dev.lastSeen = currentMillis;
-                    break;
+        bool known = false;
+        for (auto& dev : devices) {
+            if (dev.macAddress == mac) {
+                known = true;
+                if (dev.inCooldown && currentMillis < dev.cooldownUntil) {
+                    xSemaphoreGive(devicesMutex);
+                    return;
                 }
+                if (dev.inCooldown && currentMillis >= dev.cooldownUntil) {
+                    dev.inCooldown = false;
+                }
+                unsigned long timeSinceLastSeen = currentMillis - dev.lastSeen;
+                if (timeSinceLastSeen >= 30000) {
+                    signal = RE30;
+                    dev.inCooldown = true;
+                    dev.cooldownUntil = currentMillis + 10000;
+                } else if (timeSinceLastSeen >= 3000) {
+                    signal = RE3;
+                    dev.inCooldown = true;
+                    dev.cooldownUntil = currentMillis + 3000;
+                }
+                dev.lastSeen = currentMillis;
+                break;
             }
+        }
 
-            if (!known) {
-                DeviceInfo newDev;
-                newDev.macAddress = mac;
-                newDev.rssi = rssi;
-                newDev.firstSeen = currentMillis;
-                newDev.lastSeen = currentMillis;
-                newDev.inCooldown = false;
-                newDev.cooldownUntil = 0;
-                newDev.matchedFilter = matchedDescription.c_str();
-                newDev.filterDescription = matchedDescription;
-                devices.push_back(newDev);
+        if (!known) {
+            DeviceInfo newDev;
+            newDev.macAddress = mac;
+            newDev.rssi = rssi;
+            newDev.firstSeen = currentMillis;
+            newDev.lastSeen = currentMillis;
+            newDev.inCooldown = true;                          // pre-set to avoid race
+            newDev.cooldownUntil = currentMillis + 3000;
+            newDev.matchedFilter = matchedDescription;         // String copy, safe
+            newDev.filterDescription = matchedDescription;
+            devices.push_back(newDev);
+            signal = NEW_DEV;
+        }
 
-                // Store data for main loop to process
-                detectedMAC = mac;
-                detectedRSSI = rssi;
-                matchedFilter = matchedDescription;
-                matchType = "NEW";
-                newMatchFound = true;
-                
-                threeBeeps();
-                
-                auto& dev = devices.back();
-                dev.inCooldown = true;
-                dev.cooldownUntil = currentMillis + 3000;
+        xSemaphoreGive(devicesMutex);
+
+        // Signal + beep AFTER releasing the mutex.
+        if (signal != NONE) {
+            detectedMAC = mac;
+            detectedRSSI = rssi;
+            matchedFilter = matchedDescription;
+            switch (signal) {
+                case NEW_DEV: matchType = "NEW";    newMatchFound = true; threeBeeps(); break;
+                case RE3:     matchType = "RE-3s";  newMatchFound = true; twoBeeps();   break;
+                case RE30:    matchType = "RE-30s"; newMatchFound = true; threeBeeps(); break;
+                default: break;
             }
         }
     }
@@ -2324,6 +2331,9 @@ void setup() {
     // Initialize Serial first
     Serial.begin(115200);
     delay(1000);
+
+    // Create the devices[] vector mutex BEFORE any BLE callbacks install.
+    devicesMutex = xSemaphoreCreateMutex();
     
     // Print ASCII art banner
     Serial.println("\n\n");

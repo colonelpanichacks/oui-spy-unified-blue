@@ -1,8 +1,6 @@
 .pio/
 .vscode/
+firmware/*.bin
+__MACOSX/
 .DS_Store
-*.o
-*.d
-# firmware/*.bin
-__pycache__/
-.venv/
+*.bak

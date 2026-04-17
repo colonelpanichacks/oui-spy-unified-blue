@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flock-You Heatmap Viewer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Courier New',monospace;background:#0a0012;color:#e0e0e0;height:100vh;display:flex;flex-direction:column}
+#toolbar{background:#1a0033;padding:8px 12px;border-bottom:2px solid #ec4899;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;z-index:1000}
+#toolbar h1{font-size:16px;color:#ec4899;letter-spacing:2px;white-space:nowrap}
+#toolbar .sub{font-size:10px;color:#8b5cf6;margin-left:4px}
+.tbtn{padding:5px 12px;background:#8b5cf6;color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:bold}
+.tbtn:hover{background:#a78bfa}
+.tbtn:active{background:#ec4899}
+.tbtn.sec{background:transparent;border:1px solid #8b5cf6;color:#8b5cf6}
+.tbtn.sec:hover{background:rgba(139,92,246,.15)}
+#stats{font-size:11px;color:#8b5cf6;margin-left:auto;white-space:nowrap}
+#map{flex:1;background:#111}
+#legend{position:absolute;bottom:20px;right:10px;background:rgba(26,0,51,.92);border:1px solid #8b5cf6;border-radius:6px;padding:8px 10px;z-index:1000;font-size:10px;line-height:1.6}
+#legend b{color:#ec4899}
+.lgd{display:flex;align-items:center;gap:5px;margin-top:2px}
+.lgd .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+#offline{display:none;flex:1;justify-content:center;align-items:center;text-align:center;padding:40px;flex-direction:column}
+#offline h2{color:#ec4899;margin-bottom:12px}
+#offline p{color:#8b5cf6;max-width:500px;line-height:1.6;font-size:13px}
+#offline table{margin-top:16px;border-collapse:collapse;font-size:11px;text-align:left}
+#offline th{color:#ec4899;padding:4px 10px;border-bottom:1px solid #8b5cf6}
+#offline td{padding:4px 10px;color:#e0e0e0}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>FLOCK-YOU<span class="sub">HEATMAP</span></h1>
+  <button class="tbtn" onclick="loadFile()">LOAD JSON</button>
+  <button class="tbtn sec" onclick="togglePaths()">PATHS</button>
+  <button class="tbtn sec" onclick="toggleSources()">SOURCES</button>
+  <div id="stats">No data loaded</div>
+</div>
+
+<div id="map"></div>
+
+<div id="legend">
+  <b>Signal Strength</b>
+  <div class="lgd"><div class="dot" style="background:#22c55e"></div> Strong (close)</div>
+  <div class="lgd"><div class="dot" style="background:#facc15"></div> Medium</div>
+  <div class="lgd"><div class="dot" style="background:#ef4444"></div> Weak (far)</div>
+  <div class="lgd"><div class="dot" style="background:#ec4899;width:14px;height:14px;border:2px solid #fff"></div> Triangulated source</div>
+</div>
+
+<div id="offline">
+  <h2>OFFLINE MODE</h2>
+  <p>Map tiles require an internet connection. Your detection data is still loaded and the coordinate list is below. Connect to the internet and reload to see the map.</p>
+  <div id="offlineData"></div>
+</div>
+
+<!-- Leaflet from CDN -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script>
+var map, detLayer, pathLayer, srcLayer;
+var detections = [], sources = [];
+var showPaths = true, showSources = true;
+var leafletLoaded = typeof L !== 'undefined';
+
+function init() {
+  if (!leafletLoaded) {
+    // Leaflet didn't load (offline). Show offline panel when data is loaded.
+    document.getElementById('map').style.display = 'none';
+    document.getElementById('legend').style.display = 'none';
+    return;
+  }
+  map = L.map('map').setView([39.5, -98.5], 4); // Center of US
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+  detLayer = L.layerGroup().addTo(map);
+  pathLayer = L.layerGroup().addTo(map);
+  srcLayer = L.layerGroup().addTo(map);
+}
+
+function rssiColor(rssi) {
+  // -30 (strongest) to -95 (weakest) mapped to green -> yellow -> red
+  var t = Math.max(0, Math.min(1, (rssi + 95) / 65)); // 0=weak, 1=strong
+  if (t > 0.5) {
+    // green to yellow
+    var u = (t - 0.5) * 2;
+    return 'rgb(' + Math.round(34 + (250-34)*(1-u)) + ',' + Math.round(197 + (204-197)*(1-u)) + ',' + Math.round(94 - 73*(1-u)) + ')';
+  } else {
+    // yellow to red
+    var u = t * 2;
+    return 'rgb(' + Math.round(239 + (250-239)*u) + ',' + Math.round(68 + (204-68)*u) + ',' + Math.round(68 - 47*u) + ')';
+  }
+}
+
+function renderMap() {
+  if (!leafletLoaded || !map) return;
+  detLayer.clearLayers();
+  pathLayer.clearLayers();
+  srcLayer.clearLayers();
+
+  // Group detections by MAC
+  var byMac = {};
+  detections.forEach(function(d) {
+    if (!d.gps) return;
+    if (!byMac[d.mac]) byMac[d.mac] = [];
+    byMac[d.mac].push(d);
+  });
+
+  var bounds = [];
+
+  // Detection dots + path lines per MAC
+  Object.keys(byMac).forEach(function(mac) {
+    var group = byMac[mac];
+    // Sort by first-seen time
+    group.sort(function(a,b){ return (a.first||0) - (b.first||0); });
+
+    var pathCoords = [];
+    group.forEach(function(d) {
+      var lat = d.gps.lat, lon = d.gps.lon;
+      var color = rssiColor(d.rssi);
+      var dist = d.dist_m ? '~' + (+d.dist_m).toFixed(0) + 'm' : '?';
+      var minD = d.min_dist_m ? (+d.min_dist_m).toFixed(0) + 'm' : '?';
+
+      var popup = '<b>' + esc(d.mac) + '</b>';
+      if (d.name) popup += ' (' + esc(d.name) + ')';
+      popup += '<br/>RSSI: ' + d.rssi + ' dBm';
+      popup += '<br/>Distance: ' + dist + ' (min: ' + minD + ')';
+      popup += '<br/>Method: ' + esc(d.method);
+      popup += '<br/>Count: ' + d.count;
+      if (d.raven) popup += '<br/><b style="color:#ef4444">RAVEN ' + esc(d.fw || '') + '</b>';
+
+      var marker = L.circleMarker([lat, lon], {
+        radius: 6,
+        fillColor: color,
+        color: '#222',
+        weight: 1,
+        fillOpacity: 0.85
+      }).bindPopup(popup);
+      detLayer.addLayer(marker);
+      pathCoords.push([lat, lon]);
+      bounds.push([lat, lon]);
+    });
+
+    // Path line connecting same-MAC detections in time order
+    if (pathCoords.length >= 2 && showPaths) {
+      var line = L.polyline(pathCoords, {
+        color: '#8b5cf6',
+        weight: 2,
+        opacity: 0.5,
+        dashArray: '4 6'
+      });
+      pathLayer.addLayer(line);
+    }
+  });
+
+  // Triangulated source pins
+  if (showSources) {
+    sources.forEach(function(s) {
+      var popup = '<b>ESTIMATED SOURCE</b><br/>';
+      popup += 'MAC: ' + esc(s.mac) + '<br/>';
+      popup += 'Position: ' + s.lat.toFixed(6) + ', ' + s.lon.toFixed(6) + '<br/>';
+      popup += 'RMS error: ' + s.rms_err_m.toFixed(0) + 'm<br/>';
+      popup += 'Observations: ' + s.obs + '<br/>';
+      if (s.is_raven) popup += '<b style="color:#ef4444">RAVEN</b>';
+
+      var marker = L.circleMarker([s.lat, s.lon], {
+        radius: 10,
+        fillColor: '#ec4899',
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.9
+      }).bindPopup(popup);
+      srcLayer.addLayer(marker);
+      bounds.push([s.lat, s.lon]);
+    });
+  }
+
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+  }
+}
+
+function renderOffline() {
+  var el = document.getElementById('offlineData');
+  if (detections.length === 0) { el.innerHTML = '<p>No data loaded</p>'; return; }
+
+  var html = '<table><tr><th>MAC</th><th>Name</th><th>RSSI</th><th>Dist</th><th>Lat</th><th>Lon</th><th>Method</th></tr>';
+  detections.forEach(function(d) {
+    if (!d.gps) return;
+    html += '<tr>';
+    html += '<td>' + esc(d.mac) + '</td>';
+    html += '<td>' + esc(d.name || '') + '</td>';
+    html += '<td>' + d.rssi + '</td>';
+    html += '<td>' + (d.dist_m ? (+d.dist_m).toFixed(0) + 'm' : '?') + '</td>';
+    html += '<td>' + d.gps.lat.toFixed(6) + '</td>';
+    html += '<td>' + d.gps.lon.toFixed(6) + '</td>';
+    html += '<td>' + esc(d.method) + '</td>';
+    html += '</tr>';
+  });
+  html += '</table>';
+
+  if (sources.length > 0) {
+    html += '<h4 style="color:#ec4899;margin-top:16px">Triangulated Sources</h4>';
+    html += '<table><tr><th>MAC</th><th>Lat</th><th>Lon</th><th>RMS</th><th>Obs</th></tr>';
+    sources.forEach(function(s) {
+      html += '<tr><td>' + esc(s.mac) + '</td>';
+      html += '<td>' + s.lat.toFixed(6) + '</td>';
+      html += '<td>' + s.lon.toFixed(6) + '</td>';
+      html += '<td>' + s.rms_err_m.toFixed(0) + 'm</td>';
+      html += '<td>' + s.obs + '</td></tr>';
+    });
+    html += '</table>';
+  }
+  el.innerHTML = html;
+}
+
+function loadFile() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var data = JSON.parse(ev.target.result);
+        // Handle both array-of-detections and {detections:[], sources:[]} formats
+        if (Array.isArray(data)) {
+          detections = data;
+          sources = [];
+        } else if (data.detections) {
+          detections = data.detections;
+          sources = data.sources || [];
+        } else {
+          detections = data;
+          sources = [];
+        }
+
+        // Auto-extract sources from detections if sources array is empty
+        // (The /api/locations endpoint returns them separately, but the
+        // /api/export/json endpoint returns a flat detection array.
+        // Sources are computed server-side; for offline viewing we just
+        // show what we have.)
+
+        var gpsCount = detections.filter(function(d){ return d.gps; }).length;
+        var ravenCount = detections.filter(function(d){ return d.raven; }).length;
+        document.getElementById('stats').textContent =
+          detections.length + ' detections, ' + gpsCount + ' GPS-tagged, ' +
+          ravenCount + ' Raven' + (sources.length ? ', ' + sources.length + ' sources' : '');
+
+        if (leafletLoaded) {
+          renderMap();
+        } else {
+          document.getElementById('offline').style.display = 'flex';
+          renderOffline();
+        }
+      } catch(ex) {
+        alert('Failed to parse JSON: ' + ex.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function togglePaths() {
+  showPaths = !showPaths;
+  renderMap();
+}
+
+function toggleSources() {
+  showSources = !showSources;
+  renderMap();
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+// Boot
+init();
+</script>
+</body>
+</html>

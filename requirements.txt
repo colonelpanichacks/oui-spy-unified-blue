@@ -1,2 +1,2 @@
-esptool>=4.0
+esptool>=5.0
 pyserial>=3.5

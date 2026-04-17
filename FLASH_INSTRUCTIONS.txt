@@ -10,7 +10,6 @@
   firmware/
     bootloader.bin      ESP32-S3 bootloader         (0x0000)
     partitions.bin      Partition table              (0x8000)
-    boot_app0.bin       OTA data                     (0xe000)
     oui-spy-unified-blue.bin  Application firmware   (0x10000)
 
 
@@ -24,6 +23,7 @@
   2. Install USB drivers if needed:
      - CH340/CH341:  https://www.wch-ic.com/downloads/CH341SER_ZIP.html
      - CP210x:       https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
+     (XIAO ESP32-S3 uses native USB -- VID 303A -- and usually needs no driver.)
 
   3. Install Python dependencies:
 
@@ -52,7 +52,7 @@
   4. Repeat until all boards are flashed
   5. Press Ctrl+C or type 'q' when finished
 
-  The script tracks success/fail counts for you.
+  The script tracks success/fail counts and prints a summary on exit.
 
   To erase flash before writing (clean slate):
 
@@ -63,34 +63,36 @@
   -------------------------
   After a successful flash, the board reboots automatically.
 
-  1. Listen for 4 ASCENDING BEEPS -- this is the boot confirmation.
-     If you hear the 4 beeps, the firmware is running correctly.
+  1. Listen for the selector boot jingle -- 4 ascending notes.
+     If you hear the jingle, the firmware is running correctly.
   2. A WiFi AP appears: SSID "oui-spy" / password "ouispy123"
   3. Connect to that AP and open http://192.168.4.1 in a browser
   4. You should see the mode selector dashboard
 
   Quick batch test cycle:
-     Plug in -> auto-flash -> hear 4 beeps -> unplug -> next board
+     Plug in -> auto-flash -> hear jingle -> unplug -> next board
 
 
   TROUBLESHOOTING
   ---------------
   "No ESP32 detected"
     - Check USB cable (must be data cable, not charge-only)
-    - Install CH340/CP210x drivers (see setup step 2)
+    - Install CH340/CP210x drivers (see setup step 2) if not using native USB
     - Try a different USB port
     - On Windows: check Device Manager for COM port
 
-  "esptool not found"
-    - Run: pip install esptool pyserial
-    - Make sure Python is in your PATH
+  "esptool not found" or "unrecognized arguments: write-flash"
+    - Run: pip install -r requirements.txt
+    - This flasher requires esptool 5.0 or newer (uses dashed subcommands).
+    - If you already have esptool 4.x: pip install --upgrade esptool
 
   Flash succeeds but board doesn't boot
-    - Make sure all 4 .bin files are in firmware/ folder
+    - Make sure bootloader.bin, partitions.bin, and the app .bin are in firmware/
     - Try: python flash.py --erase   (full erase first)
 
   Multiple boards detected
-    - The script lists all ports and lets you pick one
-    - Unplug other USB serial devices if possible
+    - Single mode lists ports and lets you pick
+    - Batch mode flashes the first native USB device and warns about extras
+    - Unplug other USB serial devices to avoid ambiguity
 
 ==============================================================================
