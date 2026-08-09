@@ -90,6 +90,7 @@ Note: Mode IDs 3 is skipped intentionally.
 - **Embedded HTML:** Stored as `PROGMEM` raw string literals with `%PLACEHOLDER%` template substitution.
 - **Device cooldowns:** Detection modes use timed cooldowns (3s or 30s) to prevent alert spam on the same device.
 - **Sky Spy differs:** Uses WiFi promiscuous mode (+ BLE passive scan) to capture ASTM F3411 Open Drone ID frames. The OpenDroneID parser is in `src/opendroneid.h/c` and `src/wifi.c`. Outputs full JSON on USB Serial (every detection) and compact human-readable messages on Serial1 pins 5/6 (throttled to 5s) for Heltec LoRa/Meshtastic mesh forwarding. Serial1 is harmless when no mesh hardware is connected.
+- **Expansion board dashboard:** Shared `src/dashboard.h` / `src/dashboard.cpp` module (U8g2) that auto-detects the expansion board OLED on I2C and no-ops when absent. Modes call `dashboard_init()` early, then draw with `dashboard_*()` helpers; the USER button advances multi-page dashboards.
 
 ### Hardware
 
@@ -98,11 +99,22 @@ Note: Mode IDs 3 is skipped intentionally.
 | GPIO | Function |
 |------|----------|
 | 0 | BOOT button (hold 2s → return to selector) |
+| 2 / D1 | Expansion board USER button (active low, internal pull-up) |
 | 3 | Piezo buzzer (PWM, inverted logic) |
 | 4 | NeoPixel LED (optional) |
 | 5 / D4 | Serial1 TX — mesh UART to Heltec LoRa gateway (Sky Spy) |
 | 6 / D5 | Serial1 RX — mesh UART from Heltec LoRa gateway (Sky Spy) |
 | 21 | Onboard LED (inverted logic) |
+
+### Expansion Board OLED Dashboard
+
+The **Seeed Studio Expansion Base for XIAO** carries a 0.96" 128x64 SSD1306-family OLED (SSD1315) plus a USER button. Shared driver: `src/dashboard.h` / `src/dashboard.cpp` (uses U8g2, detected by I2C probe at `0x3C`/`0x3D`). On the XIAO ESP32S3 the OLED is on **GPIO5 (SDA) / GPIO6 (SCL)** and the button on **GPIO2**.
+
+- **Auto-detect, never required:** `dashboard_init()` probes the I2C bus; if nothing answers it releases the pins and every other `dashboard_*` call becomes a no-op, so modes behave exactly as before with no display.
+- **Pin conflict with Sky Spy mesh UART:** the OLED and the Serial1 mesh UART share GPIO5/6. Sky Spy calls `dashboard_init()` before `Serial1.begin()`; when the OLED is present it disables Serial1 (`send_mesh_message()` returns early). Headless builds keep full mesh forwarding.
+- **Multi-page dashboards:** the USER button (GPIO2) advances pages. Sky Spy implements 4 pages (Summary, Latest Drone, Position, Fleet) via the `dashPage*()` render functions in `src/raw/skyspy.cpp`, redrawn at 1 Hz.
+- `dashboard_printf` uses U8g2's `setCursor(x, y)` where **y is the text baseline** (font `u8g2_font_5x7_tr` ascent = 6), so row `i` lives at `y = 6 + i*8`.
+- All draw/press calls are safe no-ops until `dashboard_init()` returns true. Call `dashboard_init()` before any other peripheral claims GPIO5/6.
 
 ### Dependencies (managed by PlatformIO)
 
@@ -110,6 +122,7 @@ Note: Mode IDs 3 is skipped intentionally.
 - `ESP Async WebServer` ^3.0.6 — Web interfaces
 - `ArduinoJson` ^7.0.4 — JSON serialization
 - `Adafruit NeoPixel` ^1.12.0 — LED control
+- `U8g2` ^2.36.18 — expansion board OLED driver
 
 ## ESP32-C6 Experimental Branch
 

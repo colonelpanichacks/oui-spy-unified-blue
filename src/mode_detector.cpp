@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <Adafruit_NeoPixel.h>
 #include "modes.h"
+#include "dashboard.h"
 
 // Rename setup/loop to avoid conflict with Arduino entry points
 #define setup detector_ns_setup

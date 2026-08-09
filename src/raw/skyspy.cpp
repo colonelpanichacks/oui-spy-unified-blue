@@ -211,6 +211,9 @@ void send_json_fast(const id_data *UAV) {
 }
 
 void send_mesh_message(const id_data *UAV) {
+  // Mesh UART is disabled while the expansion board OLED uses pins 5/6.
+  if (dashboard_present()) return;
+
   static unsigned long lastSendTime = 0;
   const unsigned long sendInterval = 5000;
   const int MAX_MESH_SIZE = 230;
@@ -399,6 +402,16 @@ void printerTask(void *param) {
 
 void initializeSerial() {
   Serial.begin(115200);
+
+  // Probe for the expansion board OLED before touching Serial1. The display
+  // lives on the same two pins (GPIO5/6) as the mesh UART, so when it is
+  // present those pins belong to the I2C bus and mesh forwarding is disabled.
+  dashboard_init();
+
+  if (dashboard_present()) {
+    Serial.println("[SKY-SPY] OLED detected - Serial1 mesh UART disabled (pins 5/6 shared with display)");
+    return;
+  }
   Serial1.begin(115200, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN);
 }
 
@@ -447,6 +460,208 @@ void initializeLED() {
   Serial.println("Orange LED initialized on GPIO21 (inverted logic)");
 }
 
+// ============================================================================
+// Expansion board OLED dashboard (SSD1306/SSD1315 128x64)
+// The 5x7 font uses y as the text baseline, so row i sits at 6 + i*8 pixels.
+// ============================================================================
+#define DASH_REFRESH_MS 1000
+#define DASH_BASELINE 6
+#define DASH_ROW_STEP 8
+
+static unsigned long lastDashboardRefresh = 0;
+
+enum DashPage {
+  DASH_PAGE_SUMMARY = 0,
+  DASH_PAGE_LATEST,
+  DASH_PAGE_POSITION,
+  DASH_PAGE_FLEET,
+  DASH_PAGE_COUNT
+};
+static uint8_t dashPage = DASH_PAGE_SUMMARY;
+
+static void dashRow(uint8_t row) {
+  dashboard_set_cursor(0, DASH_BASELINE + row * DASH_ROW_STEP);
+}
+
+static void dashFormatMac(const uint8_t *mac, char *out, size_t len) {
+  snprintf(out, len, "%02X:%02X:%02X:%02X:%02X:%02X",
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
+
+static const char *dashDroneId(const id_data *uav) {
+  if (uav->op_id[0] != '\0') return uav->op_id;
+  if (uav->uav_id[0] != '\0') return uav->uav_id;
+  return "-";
+}
+
+static void dashFooter(unsigned long now) {
+  dashRow(7);
+  dashboard_printf("P%u/%u UP %02lu:%02lu:%02lu",
+                   (unsigned)(dashPage + 1), (unsigned)DASH_PAGE_COUNT,
+                   (unsigned long)((now / 3600000UL) % 100UL),
+                   (unsigned long)((now / 60000UL) % 60UL),
+                   (unsigned long)((now / 1000UL) % 60UL));
+}
+
+static void dashPageSummary(const id_data *best, int activeCount, int totalCount, unsigned long now) {
+  char mac[18];
+  dashRow(0);
+  dashboard_printf("SKYSPY ACT:%d TOT:%d", activeCount, totalCount);
+  dashboard_draw_hline(0, 7, 128);
+
+  if (activeCount > 0) {
+    dashRow(2);
+    dashboard_printf("DRONE IN RANGE");
+    if (best != NULL) {
+      dashRow(3);
+      dashboard_printf("RSSI %d dBm", best->rssi);
+      dashFormatMac(best->mac, mac, sizeof(mac));
+      dashRow(4);
+      dashboard_printf("%s", mac);
+    }
+  } else {
+    dashRow(2);
+    dashboard_printf("SCANNING FOR DRONES");
+    dashRow(3);
+    dashboard_printf("NO REMOTE ID SIGNAL");
+  }
+  dashRow(5);
+  dashboard_printf("WIFI+BLE PASSIVE");
+  dashFooter(now);
+}
+
+static void dashPageLatest(const id_data *best, unsigned long now) {
+  char mac[18];
+  dashRow(0);
+  dashboard_printf("LATEST DRONE");
+  dashboard_draw_hline(0, 7, 128);
+
+  if (best == NULL) {
+    dashRow(3);
+    dashboard_printf("NO DRONE DETECTED");
+    dashFooter(now);
+    return;
+  }
+
+  dashFormatMac(best->mac, mac, sizeof(mac));
+  dashRow(2);
+  dashboard_printf("MAC %s", mac);
+  dashRow(3);
+  dashboard_printf("RSSI %d dBm", best->rssi);
+  dashRow(4);
+  dashboard_printf("ALT %dm SPD %dm/s", best->altitude_msl, best->speed);
+  dashRow(5);
+  dashboard_printf("HDG %d AGL %dm", best->heading, best->height_agl);
+  dashRow(6);
+  dashboard_printf("ID %s", dashDroneId(best));
+  dashFooter(now);
+}
+
+static void dashPagePosition(const id_data *best, unsigned long now) {
+  dashRow(0);
+  dashboard_printf("DRONE POSITION");
+  dashboard_draw_hline(0, 7, 128);
+
+  if (best == NULL) {
+    dashRow(3);
+    dashboard_printf("NO DRONE DETECTED");
+    dashFooter(now);
+    return;
+  }
+
+  if (best->lat_d != 0.0 && best->long_d != 0.0) {
+    dashRow(2);
+    dashboard_printf("LAT %.5f", best->lat_d);
+    dashRow(3);
+    dashboard_printf("LON %.5f", best->long_d);
+  } else {
+    dashRow(2);
+    dashboard_printf("POSITION NOT RX'D");
+    dashRow(3);
+    dashboard_printf("LAT/LON UNAVAILABLE");
+  }
+  dashRow(4);
+  dashboard_printf("ALT %dm AGL %dm", best->altitude_msl, best->height_agl);
+
+  if (best->base_lat_d != 0.0 && best->base_long_d != 0.0) {
+    dashRow(5);
+    dashboard_printf("PILOT LAT %.5f", best->base_lat_d);
+    dashRow(6);
+    dashboard_printf("PILOT LON %.5f", best->base_long_d);
+  } else {
+    dashRow(5);
+    dashboard_printf("PILOT POS N/A");
+  }
+  dashFooter(now);
+}
+
+static void dashPageFleet(int totalCount, unsigned long now) {
+  id_data *list[MAX_UAVS];
+  int n = 0;
+  for (int i = 0; i < MAX_UAVS; i++) {
+    if (uavs[i].mac[0] != 0) list[n++] = &uavs[i];
+  }
+  // Insertion sort, strongest signal first
+  for (int i = 1; i < n; i++) {
+    id_data *key = list[i];
+    int j = i - 1;
+    while (j >= 0 && list[j]->rssi < key->rssi) {
+      list[j + 1] = list[j];
+      j--;
+    }
+    list[j + 1] = key;
+  }
+
+  dashRow(0);
+  dashboard_printf("FLEET TOT:%d", totalCount);
+  dashboard_draw_hline(0, 7, 128);
+
+  int shown = 0;
+  for (int i = 0; i < n && shown < 5; i++) {
+    char mac[18];
+    dashFormatMac(list[i]->mac, mac, sizeof(mac));
+    dashRow(2 + shown);
+    dashboard_printf("%d %s %d", i + 1, mac, list[i]->rssi);
+    shown++;
+  }
+  if (n > 5) {
+    dashRow(6);
+    dashboard_printf("...and %d more", n - 5);
+  }
+  dashFooter(now);
+}
+
+void renderDashboard() {
+  if (!dashboard_present()) return;
+
+  unsigned long now = millis();
+  if (now - lastDashboardRefresh < DASH_REFRESH_MS) return;
+  lastDashboardRefresh = now;
+
+  int activeCount = 0, totalCount = 0;
+  id_data *best = NULL;
+  uint32_t bestLast = 0;
+  for (int i = 0; i < MAX_UAVS; i++) {
+    if (uavs[i].mac[0] == 0) continue;
+    totalCount++;
+    if (now - uavs[i].last_seen < 10000) activeCount++;
+    if (uavs[i].last_seen >= bestLast) {
+      bestLast = uavs[i].last_seen;
+      best = &uavs[i];
+    }
+  }
+
+  dashboard_clear();
+  switch (dashPage) {
+    case DASH_PAGE_SUMMARY:  dashPageSummary(best, activeCount, totalCount, now); break;
+    case DASH_PAGE_LATEST:   dashPageLatest(best, now); break;
+    case DASH_PAGE_POSITION: dashPagePosition(best, now); break;
+    case DASH_PAGE_FLEET:    dashPageFleet(totalCount, now); break;
+    default:                 dashPage = DASH_PAGE_SUMMARY; break;
+  }
+  dashboard_flush();
+}
+
 void setup() {
   setCpuFrequencyMhz(160);
   initializeSerial();
@@ -455,7 +670,22 @@ void setup() {
   
   // Close Encounters boot melody
   playCloseEncounters();
-  
+
+  // Brief boot splash on the expansion board OLED
+  if (dashboard_present()) {
+    dashboard_clear();
+    dashboard_set_cursor(0, DASH_BASELINE + 0 * DASH_ROW_STEP);
+    dashboard_printf("SKY SPY");
+    dashboard_set_cursor(0, DASH_BASELINE + 1 * DASH_ROW_STEP);
+    dashboard_printf("DRONE REMOTE ID MONITOR");
+    dashboard_set_cursor(0, DASH_BASELINE + 2 * DASH_ROW_STEP);
+    dashboard_printf("MODE 5 WIFI+BLE");
+    dashboard_set_cursor(0, DASH_BASELINE + 5 * DASH_ROW_STEP);
+    dashboard_printf("BOOTING...");
+    dashboard_flush();
+    delay(1500);
+  }
+
   nvs_flash_init();
   
   WiFi.mode(WIFI_STA);
@@ -482,7 +712,15 @@ void setup() {
 
 void loop() {
   unsigned long current_millis = millis();
-  
+
+  // Expansion board button advances the dashboard page (display only)
+  if (dashboard_present() && dashboard_button_pressed()) {
+    dashPage++;
+    if (dashPage >= DASH_PAGE_COUNT) dashPage = 0;
+    lastDashboardRefresh = 0;  // redraw immediately on page change
+  }
+  renderDashboard();
+
   // Status message every 60 seconds
   if ((current_millis - last_status) > 60000UL) {
     Serial.println("{\"   [+] Device is active and scanning...\"}");

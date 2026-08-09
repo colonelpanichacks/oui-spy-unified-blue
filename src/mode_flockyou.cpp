@@ -26,6 +26,7 @@
 #include <TinyGPS++.h>
 #include <Adafruit_NeoPixel.h>
 #include "modes.h"
+#include "dashboard.h"
 
 // Rename setup/loop
 #define setup flockyou_ns_setup

@@ -1100,12 +1100,223 @@ static void fySetupServer() {
 }
 
 // ============================================================================
+// EXPANSION BOARD OLED DASHBOARD
+// ============================================================================
+
+#define DASH_REFRESH_MS 1000
+#define DASH_BASELINE 6
+#define DASH_ROW_STEP 8
+
+static unsigned long lastDashboardRefresh = 0;
+
+enum DashPage {
+    DASH_PAGE_SUMMARY = 0,
+    DASH_PAGE_LATEST,
+    DASH_PAGE_FLEET,
+    DASH_PAGE_GPS,
+    DASH_PAGE_COUNT
+};
+static uint8_t dashPage = DASH_PAGE_SUMMARY;
+
+static void dashRow(uint8_t row) {
+    dashboard_set_cursor(0, DASH_BASELINE + row * DASH_ROW_STEP);
+}
+
+static void dashFooter(unsigned long now) {
+    dashRow(7);
+    dashboard_printf("P%u/%u UP %02lu:%02lu:%02lu",
+                     (unsigned)(dashPage + 1), (unsigned)DASH_PAGE_COUNT,
+                     (unsigned long)((now / 3600000UL) % 100UL),
+                     (unsigned long)((now / 60000UL) % 60UL),
+                     (unsigned long)((now / 1000UL) % 60UL));
+}
+
+static void dashPageSummary(unsigned long now) {
+    int ravens = 0;
+    if (fyMutex && xSemaphoreTake(fyMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+        for (int i = 0; i < fyDetCount; i++) {
+            if (fyDet[i].isRaven) ravens++;
+        }
+        xSemaphoreGive(fyMutex);
+    }
+
+    dashRow(0);
+    dashboard_printf("FLOCK-YOU DEV:%d", fyDetCount);
+    dashboard_draw_hline(0, 7, 128);
+
+    dashRow(2);
+    dashboard_printf(fyDeviceInRange ? "DEVICE IN RANGE" : "NO DEVICE IN RANGE");
+    dashRow(3);
+    dashboard_printf("RAVEN:%d BUZZ:%s", ravens, fyBuzzerOn ? "ON" : "OFF");
+    dashRow(4);
+    dashboard_printf("BLE+AP SCANNING");
+    dashRow(5);
+    dashboard_printf("WEB 192.168.4.1");
+    dashFooter(now);
+}
+
+static void dashPageLatest(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("LATEST DETECTION");
+    dashboard_draw_hline(0, 7, 128);
+
+    if (fyDetCount == 0) {
+        dashRow(3);
+        dashboard_printf("NO DETECTIONS");
+        dashRow(4);
+        dashboard_printf("SCANNING FOR DEVICES");
+        dashFooter(now);
+        return;
+    }
+
+    char mac[18] = "";
+    char method[24] = "";
+    int rssi = 0;
+    unsigned long last = 0;
+    int count = 0;
+    if (fyMutex && xSemaphoreTake(fyMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+        int best = 0;
+        for (int i = 1; i < fyDetCount; i++) {
+            if (fyDet[i].lastSeen > fyDet[best].lastSeen) best = i;
+        }
+        strncpy(mac, fyDet[best].mac, sizeof(mac) - 1);
+        strncpy(method, fyDet[best].method, sizeof(method) - 1);
+        rssi = fyDet[best].rssi;
+        last = fyDet[best].lastSeen;
+        count = fyDet[best].count;
+        xSemaphoreGive(fyMutex);
+    }
+
+    dashRow(2);
+    dashboard_printf("%s", mac);
+    dashRow(3);
+    dashboard_printf("RSSI %d dBm x%d", rssi, count);
+    dashRow(4);
+    dashboard_printf("%.14s", method);
+    dashRow(5);
+    dashboard_printf("SEEN %lus AGO", (unsigned long)((now - last) / 1000UL));
+    dashFooter(now);
+}
+
+static void dashPageFleet(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("FLEET TOT:%d", fyDetCount);
+    dashboard_draw_hline(0, 7, 128);
+
+    if (fyDetCount == 0) {
+        dashRow(3);
+        dashboard_printf("NO DETECTIONS");
+        dashFooter(now);
+        return;
+    }
+
+    static const int MAX_SHOW = 5;
+    char macs[MAX_SHOW][18];
+    int rssis[MAX_SHOW];
+    int nshown = 0;
+
+    if (fyMutex && xSemaphoreTake(fyMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+        bool used[MAX_DETECTIONS];
+        memset(used, 0, sizeof(used));
+        for (int s = 0; s < MAX_SHOW; s++) {
+            int best = -1;
+            for (int i = 0; i < fyDetCount; i++) {
+                if (used[i]) continue;
+                if (best < 0 || fyDet[i].rssi > fyDet[best].rssi) best = i;
+            }
+            if (best < 0) break;
+            used[best] = true;
+            strncpy(macs[nshown], fyDet[best].mac, 17);
+            macs[nshown][17] = '\0';
+            rssis[nshown] = fyDet[best].rssi;
+            nshown++;
+        }
+        xSemaphoreGive(fyMutex);
+    }
+
+    for (int i = 0; i < nshown; i++) {
+        dashRow(2 + i);
+        dashboard_printf("%d %s %d", i + 1, macs[i], rssis[i]);
+    }
+    if (fyDetCount > MAX_SHOW) {
+        dashRow(6);
+        dashboard_printf("...and %d more", fyDetCount - MAX_SHOW);
+    }
+    dashFooter(now);
+}
+
+static void dashPageGPS(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("GPS STATUS");
+    dashboard_draw_hline(0, 7, 128);
+
+    const char* src = "NONE";
+    if (fyGPSIsHardware && fyHWGPSFix) src = "HARDWARE";
+    else if (fyGPSIsFresh()) src = "PHONE";
+
+    dashRow(2);
+    dashboard_printf("SOURCE %s", src);
+    if (fyGPSIsHardware) {
+        dashRow(3);
+        dashboard_printf("SATS %d", fyHWGPSSats);
+    }
+    if (fyGPSIsFresh()) {
+        dashRow(4);
+        dashboard_printf("LAT %.5f", fyGPSLat);
+        dashRow(5);
+        dashboard_printf("LON %.5f", fyGPSLon);
+        dashRow(6);
+        dashboard_printf("ACC %.1fm", fyGPSAcc);
+    } else {
+        dashRow(4);
+        dashboard_printf("NO FIX YET");
+    }
+    dashFooter(now);
+}
+
+static void renderDashboard() {
+    if (!dashboard_present()) return;
+
+    unsigned long now = millis();
+    if (now - lastDashboardRefresh < DASH_REFRESH_MS) return;
+    lastDashboardRefresh = now;
+
+    dashboard_clear();
+    switch (dashPage) {
+        case DASH_PAGE_SUMMARY: dashPageSummary(now); break;
+        case DASH_PAGE_LATEST:  dashPageLatest(now); break;
+        case DASH_PAGE_FLEET:   dashPageFleet(now); break;
+        case DASH_PAGE_GPS:     dashPageGPS(now); break;
+        default:                dashPage = DASH_PAGE_SUMMARY; break;
+    }
+    dashboard_flush();
+}
+
+// ============================================================================
 // MAIN FUNCTIONS
 // ============================================================================
 
 void setup() {
     Serial.begin(115200);
     delay(500);
+
+    // Probe for the expansion board OLED. Pins 5/6 are free in this mode
+    // (the hardware GPS uses 44/43), so this is safe and a no-op when no
+    // display is attached.
+    dashboard_init();
+    if (dashboard_present()) {
+        dashboard_clear();
+        dashRow(0);
+        dashboard_printf("FLOCK-YOU");
+        dashRow(1);
+        dashboard_printf("SURVEILLANCE DETECTOR");
+        dashRow(2);
+        dashboard_printf("MODE 4");
+        dashRow(5);
+        dashboard_printf("BOOTING...");
+        dashboard_flush();
+        delay(1200);
+    }
 
     // Read buzzer setting from OUI-SPY NVS
     Preferences bzP;
@@ -1184,6 +1395,14 @@ void setup() {
 }
 
 void loop() {
+    // Expansion board button advances the dashboard page (display only)
+    if (dashboard_present() && dashboard_button_pressed()) {
+        dashPage++;
+        if (dashPage >= DASH_PAGE_COUNT) dashPage = 0;
+        lastDashboardRefresh = 0;  // redraw immediately on page change
+    }
+    renderDashboard();
+
     fyProcessHardwareGPS();
     fyUpdatePixel();
 

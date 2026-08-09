@@ -20,6 +20,7 @@
 #include <freertos/task.h>
 #include <Preferences.h>
 #include "modes.h"
+#include "dashboard.h"
 
 // Rename setup/loop
 #define setup skyspy_ns_setup

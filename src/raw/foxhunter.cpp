@@ -930,6 +930,140 @@ void startTrackingMode() {
     ascendingBeeps();
 }
 
+// ================================
+// Expansion Board OLED Dashboard
+// ================================
+#define DASH_REFRESH_MS 500
+#define DASH_BASELINE 6
+#define DASH_ROW_STEP 8
+
+static unsigned long lastDashboardRefresh = 0;
+
+enum DashPage {
+    DASH_PAGE_SUMMARY = 0,
+    DASH_PAGE_SIGNAL,
+    DASH_PAGE_TARGET,
+    DASH_PAGE_COUNT
+};
+static uint8_t dashPage = DASH_PAGE_SUMMARY;
+
+static void dashRow(uint8_t row) {
+    dashboard_set_cursor(0, DASH_BASELINE + row * DASH_ROW_STEP);
+}
+
+static void dashFooter(unsigned long now) {
+    dashRow(7);
+    dashboard_printf("P%u/%u UP %02lu:%02lu:%02lu",
+                     (unsigned)(dashPage + 1), (unsigned)DASH_PAGE_COUNT,
+                     (unsigned long)((now / 3600000UL) % 100UL),
+                     (unsigned long)((now / 60000UL) % 60UL),
+                     (unsigned long)((now / 1000UL) % 60UL));
+}
+
+static void dashPageSummary(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("FOXHUNTER %s",
+                     currentMode == TRACKING_MODE ? "TRACK" : "CONFIG");
+    dashboard_draw_hline(0, 7, 128);
+
+    if (currentMode == TRACKING_MODE) {
+        dashRow(2);
+        dashboard_printf("TARGET %s", targetMAC.length() > 0 ? "SET" : "NONE");
+        dashRow(3);
+        dashboard_printf(targetDetected ? "SIGNAL ACQUIRED" : "SEARCHING...");
+        dashRow(4);
+        dashboard_printf("RSSI %d dBm", currentRSSI);
+        dashRow(5);
+        dashboard_printf("BZ:%s LED:%s", buzzerEnabled ? "ON" : "OFF",
+                         ledEnabled ? "ON" : "OFF");
+    } else {
+        dashRow(2);
+        dashboard_printf("TARGET %s", targetMAC.length() > 0 ? "SET" : "NONE");
+        dashRow(3);
+        dashboard_printf("AP foxhunter");
+        dashRow(4);
+        dashboard_printf("192.168.4.1 CONFIG");
+    }
+    dashFooter(now);
+}
+
+static void dashPageSignal(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("SIGNAL STRENGTH");
+    dashboard_draw_hline(0, 7, 128);
+
+    if (currentMode != TRACKING_MODE) {
+        dashRow(3);
+        dashboard_printf("CONFIG MODE");
+        dashRow(4);
+        dashboard_printf("TARGET NOT SET");
+        dashFooter(now);
+        return;
+    }
+
+    dashRow(2);
+    dashboard_printf("RSSI %d dBm", currentRSSI);
+
+    // Signal bar: -100..-25 dBm mapped to 0..128 px
+    int bar = constrain(map(currentRSSI, -100, -25, 0, 128), 0, 128);
+    dashboard_draw_box(0, 30, (uint16_t)bar, 10);
+    dashboard_draw_hline(0, 41, 128);
+
+    if (targetDetected) {
+        dashRow(6);
+        dashboard_printf("BEEP %ums", (unsigned)calculateBeepInterval(currentRSSI));
+    } else {
+        dashRow(6);
+        dashboard_printf("TARGET LOST");
+    }
+    dashFooter(now);
+}
+
+static void dashPageTarget(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("TARGET DEVICE");
+    dashboard_draw_hline(0, 7, 128);
+
+    if (targetMAC.length() == 0) {
+        dashRow(3);
+        dashboard_printf("NOT CONFIGURED");
+        dashRow(4);
+        dashboard_printf("USE WEB UI TO SET");
+        dashFooter(now);
+        return;
+    }
+
+    dashRow(2);
+    dashboard_printf("%s", targetMAC.c_str());
+    dashRow(3);
+    dashboard_printf(targetDetected ? "STATUS: IN RANGE" : "STATUS: SEARCHING");
+    if (targetDetected) {
+        dashRow(4);
+        dashboard_printf("RSSI %d dBm", currentRSSI);
+        dashRow(5);
+        dashboard_printf("LAST SEEN %lus AGO",
+                         (unsigned long)((now - lastTargetSeen) / 1000UL));
+    }
+    dashFooter(now);
+}
+
+void renderDashboard() {
+    if (!dashboard_present()) return;
+
+    unsigned long now = millis();
+    if (now - lastDashboardRefresh < DASH_REFRESH_MS) return;
+    lastDashboardRefresh = now;
+
+    dashboard_clear();
+    switch (dashPage) {
+        case DASH_PAGE_SUMMARY: dashPageSummary(now); break;
+        case DASH_PAGE_SIGNAL:  dashPageSignal(now); break;
+        case DASH_PAGE_TARGET:  dashPageTarget(now); break;
+        default:                dashPage = DASH_PAGE_SUMMARY; break;
+    }
+    dashboard_flush();
+}
+
 void setup() {
     Serial.begin(115200);
     Serial.println("\n=== OUI-SPY FOXHUNT MODE for Xiao ESP32 S3 ===");
@@ -939,6 +1073,23 @@ void setup() {
     Serial.println("Mode: REALTIME RSSI-based proximity beeping");
     Serial.println("Range: 5s (WEAK) to 100ms (STRONG)");
     Serial.println("Initializing...\n");
+    
+    // Probe for the expansion board OLED. Pins 5/6 are free in this mode, so
+    // this is safe and a no-op when no display is attached.
+    dashboard_init();
+    if (dashboard_present()) {
+        dashboard_clear();
+        dashRow(0);
+        dashboard_printf("FOXHUNTER");
+        dashRow(1);
+        dashboard_printf("RSSI PROXIMITY TRACKER");
+        dashRow(2);
+        dashboard_printf("MODE 2");
+        dashRow(5);
+        dashboard_printf("BOOTING...");
+        dashboard_flush();
+        delay(1200);
+    }
     
     // Setup buzzer - initialize to 1kHz for proximity beeps
     ledcSetup(0, 1000, 8);  // 1kHz default frequency
@@ -990,6 +1141,14 @@ void setup() {
 
 void loop() {
     unsigned long currentTime = millis();
+    
+    // Expansion board button advances the dashboard page (display only)
+    if (dashboard_present() && dashboard_button_pressed()) {
+        dashPage++;
+        if (dashPage >= DASH_PAGE_COUNT) dashPage = 0;
+        lastDashboardRefresh = 0;  // redraw immediately on page change
+    }
+    renderDashboard();
     
     // Handle scheduled mode switch
     if (modeSwitchScheduled > 0 && currentTime >= modeSwitchScheduled) {

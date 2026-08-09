@@ -2305,6 +2305,184 @@ void startScanningMode() {
 
 
 // ================================
+// Expansion Board OLED Dashboard
+// ================================
+#define DASH_REFRESH_MS 1000
+#define DASH_BASELINE 6
+#define DASH_ROW_STEP 8
+
+static unsigned long lastDashboardRefresh = 0;
+
+enum DashPage {
+    DASH_PAGE_SUMMARY = 0,
+    DASH_PAGE_LATEST,
+    DASH_PAGE_FLEET,
+    DASH_PAGE_FILTERS,
+    DASH_PAGE_COUNT
+};
+static uint8_t dashPage = DASH_PAGE_SUMMARY;
+
+static void dashRow(uint8_t row) {
+    dashboard_set_cursor(0, DASH_BASELINE + row * DASH_ROW_STEP);
+}
+
+static void dashFooter(unsigned long now) {
+    dashRow(7);
+    dashboard_printf("P%u/%u UP %02lu:%02lu:%02lu",
+                     (unsigned)(dashPage + 1), (unsigned)DASH_PAGE_COUNT,
+                     (unsigned long)((now / 3600000UL) % 100UL),
+                     (unsigned long)((now / 60000UL) % 60UL),
+                     (unsigned long)((now / 1000UL) % 60UL));
+}
+
+static void dashPageSummary(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("DETECTOR FLT:%u DEV:%u",
+                     (unsigned)targetFilters.size(), (unsigned)devices.size());
+    dashboard_draw_hline(0, 7, 128);
+
+    if (currentMode == SCANNING_MODE) {
+        dashRow(2);
+        dashboard_printf("MODE SCANNING");
+        dashRow(3);
+        dashboard_printf("WATCHLIST ACTIVE");
+    } else {
+        dashRow(2);
+        dashboard_printf("MODE CONFIG");
+        dashRow(3);
+        dashboard_printf("WAITING FOR CONFIG");
+    }
+    dashRow(4);
+    dashboard_printf("BZ:%s LED:%s", buzzerEnabled ? "ON" : "OFF",
+                     ledEnabled ? "ON" : "OFF");
+    dashRow(5);
+    dashboard_printf(currentMode == CONFIG_MODE ? "AP %s" : "WIFI OFF",
+                     currentMode == CONFIG_MODE ? AP_SSID.c_str() : "");
+    dashFooter(now);
+}
+
+static void dashPageLatest(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("LATEST DETECTION");
+    dashboard_draw_hline(0, 7, 128);
+
+    if (devices.size() == 0) {
+        dashRow(3);
+        dashboard_printf("NO DEVICES YET");
+        dashRow(4);
+        dashboard_printf("CONFIG VIA WEB UI");
+        dashFooter(now);
+        return;
+    }
+
+    const DeviceInfo* latest = &devices[0];
+    unsigned long newest = devices[0].lastSeen;
+    for (size_t i = 1; i < devices.size(); i++) {
+        if (devices[i].lastSeen > newest) {
+            newest = devices[i].lastSeen;
+            latest = &devices[i];
+        }
+    }
+
+    dashRow(2);
+    dashboard_printf("%s", latest->macAddress.c_str());
+    String alias = getDeviceAlias(latest->macAddress);
+    if (alias.length() > 0) {
+        dashRow(3);
+        dashboard_printf("ALIAS %s", alias.c_str());
+    }
+    dashRow(4);
+    dashboard_printf("RSSI %d dBm", latest->rssi);
+    dashRow(5);
+    dashboard_printf("%.14s", latest->filterDescription.c_str());
+    dashRow(6);
+    dashboard_printf("SEEN %lus AGO",
+                     (unsigned long)((now - latest->lastSeen) / 1000UL));
+    dashFooter(now);
+}
+
+static void dashPageFleet(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("DEVICES RSSI TOT:%u", (unsigned)devices.size());
+    dashboard_draw_hline(0, 7, 128);
+
+    if (devices.size() == 0) {
+        dashRow(3);
+        dashboard_printf("NO DETECTIONS YET");
+        dashFooter(now);
+        return;
+    }
+
+    std::vector<const DeviceInfo*> sorted;
+    sorted.reserve(devices.size());
+    for (const auto& d : devices) sorted.push_back(&d);
+    std::sort(sorted.begin(), sorted.end(),
+              [](const DeviceInfo* a, const DeviceInfo* b) { return a->rssi > b->rssi; });
+
+    size_t shown = 0;
+    for (const DeviceInfo* d : sorted) {
+        if (shown >= 5) break;
+        dashRow(2 + shown);
+        dashboard_printf("%d %s %d", (int)shown + 1,
+                         d->macAddress.c_str(), d->rssi);
+        shown++;
+    }
+    if (devices.size() > 5) {
+        dashRow(6);
+        dashboard_printf("...and %u more", (unsigned)(devices.size() - 5));
+    }
+    dashFooter(now);
+}
+
+static void dashPageFilters(unsigned long now) {
+    dashRow(0);
+    dashboard_printf("WATCHLIST FLT:%u", (unsigned)targetFilters.size());
+    dashboard_draw_hline(0, 7, 128);
+
+    if (targetFilters.size() == 0) {
+        dashRow(3);
+        dashboard_printf("NO FILTERS");
+        dashRow(4);
+        dashboard_printf("CONFIGURE VIA WEB UI");
+        dashFooter(now);
+        return;
+    }
+
+    size_t shown = 0;
+    for (const auto& f : targetFilters) {
+        if (shown >= 5) break;
+        const char* type = f.isFullMAC ? "M" : "O";
+        dashRow(2 + shown);
+        dashboard_printf("%d %s %.12s", (int)shown + 1, type,
+                         f.identifier.c_str());
+        shown++;
+    }
+    if (targetFilters.size() > 5) {
+        dashRow(6);
+        dashboard_printf("...and %u more", (unsigned)(targetFilters.size() - 5));
+    }
+    dashFooter(now);
+}
+
+void renderDashboard() {
+    if (!dashboard_present()) return;
+
+    unsigned long now = millis();
+    if (now - lastDashboardRefresh < DASH_REFRESH_MS) return;
+    lastDashboardRefresh = now;
+
+    dashboard_clear();
+    switch (dashPage) {
+        case DASH_PAGE_SUMMARY: dashPageSummary(now); break;
+        case DASH_PAGE_LATEST:  dashPageLatest(now); break;
+        case DASH_PAGE_FLEET:   dashPageFleet(now); break;
+        case DASH_PAGE_FILTERS: dashPageFilters(now); break;
+        default:                dashPage = DASH_PAGE_SUMMARY; break;
+    }
+    dashboard_flush();
+}
+
+// ================================
 // Setup Function
 // ================================
 void setup() {
@@ -2329,6 +2507,23 @@ void setup() {
     Serial.println(" \\____/|____/|__|         /____  >|   __// ____| \\____ |\\___  >__|  \\___  >\\___  >__|  \\____/|__|   ");
     Serial.println("                               \\/ |__|   \\/           \\/    \\/          \\/     \\/                   ");
     Serial.println("\n");
+    
+    // Probe for the expansion board OLED. Pins 5/6 are free in this mode, so
+    // this is safe and a no-op when no display is attached.
+    dashboard_init();
+    if (dashboard_present()) {
+        dashboard_clear();
+        dashRow(0);
+        dashboard_printf("DETECTOR");
+        dashRow(1);
+        dashboard_printf("BLE WATCHLIST ALERT");
+        dashRow(2);
+        dashboard_printf("MODE 1");
+        dashRow(5);
+        dashboard_printf("BOOTING...");
+        dashboard_flush();
+        delay(1200);
+    }
     
     // Randomize MAC address on each boot
     uint8_t newMAC[6];
@@ -2436,6 +2631,14 @@ void loop() {
     static unsigned long lastCleanupTime = 0;
     static unsigned long lastStatusTime = 0;
     unsigned long currentMillis = millis();
+    
+    // Expansion board button advances the dashboard page (display only)
+    if (dashboard_present() && dashboard_button_pressed()) {
+        dashPage++;
+        if (dashPage >= DASH_PAGE_COUNT) dashPage = 0;
+        lastDashboardRefresh = 0;  // redraw immediately on page change
+    }
+    renderDashboard();
     
     if (currentMode == CONFIG_MODE) {
         // Check for scheduled normal restart (from burn-in config)

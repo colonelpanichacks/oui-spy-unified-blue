@@ -15,6 +15,7 @@
 #include <ESPAsyncWebServer.h>
 #include <Preferences.h>
 #include "modes.h"
+#include "dashboard.h"
 
 // Hardware pins (shared across all modes)
 #define BUZZER_PIN 3
@@ -208,6 +209,134 @@ static void selectorBeep() {
 }
 
 // ============================================================================
+// OLED Mode Selector Menu (expansion board display)
+// ============================================================================
+// When the expansion board OLED is attached, the selector offers an on-screen
+// menu as an alternative to the web UI:
+//   - TAP the USER button  -> advance the highlighted mode
+//   - HOLD the USER button -> boot the highlighted mode
+// The WiFi AP / web UI keeps working alongside it.
+#define MENU_MODES_COUNT 4
+#define MENU_HOLD_BOOT_MS 1500
+
+static const uint8_t MENU_MODES[MENU_MODES_COUNT] = { 1, 2, 4, 5 };
+static const char* MENU_LABELS[MENU_MODES_COUNT] = {
+    "DETECTOR", "FOXHUNTER", "FLOCK-YOU", "SKY SPY"
+};
+
+#define MENU_BASELINE 6
+#define MENU_ROW_STEP 8
+
+static uint8_t menuIndex = 0;
+static unsigned long lastMenuRender = 0;
+static bool menuDirty = true;
+static unsigned long menuBtnDown = 0;
+static bool menuBtnWasDown = false;
+static bool menuBtnLongDone = false;
+
+static void renderSelectorMenu(unsigned long now) {
+    if (!dashboard_present()) return;
+    if (!menuDirty && now - lastMenuRender < 1000) return;
+    menuDirty = false;
+    lastMenuRender = now;
+
+    dashboard_clear();
+    dashboard_set_cursor(0, MENU_BASELINE + 0 * MENU_ROW_STEP);
+    dashboard_printf("OUI-SPY");
+    dashboard_set_cursor(0, MENU_BASELINE + 1 * MENU_ROW_STEP);
+    dashboard_printf("FIRMWARE SELECTOR");
+    dashboard_draw_hline(0, 15, 128);
+
+    for (uint8_t i = 0; i < MENU_MODES_COUNT; i++) {
+        int yBase = MENU_BASELINE + (2 + i) * MENU_ROW_STEP;
+        if (i == menuIndex) {
+            dashboard_draw_box(0, yBase - 6, 128, 7);
+            dashboard_set_draw_color(0);
+            dashboard_set_cursor(0, yBase);
+            dashboard_printf("%s", MENU_LABELS[i]);
+            dashboard_set_draw_color(1);
+        } else {
+            dashboard_set_cursor(0, yBase);
+            dashboard_printf("  %s", MENU_LABELS[i]);
+        }
+    }
+
+    dashboard_set_cursor(0, MENU_BASELINE + 6 * MENU_ROW_STEP);
+    dashboard_printf("TAP NEXT  HOLD BOOT");
+    dashboard_set_cursor(0, MENU_BASELINE + 7 * MENU_ROW_STEP);
+    dashboard_printf("WEB 192.168.4.1");
+    dashboard_flush();
+}
+
+static void bootSelectedMode() {
+    int mode = MENU_MODES[menuIndex];
+    Serial.printf("[SELECTOR] OLED menu: booting mode %d (%s)\n",
+                  mode, MENU_LABELS[menuIndex]);
+    Serial.flush();
+
+    // Write mode to NVS (same path as the web UI /select handler)
+    prefs.begin("unified-mode", false);
+    prefs.putInt("mode", mode);
+    prefs.end();
+
+    // One-shot flag: the next boot goes straight into this mode, not the menu.
+    Preferences menuPrefs;
+    menuPrefs.begin("ouispy-menu", false);
+    menuPrefs.putBool("boot", true);
+    menuPrefs.end();
+
+    // Confirmation feedback
+    for (int i = 0; i < 2; i++) {
+        playNote(1000 + i * 200, 120);
+        delay(30);
+    }
+
+    if (dashboard_present()) {
+        dashboard_clear();
+        dashboard_set_cursor(0, MENU_BASELINE + 0 * MENU_ROW_STEP);
+        dashboard_printf("BOOTING MODE %d", mode);
+        dashboard_set_cursor(0, MENU_BASELINE + 2 * MENU_ROW_STEP);
+        dashboard_printf("%s", MENU_LABELS[menuIndex]);
+        dashboard_flush();
+        delay(1200);
+    }
+
+    ESP.restart();
+}
+
+// Handles the USER button: tap advances, hold boots. Call every loop tick.
+static void handleSelectorMenu(unsigned long now) {
+    if (!dashboard_present()) return;
+
+    bool down = digitalRead(DISPLAY_BUTTON_PIN) == LOW;
+
+    if (down && !menuBtnWasDown) {
+        menuBtnWasDown = true;
+        menuBtnDown = now;
+        menuBtnLongDone = false;
+    }
+
+    if (down && menuBtnWasDown && !menuBtnLongDone &&
+        now - menuBtnDown >= MENU_HOLD_BOOT_MS) {
+        menuBtnLongDone = true;
+        bootSelectedMode();
+        return;
+    }
+
+    if (!down && menuBtnWasDown) {
+        menuBtnWasDown = false;
+        // Debounce release, then treat as a tap
+        if (!menuBtnLongDone && now - menuBtnDown >= 30) {
+            menuIndex = (menuIndex + 1) % MENU_MODES_COUNT;
+            menuDirty = true;
+            Serial.printf("[SELECTOR] OLED menu highlight: %s (mode %d)\n",
+                          MENU_LABELS[menuIndex], MENU_MODES[menuIndex]);
+            Serial.flush();
+        }
+    }
+}
+
+// ============================================================================
 // Boot Button Detection (GPIO0)
 // ============================================================================
 // Hold the BOOT button during startup to return to selector menu.
@@ -260,6 +389,16 @@ static void startSelector() {
     // Load user-configured AP credentials and buzzer setting from NVS
     loadAPConfig();
     loadBuzzerConfig();
+    
+    // Probe for the expansion board OLED. Pins 5/6 are free in this mode, so
+    // this is safe and a no-op when no display is attached. When present, an
+    // on-screen mode menu is offered alongside the web UI.
+    dashboard_init();
+    if (dashboard_present()) {
+        Serial.println("[SELECTOR] OLED detected - on-screen mode menu enabled");
+        menuDirty = true;
+        renderSelectorMenu(millis());
+    }
     
     Serial.println("\n========================================");
     Serial.println("  OUI SPY - Firmware Selector");
@@ -323,6 +462,12 @@ static void startSelector() {
                 prefs.begin("unified-mode", false);
                 prefs.putInt("mode", mode);
                 prefs.end();
+
+                // One-shot flag: next boot lands in this mode, not the menu.
+                Preferences menuPrefs;
+                menuPrefs.begin("ouispy-menu", false);
+                menuPrefs.putBool("boot", true);
+                menuPrefs.end();
                 
                 // Verify the write by reading it back
                 prefs.begin("unified-mode", true);
@@ -483,6 +628,33 @@ void setup() {
     Serial.println("========================================");
     Serial.flush();
     
+    // One-shot flag set by the OLED menu (or web UI) when the user picks a mode:
+    // the next boot must go straight into that mode instead of the selector.
+    bool launchFromMenu = false;
+    {
+        Preferences menuPrefs;
+        menuPrefs.begin("ouispy-menu", true);
+        launchFromMenu = menuPrefs.getBool("boot", false);
+        menuPrefs.end();
+        if (launchFromMenu) {
+            menuPrefs.begin("ouispy-menu", false);
+            menuPrefs.putBool("boot", false);
+            menuPrefs.end();
+        }
+    }
+
+    // If the expansion board OLED is present, the on-screen menu is the default
+    // boot interface: always boot into the selector so the user can pick a mode
+    // with the USER button (unless this boot is the result of a menu selection,
+    // which must land in the chosen mode). This is also the reliable way to reach
+    // the selector, because holding the BOOT button across a reset makes the ROM
+    // enter download mode instead of running the firmware.
+    if (dashboard_init() && currentMode != 0 && !launchFromMenu) {
+        Serial.println("[OUI-SPY] OLED present - booting into selector menu");
+        Serial.flush();
+        currentMode = 0;
+    }
+    
     // Route to selected mode
     Serial.println("\n[OUI-SPY] ========== ROUTING TO MODE ==========");
     Serial.printf("[OUI-SPY] About to switch on currentMode = %d\n", currentMode);
@@ -577,6 +749,9 @@ void loop() {
         case 5: skyspy_loop(); break;
         default:
             // Selector mode - web server handles everything
+            // OLED mode menu (when expansion board display present)
+            handleSelectorMenu(millis());
+            renderSelectorMenu(millis());
             // LED breathing animation
             {
                 static unsigned long lastLed = 0;
