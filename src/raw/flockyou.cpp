@@ -32,7 +32,11 @@
 // CONFIGURATION
 // ============================================================================
 
-#define BUZZER_PIN 3
+// Buzzer pin routing: GPIO3 (D2) for the external oui-spy piezo, or GPIO4
+// (D3/A3) for the expansion board's passive buzzer when the chassis is present.
+// Set in setup() after dashboard_init().
+static int buzzerPin = BUZZER_PIN_EXTERNAL;
+#define BUZZER_PIN buzzerPin
 
 // Hardware GPS (Seeed L76K GNSS module)
 #define GPS_RX_PIN 44      // D7 — ESP32 RX <- GPS TX
@@ -1302,8 +1306,10 @@ void setup() {
 
     // Probe for the expansion board OLED. Pins 5/6 are free in this mode
     // (the hardware GPS uses 44/43), so this is safe and a no-op when no
-    // display is attached.
+    // display is attached. Also route the buzzer to the chassis buzzer
+    // (GPIO4) when the expansion board is present.
     dashboard_init();
+    buzzerPin = dashboard_buzzer_pin();
     if (dashboard_present()) {
         dashboard_clear();
         dashRow(0);
@@ -1327,20 +1333,24 @@ void setup() {
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW);
 
-    // Init NeoPixel
-    fyPixel.begin();
-    fyPixel.setBrightness(FY_NEOPIXEL_BRIGHTNESS);
-    fyPixel.clear();
-    fyPixel.show();
-    // Test flash: pink -> purple
-    fyPixel.setPixelColor(0, fyPixel.Color(236, 72, 153));  // pink #ec4899
-    fyPixel.show();
-    delay(500);
-    fyPixel.setPixelColor(0, fyPixel.Color(139, 92, 246));  // purple #8b5cf6
-    fyPixel.show();
-    delay(500);
-    fyPixel.clear();
-    fyPixel.show();
+    // NeoPixel shares GPIO4 with the expansion board's buzzer, so it is skipped
+    // when the chassis (and its buzzer) is present.
+    if (!dashboard_present()) {
+        // Init NeoPixel
+        fyPixel.begin();
+        fyPixel.setBrightness(FY_NEOPIXEL_BRIGHTNESS);
+        fyPixel.clear();
+        fyPixel.show();
+        // Test flash: pink -> purple
+        fyPixel.setPixelColor(0, fyPixel.Color(236, 72, 153));  // pink #ec4899
+        fyPixel.show();
+        delay(500);
+        fyPixel.setPixelColor(0, fyPixel.Color(139, 92, 246));  // purple #8b5cf6
+        fyPixel.show();
+        delay(500);
+        fyPixel.clear();
+        fyPixel.show();
+    }
 
     fyMutex = xSemaphoreCreateMutex();
 
@@ -1404,7 +1414,8 @@ void loop() {
     renderDashboard();
 
     fyProcessHardwareGPS();
-    fyUpdatePixel();
+    // NeoPixel skipped when the expansion board buzzer owns GPIO4
+    if (!dashboard_present()) fyUpdatePixel();
 
     // BLE scanning cycle
     if (millis() - fyLastBleScan >= BLE_SCAN_INTERVAL && !fyBLEScan->isScanning()) {

@@ -17,12 +17,17 @@
 // ================================
 // Pin and Buzzer Definitions - Xiao ESP32 S3
 // ================================
-#define BUZZER_PIN 3   // GPIO3 (D2) for buzzer - good PWM pin on Xiao ESP32 S3
 #define BUZZER_FREQ 2000  // Frequency in Hz
 #define BUZZER_DUTY 127  // 50% duty cycle for good volume without excessive power draw
 #define BEEP_DURATION 200  // Duration of each beep in ms
 #define BEEP_PAUSE 50  // Pause between beeps in ms (faster sequence)
 #define LED_PIN 21   // GPIO21 for onboard LED (inverted logic)
+
+// Buzzer pin routing: GPIO3 (D2) for the external oui-spy piezo, or GPIO4
+// (D3/A3) for the expansion board's passive buzzer when the chassis is present.
+// Set in setup() after dashboard_init().
+static int buzzerPin = BUZZER_PIN_EXTERNAL;
+#define BUZZER_PIN buzzerPin
 
 // ================================
 // NeoPixel Definitions - Xiao ESP32 S3
@@ -2509,8 +2514,10 @@ void setup() {
     Serial.println("\n");
     
     // Probe for the expansion board OLED. Pins 5/6 are free in this mode, so
-    // this is safe and a no-op when no display is attached.
+    // this is safe and a no-op when no display is attached. Also route the
+    // buzzer to the chassis buzzer (GPIO4) when the expansion board is present.
     dashboard_init();
+    buzzerPin = dashboard_buzzer_pin();
     if (dashboard_present()) {
         dashboard_clear();
         dashRow(0);
@@ -2567,13 +2574,17 @@ void setup() {
     singleBeep();
     delay(500);
     
-    initializeNeoPixel();
-    
-    // Test NeoPixel
-    setNeoPixelColor(255, 0, 255); // Bright pink
-    delay(1000);
-    setNeoPixelColor(128, 0, 255); // Purple
-    delay(1000);
+    // NeoPixel shares GPIO4 with the expansion board's buzzer, so it is skipped
+    // when the chassis (and its buzzer) is present.
+    if (!dashboard_present()) {
+        initializeNeoPixel();
+        
+        // Test NeoPixel
+        setNeoPixelColor(255, 0, 255); // Bright pink
+        delay(1000);
+        setNeoPixelColor(128, 0, 255); // Purple
+        delay(1000);
+    }
     
     // Check for factory reset flag first
     preferences.begin("ouispy", true); // read-only
@@ -2748,8 +2759,8 @@ void loop() {
         }
     }
     
-    // Update NeoPixel animation
-    updateNeoPixelAnimation();
+    // Update NeoPixel animation (skipped when the expansion board buzzer owns GPIO4)
+    if (!dashboard_present()) updateNeoPixelAnimation();
     
     delay(100);
 } 

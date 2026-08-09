@@ -16,7 +16,11 @@
 #include <freertos/task.h>
 
 // Buzzer configuration
-#define BUZZER_PIN 3  // GPIO3 (D2) - PWM capable pin on Xiao ESP32 S3
+// Buzzer pin routing: GPIO3 (D2) for the external oui-spy piezo, or GPIO4
+// (D3/A3) for the expansion board's passive buzzer when the chassis is present.
+// Set in initializeBuzzer() after initializeSerial() has probed for the display.
+static int buzzerPin = BUZZER_PIN_EXTERNAL;
+#define BUZZER_PIN buzzerPin
 
 // LED configuration
 #define LED_PIN 21    // GPIO21 - Built-in orange LED on Xiao ESP32 S3 (inverted logic)
@@ -416,6 +420,10 @@ void initializeSerial() {
 }
 
 void initializeBuzzer() {
+  // Route to the chassis buzzer (GPIO4) when the expansion board is present;
+  // initializeSerial() already probed for the display before this runs.
+  buzzerPin = dashboard_buzzer_pin();
+
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
 
@@ -425,7 +433,7 @@ void initializeBuzzer() {
   ssBuzzerOn = bzP.getBool("on", true);
   bzP.end();
 
-  Serial.printf("Buzzer initialized on GPIO3 (%s)\n", ssBuzzerOn ? "ON" : "OFF");
+  Serial.printf("Buzzer initialized on GPIO%d (%s)\n", buzzerPin, ssBuzzerOn ? "ON" : "OFF");
 }
 
 // Close Encounters of the Third Kind - iconic 5-note motif

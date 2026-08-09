@@ -8,10 +8,15 @@
 #include <esp_wifi.h>
 
 // Hardware configuration
-#define BUZZER_PIN 3
 #define BUZZER_FREQ 2000
 #define BUZZER_DUTY 127
 #define LED_PIN 21
+
+// Buzzer pin routing: GPIO3 (D2) for the external oui-spy piezo, or GPIO4
+// (D3/A3) for the expansion board's passive buzzer when the chassis is present.
+// Set in setup() after dashboard_init().
+static int buzzerPin = BUZZER_PIN_EXTERNAL;
+#define BUZZER_PIN buzzerPin
 
 // Network configuration
 const char* AP_SSID = "foxhunter";
@@ -1075,8 +1080,10 @@ void setup() {
     Serial.println("Initializing...\n");
     
     // Probe for the expansion board OLED. Pins 5/6 are free in this mode, so
-    // this is safe and a no-op when no display is attached.
+    // this is safe and a no-op when no display is attached. Also route the
+    // buzzer to the chassis buzzer (GPIO4) when the expansion board is present.
     dashboard_init();
+    buzzerPin = dashboard_buzzer_pin();
     if (dashboard_present()) {
         dashboard_clear();
         dashRow(0);

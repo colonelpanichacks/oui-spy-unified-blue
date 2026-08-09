@@ -60,6 +60,10 @@ bool dashboard_init() {
 
 bool dashboard_present() { return displayPresent; }
 
+int dashboard_buzzer_pin() {
+    return displayPresent ? BUZZER_PIN_EXPANSION : BUZZER_PIN_EXTERNAL;
+}
+
 void dashboard_clear() {
     if (!displayPresent) return;
     u8g2.clearBuffer();

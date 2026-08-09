@@ -16,6 +16,17 @@
 // which is GPIO2 on the XIAO ESP32S3. Active low with the internal pull-up.
 #define DISPLAY_BUTTON_PIN 2
 
+// Buzzer hardware routing.
+// The oui-spy build drives an external piezo buzzer on GPIO3 (D2). The Seeed
+// Studio XIAO Expansion Board carries its own passive buzzer on GPIO4 (D3/A3).
+// When the expansion board is detected, buzzer output is routed to GPIO4
+// instead, so GPIO4 must not be used for the optional NeoPixel.
+#define BUZZER_PIN_EXTERNAL 3
+#define BUZZER_PIN_EXPANSION 4
+
+// Pin to drive the buzzer on for the currently attached hardware.
+int dashboard_buzzer_pin();
+
 // Probe the I2C bus and init the OLED when present. Returns true once a
 // display is attached. When absent, every other dashboard_* call is a safe
 // no-op, so firmware behavior is unchanged. Call this before any other

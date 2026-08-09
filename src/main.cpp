@@ -18,7 +18,11 @@
 #include "dashboard.h"
 
 // Hardware pins (shared across all modes)
-#define BUZZER_PIN 3
+// Buzzer is routed to the expansion board's buzzer (GPIO4) when the chassis is
+// attached, otherwise the external oui-spy piezo (GPIO3). Set in setup() after
+// dashboard_init().
+static int buzzerPin = BUZZER_PIN_EXTERNAL;
+#define BUZZER_PIN buzzerPin
 #define LED_PIN 21
 
 // Boot button (GPIO0) - held during boot to return to selector menu
@@ -570,6 +574,12 @@ void setup() {
     Serial.println("OUI SPY UNIFIED FIRMWARE v2.0");
     Serial.println("========================================");
     Serial.flush();
+    
+    // Detect the expansion board early so the buzzer is routed to the chassis
+    // buzzer (GPIO4) instead of the external piezo (GPIO3) from the first beep.
+    // This also decides whether the selector boots into its OLED mode menu.
+    dashboard_init();
+    buzzerPin = dashboard_buzzer_pin();
     
     // FIRST THING: Check if BOOT button (GPIO0) is being held
     // Hold BOOT for 1.5 seconds during startup to force selector menu.

@@ -100,11 +100,13 @@ Note: Mode IDs 3 is skipped intentionally.
 |------|----------|
 | 0 | BOOT button (hold 2s → return to selector) |
 | 2 / D1 | Expansion board USER button (active low, internal pull-up) |
-| 3 | Piezo buzzer (PWM, inverted logic) |
-| 4 | NeoPixel LED (optional) |
+| 3 | Buzzer (external oui-spy piezo, PWM; see note below) |
+| 4 / D3 | Expansion board buzzer (A3) when chassis present; else optional NeoPixel LED |
 | 5 / D4 | Serial1 TX — mesh UART to Heltec LoRa gateway (Sky Spy) |
 | 6 / D5 | Serial1 RX — mesh UART from Heltec LoRa gateway (Sky Spy) |
 | 21 | Onboard LED (inverted logic) |
+
+**Buzzer routing:** the oui-spy build drives an external piezo on GPIO3 (D2). The **Seeed Studio XIAO Expansion Board** carries its own passive buzzer on **GPIO4 (D3/A3)**. When the expansion board is detected (`dashboard_present()`), `dashboard_buzzer_pin()` returns GPIO4 and every mode routes its `BUZZER_PIN` there instead; GPIO4 then cannot drive the optional NeoPixel, so Detector and Flock-You skip NeoPixel init/animations while the chassis is present.
 
 ### Expansion Board OLED Dashboard
 
