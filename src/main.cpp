@@ -219,9 +219,11 @@ static void selectorBeep() {
 // menu as an alternative to the web UI:
 //   - TAP the USER button  -> advance the highlighted mode
 //   - HOLD the USER button -> boot the highlighted mode
-// The WiFi AP / web UI keeps working alongside it.
+// The WiFi AP / web UI keeps working alongside it. If the user does not
+// interact for MENU_TIMEOUT_MS, the menu resumes the last active mode.
 #define MENU_MODES_COUNT 4
 #define MENU_HOLD_BOOT_MS 1500
+#define MENU_TIMEOUT_MS 30000
 
 static const uint8_t MENU_MODES[MENU_MODES_COUNT] = { 1, 2, 4, 5 };
 static const char* MENU_LABELS[MENU_MODES_COUNT] = {
@@ -237,6 +239,7 @@ static bool menuDirty = true;
 static unsigned long menuBtnDown = 0;
 static bool menuBtnWasDown = false;
 static bool menuBtnLongDone = false;
+static unsigned long lastMenuActivity = 0;
 
 static void renderSelectorMenu(unsigned long now) {
     if (!dashboard_present()) return;
@@ -308,6 +311,50 @@ static void bootSelectedMode() {
     ESP.restart();
 }
 
+// Boots the last active mode (stored in NVS) when the OLED menu times out.
+// Returns true when it actually reboots, false if there is no last mode to
+// resume (in which case the menu keeps waiting).
+static bool resumeLastMode() {
+    prefs.begin("unified-mode", true);
+    int mode = prefs.getInt("mode", 0);
+    prefs.end();
+
+    // Valid modes are 1, 2, 4, 5 (mode 3 is intentionally skipped).
+    if (mode != 1 && mode != 2 && mode != 4 && mode != 5) {
+        Serial.println("[SELECTOR] Menu timeout - no last mode to resume, staying in menu");
+        Serial.flush();
+        return false;
+    }
+
+    // One-shot flag: the next boot goes straight into this mode, not the menu.
+    Preferences menuPrefs;
+    menuPrefs.begin("ouispy-menu", false);
+    menuPrefs.putBool("boot", true);
+    menuPrefs.end();
+
+    Serial.printf("[SELECTOR] Menu timeout - resuming last mode %d\n", mode);
+    Serial.flush();
+
+    // Confirmation feedback
+    for (int i = 0; i < 2; i++) {
+        playNote(800 + i * 150, 100);
+        delay(30);
+    }
+
+    if (dashboard_present()) {
+        dashboard_clear();
+        dashboard_set_cursor(0, MENU_BASELINE + 0 * MENU_ROW_STEP);
+        dashboard_printf("RESUMING MODE %d", mode);
+        dashboard_set_cursor(0, MENU_BASELINE + 2 * MENU_ROW_STEP);
+        dashboard_printf("LAST ACTIVE MODE");
+        dashboard_flush();
+        delay(1000);
+    }
+
+    ESP.restart();
+    return true;  // never reached
+}
+
 // Handles the USER button: tap advances, hold boots. Call every loop tick.
 static void handleSelectorMenu(unsigned long now) {
     if (!dashboard_present()) return;
@@ -333,6 +380,7 @@ static void handleSelectorMenu(unsigned long now) {
         if (!menuBtnLongDone && now - menuBtnDown >= 30) {
             menuIndex = (menuIndex + 1) % MENU_MODES_COUNT;
             menuDirty = true;
+            lastMenuActivity = now;
             Serial.printf("[SELECTOR] OLED menu highlight: %s (mode %d)\n",
                           MENU_LABELS[menuIndex], MENU_MODES[menuIndex]);
             Serial.flush();
@@ -401,6 +449,18 @@ static void startSelector() {
     if (dashboard_present()) {
         Serial.println("[SELECTOR] OLED detected - on-screen mode menu enabled");
         menuDirty = true;
+        // Position the highlight on the last active mode so the user can see
+        // what the menu will auto-boot into on timeout.
+        prefs.begin("unified-mode", true);
+        int lastMode = prefs.getInt("mode", 0);
+        prefs.end();
+        for (uint8_t i = 0; i < MENU_MODES_COUNT; i++) {
+            if (MENU_MODES[i] == lastMode) {
+                menuIndex = i;
+                break;
+            }
+        }
+        lastMenuActivity = millis();
         renderSelectorMenu(millis());
     }
     
@@ -762,6 +822,15 @@ void loop() {
             // OLED mode menu (when expansion board display present)
             handleSelectorMenu(millis());
             renderSelectorMenu(millis());
+            // Menu timeout: after 30s without interaction, resume the last mode
+            {
+                unsigned long now = millis();
+                if (dashboard_present() && now - lastMenuActivity >= MENU_TIMEOUT_MS) {
+                    if (!resumeLastMode()) {
+                        lastMenuActivity = now;  // no last mode - keep waiting
+                    }
+                }
+            }
             // LED breathing animation
             {
                 static unsigned long lastLed = 0;
