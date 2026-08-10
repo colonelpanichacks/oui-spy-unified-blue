@@ -948,6 +948,7 @@ enum DashPage {
     DASH_PAGE_SUMMARY = 0,
     DASH_PAGE_SIGNAL,
     DASH_PAGE_TARGET,
+    DASH_PAGE_QR,
     DASH_PAGE_COUNT
 };
 static uint8_t dashPage = DASH_PAGE_SUMMARY;
@@ -1052,6 +1053,19 @@ static void dashPageTarget(unsigned long now) {
     dashFooter(now);
 }
 
+static void dashPageQR(unsigned long now) {
+    char wifiStr[96];
+    snprintf(wifiStr, sizeof(wifiStr), "WIFI:T:WPA;S:%s;P:%s;;",
+             AP_SSID, AP_PASSWORD);
+    if (!dashboard_draw_qrcode(wifiStr)) {
+        dashRow(2);
+        dashboard_printf("SSID/PASS TOO LONG");
+        dashRow(3);
+        dashboard_printf("FOR QR CODE");
+        dashFooter(now);
+    }
+}
+
 void renderDashboard() {
     if (!dashboard_present()) return;
 
@@ -1064,6 +1078,7 @@ void renderDashboard() {
         case DASH_PAGE_SUMMARY: dashPageSummary(now); break;
         case DASH_PAGE_SIGNAL:  dashPageSignal(now); break;
         case DASH_PAGE_TARGET:  dashPageTarget(now); break;
+        case DASH_PAGE_QR:      dashPageQR(now); break;
         default:                dashPage = DASH_PAGE_SUMMARY; break;
     }
     dashboard_flush();

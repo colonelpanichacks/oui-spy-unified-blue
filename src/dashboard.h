@@ -59,6 +59,11 @@ void dashboard_printf(const char *fmt, ...);
 void dashboard_draw_hline(uint16_t x, uint16_t y, uint16_t w);
 void dashboard_draw_box(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
+// Generate a QR code for `text` and draw it centered on the display, scaled to
+// fit. Returns false (and draws nothing) when the text is too long to encode in
+// a QR that stays scannable on this 128x64 display.
+bool dashboard_draw_qrcode(const char *text);
+
 // Expansion board user button (active low, internal pull-up).
 void dashboard_button_init();
 // True once per fresh press (debounced, edge-triggered).

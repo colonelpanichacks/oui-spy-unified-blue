@@ -16,8 +16,10 @@
 #include "dashboard.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <Wire.h>
 #include <U8g2lib.h>
+#include "qrcode.h"
 
 static U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(
     U8G2_R0, U8X8_PIN_NONE, DISPLAY_SCL_PIN, DISPLAY_SDA_PIN);
@@ -107,6 +109,46 @@ void dashboard_draw_hline(uint16_t x, uint16_t y, uint16_t w) {
 void dashboard_draw_box(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     if (!displayPresent) return;
     u8g2.drawBox(x, y, w, h);
+}
+
+// QR version -> byte-mode data capacity at ECC_LOW (versions 1-3 are the ones
+// that render at a scannable 2 px/module on a 128x64 display).
+static const uint16_t QR_BYTE_CAPACITY[3] = { 17, 32, 53 };
+
+bool dashboard_draw_qrcode(const char *text) {
+    if (!displayPresent) return true;
+    if (!text) return false;
+
+    size_t len = strlen(text);
+    uint8_t version = 0;
+    uint16_t bufferSize = 0;
+    for (uint8_t v = 1; v <= 3; v++) {
+        if (len <= QR_BYTE_CAPACITY[v - 1]) {
+            version = v;
+            bufferSize = qrcode_getBufferSize(v);
+            break;
+        }
+    }
+    if (version == 0) return false;  // too long to stay scannable here
+
+    uint8_t qrcodeData[bufferSize];
+    QRCode qr;
+    qrcode_initText(&qr, qrcodeData, version, ECC_LOW, text);
+
+    int size = qr.size;          // modules per side (4*version + 17)
+    int scale = 2;               // px per module
+    int px = size * scale;
+    int x0 = (128 - px) / 2;
+    int y0 = (64 - px) / 2;
+
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            if (qrcode_getModule(&qr, (uint8_t)x, (uint8_t)y)) {
+                u8g2.drawBox(x0 + x * scale, y0 + y * scale, scale, scale);
+            }
+        }
+    }
+    return true;
 }
 
 void dashboard_button_init() {

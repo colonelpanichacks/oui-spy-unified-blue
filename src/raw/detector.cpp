@@ -2323,6 +2323,7 @@ enum DashPage {
     DASH_PAGE_LATEST,
     DASH_PAGE_FLEET,
     DASH_PAGE_FILTERS,
+    DASH_PAGE_QR,
     DASH_PAGE_COUNT
 };
 static uint8_t dashPage = DASH_PAGE_SUMMARY;
@@ -2363,6 +2364,10 @@ static void dashPageSummary(unsigned long now) {
     dashRow(5);
     dashboard_printf(currentMode == CONFIG_MODE ? "AP %s" : "WIFI OFF",
                      currentMode == CONFIG_MODE ? AP_SSID.c_str() : "");
+    if (currentMode == CONFIG_MODE) {
+        dashRow(6);
+        dashboard_printf("WEB 192.168.4.1");
+    }
     dashFooter(now);
 }
 
@@ -2469,6 +2474,19 @@ static void dashPageFilters(unsigned long now) {
     dashFooter(now);
 }
 
+static void dashPageQR(unsigned long now) {
+    char wifiStr[96];
+    snprintf(wifiStr, sizeof(wifiStr), "WIFI:T:WPA;S:%s;P:%s;;",
+             AP_SSID.c_str(), AP_PASSWORD.c_str());
+    if (!dashboard_draw_qrcode(wifiStr)) {
+        dashRow(2);
+        dashboard_printf("SSID/PASS TOO LONG");
+        dashRow(3);
+        dashboard_printf("FOR QR CODE");
+        dashFooter(now);
+    }
+}
+
 void renderDashboard() {
     if (!dashboard_present()) return;
 
@@ -2482,6 +2500,7 @@ void renderDashboard() {
         case DASH_PAGE_LATEST:  dashPageLatest(now); break;
         case DASH_PAGE_FLEET:   dashPageFleet(now); break;
         case DASH_PAGE_FILTERS: dashPageFilters(now); break;
+        case DASH_PAGE_QR:      dashPageQR(now); break;
         default:                dashPage = DASH_PAGE_SUMMARY; break;
     }
     dashboard_flush();
