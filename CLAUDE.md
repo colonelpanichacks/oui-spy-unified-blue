@@ -89,7 +89,7 @@ Note: Mode IDs 3 is skipped intentionally.
 - **LED:** GPIO 21 has inverted logic (LOW = ON). Optional NeoPixel on GPIO 4.
 - **Embedded HTML:** Stored as `PROGMEM` raw string literals with `%PLACEHOLDER%` template substitution.
 - **Device cooldowns:** Detection modes use timed cooldowns (3s or 30s) to prevent alert spam on the same device.
-- **Sky Spy differs:** Uses WiFi promiscuous mode (+ BLE passive scan) to capture ASTM F3411 Open Drone ID frames. The OpenDroneID parser is in `src/opendroneid.h/c` and `src/wifi.c`. Outputs full JSON on USB Serial (every detection) and compact human-readable messages on Serial1 pins 5/6 (throttled to 5s) for Heltec LoRa/Meshtastic mesh forwarding. Serial1 is harmless when no mesh hardware is connected.
+- **Sky Spy differs:** Uses WiFi promiscuous mode (+ BLE passive scan) to capture ASTM F3411 Open Drone ID frames. The OpenDroneID parser is in `src/opendroneid.h/c` and `src/wifi.c`. Outputs full JSON on USB Serial (every detection) AND a Serial1 line per detection whose format is gated by expansion board presence: headless builds send compact human-readable messages on pins 5/6 for the Heltec LoRa/Meshtastic gateway (unchanged legacy behavior); when the expansion board is detected the full JSON line is sent on the Grove UART (GPIO43 TX / GPIO44 RX) for a second XIAO ESP32-S3 running the `sky-spy-relay` firmware, which publishes it to MQTT.
 - **Expansion board dashboard:** Shared `src/dashboard.h` / `src/dashboard.cpp` module (U8g2) that auto-detects the expansion board OLED on I2C and no-ops when absent. Modes call `dashboard_init()` early, then draw with `dashboard_*()` helpers; the USER button advances multi-page dashboards.
 
 ### Hardware
@@ -102,8 +102,10 @@ Note: Mode IDs 3 is skipped intentionally.
 | 2 / D1 | Expansion board USER button (active low, internal pull-up) |
 | 3 | Buzzer (external oui-spy piezo, PWM; see note below) |
 | 4 / D3 | Expansion board buzzer (A3) when chassis present; else optional NeoPixel LED |
-| 5 / D4 | Serial1 TX — mesh UART to Heltec LoRa gateway (Sky Spy) |
-| 6 / D5 | Serial1 RX — mesh UART from Heltec LoRa gateway (Sky Spy) |
+| 5 / D4 | OLED I2C SDA (expansion board); Serial1 TX — mesh UART to Heltec LoRa gateway (Sky Spy, headless) |
+| 6 / D5 | OLED I2C SCL (expansion board); Serial1 RX — mesh UART from Heltec LoRa gateway (Sky Spy, headless) |
+| 43 / D6 | Serial1 TX — relay UART to sky-spy-relay (Sky Spy, expansion board present); Grove UART TX |
+| 44 / D7 | Serial1 RX — relay UART from sky-spy-relay (Sky Spy, expansion board present); Grove UART RX |
 | 21 | Onboard LED (inverted logic) |
 
 **Buzzer routing:** the oui-spy build drives an external piezo on GPIO3 (D2). The **Seeed Studio XIAO Expansion Board** carries its own passive buzzer on **GPIO4 (D3/A3)**. When the expansion board is detected (`dashboard_present()`), `dashboard_buzzer_pin()` returns GPIO4 and every mode routes its `BUZZER_PIN` there instead; GPIO4 then cannot drive the optional NeoPixel, so Detector and Flock-You skip NeoPixel init/animations while the chassis is present.
@@ -113,10 +115,18 @@ Note: Mode IDs 3 is skipped intentionally.
 The **Seeed Studio Expansion Base for XIAO** carries a 0.96" 128x64 SSD1306-family OLED (SSD1315) plus a USER button. Shared driver: `src/dashboard.h` / `src/dashboard.cpp` (uses U8g2, detected by I2C probe at `0x3C`/`0x3D`). On the XIAO ESP32S3 the OLED is on **GPIO5 (SDA) / GPIO6 (SCL)** and the button on **GPIO2**.
 
 - **Auto-detect, never required:** `dashboard_init()` probes the I2C bus; if nothing answers it releases the pins and every other `dashboard_*` call becomes a no-op, so modes behave exactly as before with no display.
-- **Pin conflict with Sky Spy mesh UART:** the OLED and the Serial1 mesh UART share GPIO5/6. Sky Spy calls `dashboard_init()` before `Serial1.begin()`; when the OLED is present it disables Serial1 (`send_mesh_message()` returns early). Headless builds keep full mesh forwarding.
+- **Sky Spy Serial1 output is gated by expansion board presence:** headless builds send compact mesh messages to the Heltec LoRa/Meshtastic gateway on GPIO5/6 (unchanged legacy behavior). When the OLED is present, GPIO5/6 belong to the display and Serial1 moves to the Grove UART pins GPIO43/44 (`dashboard_present()` selects the pins in `initializeSerial()`), carrying the full JSON detection stream for the `sky-spy-relay` board. `dashboard_init()` runs before `Serial1.begin()` to probe the OLED and pick the correct pins.
 - **Multi-page dashboards:** the USER button (GPIO2) advances pages. Sky Spy implements 4 pages (Summary, Latest Drone, Position, Fleet) via the `dashPage*()` render functions in `src/raw/skyspy.cpp`, redrawn at 1 Hz.
 - `dashboard_printf` uses U8g2's `setCursor(x, y)` where **y is the text baseline** (font `u8g2_font_5x7_tr` ascent = 6), so row `i` lives at `y = 6 + i*8`.
 - All draw/press calls are safe no-ops until `dashboard_init()` returns true. Call `dashboard_init()` before any other peripheral claims GPIO5/6.
+
+### Relay UART (Sky Spy)
+
+The Sky Spy relay UART (`Serial1`, 115200 8N1) lives on the expansion board's **Grove UART** connector, which is wired to **GPIO43 (TX / D6) and GPIO44 (RX / D7)** on the XIAO ESP32-S3. It carries one full JSON detection line per detection. A second XIAO ESP32-S3 running `sky-spy-relay` receives this stream and publishes it to MQTT (`skyspy/<topic>/raw` and `skyspy/<topic>/detections`). The Grove UART pins do NOT overlap the OLED on GPIO5/6, so the OLED dashboard and the relay stream coexist on the same board. This relay path is only active when the expansion board is detected; headless builds keep the legacy compact mesh messages on GPIO5/6.
+
+Note: GPIO43/44 are the same pins Flock-You uses for its hardware GPS (Seeed L76K GNSS). This is fine because Flock-You and Sky Spy are never active at the same time (mode selection reboots the board).
+
+Pins claimed by other hardware: GPIO0 (BOOT button), GPIO2 (USER button), GPIO3 (external buzzer), GPIO4 (expansion buzzer / optional NeoPixel), GPIO5/6 (OLED I2C), GPIO21 (onboard LED), GPIO43/44 (Sky Spy relay UART / Flock-You GPS). Free XIAO header pins: **D0 (GPIO1), D8 (GPIO7), D9 (GPIO8), D10 (GPIO9), D11 (GPIO42), D12 (GPIO41)**.
 
 ### Dependencies (managed by PlatformIO)
 

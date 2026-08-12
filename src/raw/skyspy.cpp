@@ -48,13 +48,22 @@ struct id_data {
   int      flag;
 };
 
-// Mesh UART on pins D4 (TX) and D5 (RX) for Heltec LoRa gateway
-const int SERIAL1_RX_PIN = 6;
-const int SERIAL1_TX_PIN = 5;
+// Serial1 UART pins. Two roles selected at runtime by expansion board presence:
+//  - Mesh mode (no expansion board): D4/D5 (GPIO5 TX / GPIO6 RX) carry compact
+//    human-readable messages to the Heltec LoRa / Meshtastic gateway.
+//  - Relay mode (expansion board present): the Grove UART on D6/D7 (GPIO43 TX /
+//    GPIO44 RX) carries the full JSON detection stream to a sky-spy-relay board
+//    that forwards it to MQTT. The OLED owns GPIO5/6 in this configuration, so
+//    Serial1 moves to the Grove UART pins instead.
+const int SERIAL1_RX_PIN = 6;   // mesh RX (D5)
+const int SERIAL1_TX_PIN = 5;   // mesh TX (D4)
+const int RELAY_RX_PIN = 44;    // Grove UART RX (D7)
+const int RELAY_TX_PIN = 43;    // Grove UART TX (D6)
 
 void callback(void *, wifi_promiscuous_pkt_type_t);
 void send_json_fast(const id_data *UAV);
 void send_mesh_message(const id_data *UAV);
+void send_mesh_startup(void);
 void buzzerTask(void *parameter);
 
 #define MAX_UAVS 8
@@ -215,14 +224,44 @@ void send_json_fast(const id_data *UAV) {
 }
 
 void send_mesh_message(const id_data *UAV) {
-  // Mesh UART is disabled while the expansion board OLED uses pins 5/6.
-  if (dashboard_present()) return;
+  // Expansion board present: the Grove UART (GPIO43/44) carries the full JSON
+  // detection stream to a sky-spy-relay board that publishes it to MQTT. This
+  // replaces the Heltec mesh forwarding because in a chassis we assume the
+  // detector is NOT wired to a Heltec V3 / Meshtastic node.
+  if (dashboard_present()) {
+    char mac_str[18];
+    snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+             UAV->mac[0], UAV->mac[1], UAV->mac[2],
+             UAV->mac[3], UAV->mac[4], UAV->mac[5]);
+    char json_msg[256];
+    snprintf(json_msg, sizeof(json_msg),
+      "{\"mac\":\"%s\",\"rssi\":%d,\"drone_lat\":%.6f,\"drone_long\":%.6f,\"drone_altitude\":%d,\"pilot_lat\":%.6f,\"pilot_long\":%.6f,\"basic_id\":\"%s\"}",
+      mac_str, UAV->rssi, UAV->lat_d, UAV->long_d, UAV->altitude_msl,
+      UAV->base_lat_d, UAV->base_long_d, UAV->uav_id);
+    Serial1.println(json_msg);
+    return;
+  }
 
+  // No expansion board: keep the original Heltec LoRa / Meshtastic mesh
+  // forwarding (compact messages on pins 5/6).
   static unsigned long lastSendTime = 0;
-  const unsigned long sendInterval = 5000;
+  static unsigned long droppedSinceLog = 0;
+  static unsigned long lastDropLog = 0;
+  const unsigned long sendInterval = 30000;
   const int MAX_MESH_SIZE = 230;
 
-  if (millis() - lastSendTime < sendInterval) return;
+  if (millis() - lastSendTime < sendInterval) {
+    // Gate closed: drop this frame for the mesh path, but report periodically
+    // so the throttle behavior is visible on USB.
+    droppedSinceLog++;
+    if (millis() - lastDropLog >= 10000) {
+      Serial.printf("[MESH] throttled: %lu frames dropped since last report, next send in %lu ms\n",
+                    droppedSinceLog, sendInterval - (millis() - lastSendTime));
+      droppedSinceLog = 0;
+      lastDropLog = millis();
+    }
+    return;
+  }
   lastSendTime = millis();
 
   char mac_str[18];
@@ -230,28 +269,59 @@ void send_mesh_message(const id_data *UAV) {
            UAV->mac[0], UAV->mac[1], UAV->mac[2],
            UAV->mac[3], UAV->mac[4], UAV->mac[5]);
 
+  // Uptime timestamp prefix so mesh message send times can be correlated
+  // against the Meshtastic notification arrival times.
+  unsigned long nowMs = millis();
+  char ts[12];
+  snprintf(ts, sizeof(ts), "[%02lu:%02lu:%02lu]",
+           nowMs / 3600000UL, nowMs / 60000UL % 60UL, nowMs / 1000UL % 60UL);
+
   char mesh_msg[MAX_MESH_SIZE];
   int msg_len = 0;
   msg_len += snprintf(mesh_msg + msg_len, sizeof(mesh_msg) - msg_len,
-                      "Drone: %s RSSI:%d", mac_str, UAV->rssi);
+                      "%s Drone: %s RSSI:%d", ts, mac_str, UAV->rssi);
   if (msg_len < MAX_MESH_SIZE && UAV->lat_d != 0.0 && UAV->long_d != 0.0) {
     msg_len += snprintf(mesh_msg + msg_len, sizeof(mesh_msg) - msg_len,
                         " https://maps.google.com/?q=%.6f,%.6f",
                         UAV->lat_d, UAV->long_d);
   }
+  // Pilot position folded into the same line so one detection window sends
+  // one Meshtastic message instead of two.
+  if (msg_len < MAX_MESH_SIZE && UAV->base_lat_d != 0.0 && UAV->base_long_d != 0.0) {
+    msg_len += snprintf(mesh_msg + msg_len, sizeof(mesh_msg) - msg_len,
+                        " Pilot: https://maps.google.com/?q=%.6f,%.6f",
+                        UAV->base_lat_d, UAV->base_long_d);
+  }
   if (Serial1.availableForWrite() >= msg_len) {
     Serial1.println(mesh_msg);
+    Serial.printf("[MESH] heltec send: %s\n", mesh_msg);
+  } else {
+    Serial.printf("[MESH] heltec UART full, send skipped (%d bytes needed)\n", msg_len);
   }
+}
 
-  vTaskDelay(pdMS_TO_TICKS(1000));
-  if (UAV->base_lat_d != 0.0 && UAV->base_long_d != 0.0) {
-    char pilot_msg[MAX_MESH_SIZE];
-    int pilot_len = snprintf(pilot_msg, sizeof(pilot_msg),
-                             "Pilot: https://maps.google.com/?q=%.6f,%.6f",
-                             UAV->base_lat_d, UAV->base_long_d);
-    if (Serial1.availableForWrite() >= pilot_len) {
-      Serial1.println(pilot_msg);
-    }
+// Announce boot over the Heltec / Meshtastic link so uptime on the channel
+// can be correlated with the USB log. Relay mode (expansion board) carries
+// JSON only, so the announcement is limited to the headless mesh path.
+// Single-shot: sent once shortly after boot.
+static bool startupSent = false;
+
+void send_mesh_startup(void) {
+  if (dashboard_present() || startupSent) return;
+  startupSent = true;
+
+  unsigned long nowMs = millis();
+  char ts[12];
+  snprintf(ts, sizeof(ts), "[%02lu:%02lu:%02lu]",
+           nowMs / 3600000UL, nowMs / 60000UL % 60UL, nowMs / 1000UL % 60UL);
+
+  char msg[64];
+  int len = snprintf(msg, sizeof(msg), "%s OUI-SPY SkySpy online (headless)", ts);
+  if (Serial1.availableForWrite() >= len) {
+    Serial1.println(msg);
+    Serial.printf("[MESH] startup sent: %s\n", msg);
+  } else {
+    Serial.printf("[MESH] startup skipped (UART full, %d bytes needed)\n", len);
   }
 }
 
@@ -407,16 +477,24 @@ void printerTask(void *param) {
 void initializeSerial() {
   Serial.begin(115200);
 
-  // Probe for the expansion board OLED before touching Serial1. The display
-  // lives on the same two pins (GPIO5/6) as the mesh UART, so when it is
-  // present those pins belong to the I2C bus and mesh forwarding is disabled.
+  // Probe for the expansion board OLED before selecting the Serial1 pins. The
+  // OLED owns GPIO5/6, so when it is present Serial1 moves to the Grove UART
+  // pins (GPIO43/44) and carries the JSON relay stream. Without the expansion
+  // board, Serial1 stays on pins 5/6 for the Heltec LoRa / Meshtastic mesh.
   dashboard_init();
 
+  int rxPin = dashboard_present() ? RELAY_RX_PIN : SERIAL1_RX_PIN;
+  int txPin = dashboard_present() ? RELAY_TX_PIN : SERIAL1_TX_PIN;
+  // Enlarge the TX ring buffer: the timestamped drone+pilot line is ~147 bytes
+  // and must fit in one availableForWrite() window. Must be set before begin().
+  Serial1.setTxBufferSize(512);
+  Serial1.begin(115200, SERIAL_8N1, rxPin, txPin);
+  Serial.printf("[SKY-SPY] Expansion board detected: %s\n", dashboard_present() ? "YES" : "NO");
   if (dashboard_present()) {
-    Serial.println("[SKY-SPY] OLED detected - Serial1 mesh UART disabled (pins 5/6 shared with display)");
-    return;
+    Serial.printf("[SKY-SPY] Relay mode - JSON stream on Grove UART TX=%d RX=%d\n", txPin, rxPin);
+  } else {
+    Serial.printf("[SKY-SPY] Headless mesh mode - compact messages to Heltec on Serial1 TX=%d RX=%d\n", txPin, rxPin);
   }
-  Serial1.begin(115200, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN);
 }
 
 void initializeBuzzer() {
@@ -720,6 +798,10 @@ void setup() {
 
 void loop() {
   unsigned long current_millis = millis();
+
+  // Announce boot over the Heltec / Meshtastic link on a retry schedule
+  // (headless only); cheap no-op after the last scheduled attempt.
+  send_mesh_startup();
 
   // Expansion board button advances the dashboard page (display only)
   if (dashboard_present() && dashboard_button_pressed()) {
