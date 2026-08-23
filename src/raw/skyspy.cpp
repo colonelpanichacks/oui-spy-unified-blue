@@ -60,6 +60,13 @@ const int SERIAL1_TX_PIN = 5;   // mesh TX (D4)
 const int RELAY_RX_PIN = 44;    // Grove UART RX (D7)
 const int RELAY_TX_PIN = 43;    // Grove UART TX (D6)
 
+// JSON lines pushed out the Grove UART to the sky-spy-relay board. Surfaced on
+// dashboard page 1 so the relay link can be diagnosed from the OLED alone: a
+// counter stuck at 0 while drones are being detected means the relay branch is
+// not running, whereas a climbing counter with no MQTT traffic puts the fault
+// in the cable or on the relay board.
+static unsigned long relayTxCount = 0;
+
 void callback(void *, wifi_promiscuous_pkt_type_t);
 void send_json_fast(const id_data *UAV);
 void send_mesh_message(const id_data *UAV);
@@ -239,6 +246,7 @@ void send_mesh_message(const id_data *UAV) {
       mac_str, UAV->rssi, UAV->lat_d, UAV->long_d, UAV->altitude_msl,
       UAV->base_lat_d, UAV->base_long_d, UAV->uav_id);
     Serial1.println(json_msg);
+    relayTxCount++;
     return;
   }
 
@@ -613,6 +621,8 @@ static void dashPageSummary(const id_data *best, int activeCount, int totalCount
   }
   dashRow(5);
   dashboard_printf("WIFI+BLE PASSIVE");
+  dashRow(6);
+  dashboard_printf("RELAY TX:%lu", relayTxCount);
   dashFooter(now);
 }
 
