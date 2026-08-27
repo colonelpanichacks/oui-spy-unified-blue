@@ -1,7 +1,7 @@
 {
   "name": "OUI-SPY Unified Blue",
   "version": "1.0",
-  "new_install_prompt_erase": false,
+  "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
