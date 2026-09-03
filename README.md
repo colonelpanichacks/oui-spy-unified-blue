@@ -2,7 +2,7 @@
 
 Multi-mode surveillance detection and BLE intelligence firmware for the **Seeed Studio XIAO ESP32-S3**.
 
-One device. Six firmware modes. Select from a boot menu, reboot, and go.
+One device. Seven firmware modes. Select from a boot menu, reboot, and go.
 
 ---
 
@@ -156,6 +156,53 @@ Passive BLE advertising capture. Listens on the three BLE advertising channels (
 - Vendor identify against the OUI Database (same list surfaced by PCAP and Detector)
 - The USB PCAP binary streaming path (previously extcap / pipe helpers) has been removed — ESP32-S3 Arduino USB CDC is not reliable for high-rate binary streaming. Use the dashboard **Save PCAP** button instead; the download parses cleanly in Wireshark regardless of capture rate.
 
+### Mode 7: Visual Scout
+
+Multi-sensor Flock camera detection that catches both RF-transmitting cameras (via GPS + DeFlock database) and RF-silent cameras (via MJPEG stream + Raspberry Pi 5 + Google Coral TPU visual inference). A bridge between passive RF detection and active computer vision.
+
+**Hardware requirements:**
+- GPS module (9600 baud NMEA) on GPIO 44 (RX) / 43 (TX)
+- OV2640 camera (via standard ESP32-S3 WROOM FPC breakout — adjust `CAM_PIN_*` in firmware for your PCB)
+- Raspberry Pi 5 (optional for visual detection; operates autonomously without Pi if only GPS proximity alerts are desired)
+- Google Coral Edge TPU (USB or M.2 via Pi HAT — optional, falls back to CPU YOLOv8)
+
+**Detection methods:**
+
+1. **GPS proximity alerting** — Haversine distance check every 2 seconds against downloaded Flock camera locations from the DeFlock database (~20–30K cameras filtered from ~117K total ALPR nodes). Buzzer + LED alert within configurable radius (default 150 m).
+
+2. **Visual detection** — MJPEG stream from ESP32 OV2640 flows to a Raspberry Pi running YOLOv8 (CPU or Coral TPU accelerated). Every detection is saved with GPS metadata and frame-level annotations to the Pi's NVMe SSD as training data. Supports crowd-source uploads to a central server for collaborative model retraining.
+
+**Deflock database sync:**
+- **Preferred path:** Pi proxy (`pi/deflock_downloader.py`) — downloads full camera list from `data.dontgetflocked.com`, filters to Flock Safety only, serves compact binary at `http://<pi>:5000/flock_cameras.bin` for the ESP32 to fetch (fastest, ~30 KB payload)
+- **Fallback:** ESP32 fetches CDN tiles directly from `cdn.deflock.me` (slower, on-device filtering to Flock Safety brand)
+
+**Features:**
+
+- AP: `ouispy-scout` (open by default; set password via web UI if desired)
+- Dashboard at `http://192.168.4.1` — configure Pi proxy URL, alert radius, WiFi STA credentials for direct CDN sync, view GPS status, trigger manual DB sync
+- MJPEG stream on port 81 (`http://192.168.4.1:81/stream`) — real-time camera feed for the Pi consumer via `cv2.VideoCapture` or `requests` streaming
+- GPS endpoint at `http://192.168.4.1:81/gps` — JSON current position for synchronization with visual detections
+- Compact binary DB in LittleFS: `uint32 camera count` + `N × {float32 lat, float32 lon}`
+- Dedicated FreeRTOS task for MJPEG streaming (core 0), GPS parse on loop (core 1)
+
+**Raspberry Pi pipeline (`pi/`):**
+
+- **`pi/deflock_downloader.py`** — HTTP service on port 5000. Downloads from `data.dontgetflocked.com/cameras-us.json` (primary, fastest), falls back to `data.dontgetflocked.com/cameras.geojson.gz` or `cdn.deflock.me` tiles. Re-syncs every 6 hours. Serves `/flock_cameras.bin` (compact binary), `/flock_cameras.geojson` (for QGIS), `/status` (JSON), and accepts `POST /sync` for manual trigger.
+
+- **`pi/flock_detector.py`** — MJPEG stream consumer. Runs YOLOv8 inference (CPU baseline) or Coral Edge TPU compiled `.tflite` model via `pycoral`. Saves annotated frames + JSON metadata sidecars to NVMe SSD (`/mnt/ssd/training_data/YYYYMMDD/`). Optional background upload thread for crowd-source training data servers.
+
+- **`pi/SETUP.md`** — Full guide: NVMe mount, Coral Edge TPU runtime installation, `edgetpu_compiler` model conversion, systemd service setup.
+
+**Workflow:**
+```
+Driving
+  ├─ ESP32 GPS alert on known Flock cameras (RF-silent or RF-on)
+  └─ ESP32 MJPEG → Pi → Coral TPU detection of new/unknown cameras
+                        ├─ Save frames + GPS to SSD
+                        ├─ Optional: upload to crowd-source server
+                        └─ Retrain shared model
+```
+
 ---
 
 ## WiFi Access Points
@@ -174,6 +221,7 @@ Each mode creates its own AP. When switching modes, **your phone/laptop will aut
 | **PCAP** | `ouispy-pcap` | `packetsniffer` | `192.168.4.1` | Configurable from mode dashboard, saved to NVS. Hop mode disables the AP — radio is dedicated to sniffing; use USB-CDC then |
 | **Sky Spy** | *none* | — | — | No AP — passive scanner, serial JSON output only |
 | **BLE Sniff** | `ouispy-blesniff` | `sniffuntothem` | `192.168.4.1` | Configurable from mode dashboard, saved to NVS |
+| **Visual Scout** | `ouispy-scout` | *(open)* | `192.168.4.1` | GPS + Deflock DB proximity alerts + MJPEG camera stream for Pi/Coral; set password & configure Pi proxy URL from dashboard |
 
 > **Tip:** If you can't reach the dashboard after a mode switch, check which WiFi network you're connected to. Your device may have auto-joined a previously saved OUI-SPY AP from a different mode.
 
