@@ -53,6 +53,7 @@
 #include <ArduinoJson.h>
 #include <TinyGPSPlus.h>
 #include "esp_camera.h"
+#include "sensor.h"
 #include "modes.h"
 
 // ============================================================================
@@ -129,6 +130,7 @@ struct VSConfig {
     char  staPass[64]     = "";
     float alertRadiusM    = ALERT_RADIUS_M_DEFAULT;
     bool  cameraEnabled   = true;
+    bool  cameraHasIrCut  = true;       // true: IR-cut lens, false: no IR-cut lens
     bool  buzzerEnabled   = true;
 };
 static VSConfig cfg;
@@ -202,6 +204,7 @@ static void loadConfig() {
         strlcpy(cfg.staPass,    doc["sta_pass"]    | "", sizeof(cfg.staPass));
         cfg.alertRadiusM  = doc["radius_m"]        | ALERT_RADIUS_M_DEFAULT;
         cfg.cameraEnabled = doc["cam_on"]          | true;
+        cfg.cameraHasIrCut = doc["cam_ir_cut"]     | true;
         cfg.buzzerEnabled = doc["buz_on"]          | true;
     }
     f.close();
@@ -216,6 +219,7 @@ static void saveConfig() {
     doc["sta_pass"] = cfg.staPass;
     doc["radius_m"] = cfg.alertRadiusM;
     doc["cam_on"]   = cfg.cameraEnabled;
+    doc["cam_ir_cut"] = cfg.cameraHasIrCut;
     doc["buz_on"]   = cfg.buzzerEnabled;
     serializeJson(doc, f);
     f.close();
@@ -450,6 +454,28 @@ static void startSync() {
 // Camera init
 // ============================================================================
 
+static void applyCameraProfile() {
+    sensor_t* s = esp_camera_sensor_get();
+    if (!s) return;
+    if (cfg.cameraHasIrCut) {
+        s->set_whitebal(s, 1);
+        s->set_awb_gain(s, 1);
+        s->set_special_effect(s, 0);   // none
+        s->set_saturation(s, 0);
+        s->set_brightness(s, 0);
+        s->set_contrast(s, 0);
+    } else {
+        // No IR-cut lenses run better at night with less color processing.
+        s->set_whitebal(s, 0);
+        s->set_awb_gain(s, 0);
+        s->set_special_effect(s, 2);   // grayscale
+        s->set_saturation(s, -2);
+        s->set_brightness(s, -1);
+        s->set_contrast(s, 1);
+    }
+    Serial.printf("[VS] Camera profile: %s\n", cfg.cameraHasIrCut ? "IR-cut" : "No IR-cut");
+}
+
 static bool initCamera() {
     camera_config_t c = {};
     c.ledc_channel  = LEDC_CHANNEL_1;
@@ -479,6 +505,8 @@ static bool initCamera() {
     }
     esp_err_t err = esp_camera_init(&c);
     if (err != ESP_OK) { Serial.printf("[VS] Camera init err: 0x%x\n", err); return false; }
+    applyCameraProfile();
+
     Serial.println("[VS] Camera OK");
     return true;
 }
@@ -570,6 +598,8 @@ h2{font-size:11px;margin:10px 0 4px;text-transform:uppercase;opacity:.7}
 input[type=text],input[type=password],input[type=number]{
   width:100%;padding:5px;background:#000;color:#0f0;border:1px solid #0f0;
   font:12px monospace;margin-bottom:6px}
+select{width:100%;padding:5px;background:#000;color:#0f0;border:1px solid #0f0;
+  font:12px monospace;margin-bottom:6px}
 button{padding:5px 12px;background:#0f0;color:#000;border:none;font:bold 11px monospace;
   cursor:pointer;margin:2px 4px 2px 0}
 button:active{background:#fff}
@@ -592,6 +622,12 @@ button:active{background:#fff}
 
 <h2>Alert Radius (metres)</h2>
 <input type="number" id="radius_m" min="10" max="5000" step="10" value="150">
+
+<h2>Camera Lens Profile</h2>
+<select id="cam_ir_cut">
+  <option value="1">IR-cut lens (daylight color, recommended default)</option>
+  <option value="0">No IR-cut lens (better NIR flash visibility at night)</option>
+</select>
 
 <div>
   <button onclick="save()">SAVE</button>
@@ -620,12 +656,13 @@ function poll(){
         ? '&#x2705; Stream: <a href="http://'+location.hostname+':81/stream" target="_blank" style="color:#0f0">:81/stream</a>'
           +' &bull; <a href="http://'+location.hostname+':81/snap" target="_blank" style="color:#0f0">snapshot</a>'
           +' &bull; GPS JSON: <a href="http://'+location.hostname+':81/gps" target="_blank" style="color:#0f0">:81/gps</a>'
+          +' &bull; Lens profile: '+(d.cam_ir_cut?'IR-cut':'No IR-cut')
         : '<span class="err">Camera not detected — check CAM_PIN_* wiring</span>';
   }).catch(()=>{});
 }
 function save(){
   var b=new URLSearchParams();
-  ['pi_proxy','sta_ssid','sta_pass','radius_m'].forEach(k=>b.append(k,document.getElementById(k).value));
+  ['pi_proxy','sta_ssid','sta_pass','radius_m','cam_ir_cut'].forEach(k=>b.append(k,document.getElementById(k).value));
   fetch('/saveconfig',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b})
     .then(r=>r.json()).then(d=>document.getElementById('msg').textContent=d.ok?'Saved!':'Error');
 }
@@ -637,6 +674,7 @@ fetch('/cfgvals').then(r=>r.json()).then(d=>{
   document.getElementById('pi_proxy').value=d.pi_proxy||'';
   document.getElementById('sta_ssid').value=d.sta_ssid||'';
   document.getElementById('radius_m').value=d.radius_m||150;
+  document.getElementById('cam_ir_cut').value=d.cam_ir_cut?'1':'0';
 });
 setInterval(poll,3000); poll();
 </script></body></html>)html";
@@ -667,6 +705,7 @@ static void setupWebServer() {
         doc["last_alert_dist_m"] = lastAlertDistM;
         doc["last_alert_idx"]    = lastAlertIdx;
         doc["camera_ok"]         = cameraOK;
+        doc["cam_ir_cut"]        = cfg.cameraHasIrCut;
         String out; serializeJson(doc, out);
         req->send(200, "application/json", out);
     });
@@ -676,6 +715,7 @@ static void setupWebServer() {
         doc["pi_proxy"] = cfg.piProxyURL;
         doc["sta_ssid"] = cfg.staSSID;
         doc["radius_m"] = cfg.alertRadiusM;
+        doc["cam_ir_cut"] = cfg.cameraHasIrCut;
         String out; serializeJson(doc, out);
         req->send(200, "application/json", out);
     });
@@ -689,7 +729,10 @@ static void setupWebServer() {
             strlcpy(cfg.staPass, req->getParam("sta_pass", true)->value().c_str(), sizeof(cfg.staPass));
         if (req->hasParam("radius_m", true))
             cfg.alertRadiusM = req->getParam("radius_m", true)->value().toFloat();
+        if (req->hasParam("cam_ir_cut", true))
+            cfg.cameraHasIrCut = req->getParam("cam_ir_cut", true)->value() != "0";
         saveConfig();
+        if (cameraOK) applyCameraProfile();
         req->send(200, "application/json", "{\"ok\":true}");
     });
 
@@ -783,7 +826,7 @@ void loop() {
     }
 }
 
-void stop() {
+void modeStop() {
     if (mjpegTaskHandle) { vTaskDelete(mjpegTaskHandle); mjpegTaskHandle = nullptr; }
     esp_camera_deinit();
     gpsSerial.end();

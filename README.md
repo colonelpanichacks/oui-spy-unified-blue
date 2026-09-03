@@ -180,6 +180,7 @@ Multi-sensor Flock camera detection that catches both RF-transmitting cameras (v
 
 - AP: `ouispy-scout` (open by default; set password via web UI if desired)
 - Dashboard at `http://192.168.4.1` — configure Pi proxy URL, alert radius, WiFi STA credentials for direct CDN sync, view GPS status, trigger manual DB sync
+- Camera lens profile toggle in dashboard: **IR-cut** (default daylight color) vs **No IR-cut** (night/NIR flash visibility profile)
 - MJPEG stream on port 81 (`http://192.168.4.1:81/stream`) — real-time camera feed for the Pi consumer via `cv2.VideoCapture` or `requests` streaming
 - GPS endpoint at `http://192.168.4.1:81/gps` — JSON current position for synchronization with visual detections
 - Compact binary DB in LittleFS: `uint32 camera count` + `N × {float32 lat, float32 lon}`

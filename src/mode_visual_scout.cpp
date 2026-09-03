@@ -29,7 +29,7 @@
 
 #define setup  visual_scout_ns_setup
 #define loop   visual_scout_ns_loop
-#define stop   visual_scout_ns_stop
+#define modeStop visual_scout_ns_stop
 
 namespace {
 #include "raw/visual_scout.cpp"
@@ -37,7 +37,7 @@ namespace {
 
 #undef setup
 #undef loop
-#undef stop
+#undef modeStop
 
 void visual_scout_setup() {
     ouispy_mode_preamble("MODE 7 VISUAL SCOUT");
