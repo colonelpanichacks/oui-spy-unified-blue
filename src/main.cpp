@@ -147,6 +147,7 @@ body{margin:0;height:100vh;height:-webkit-fill-available;font-family:monospace;b
 <div class="i" onclick="go(4)"><div class="n">PCAP</div><div class="d">AP: ouispy-pcap &bull; Passive WiFi capture + USB-CDC</div></div>
 <div class="i" onclick="go(5)"><div class="n">SKY SPY</div><div class="d">No AP &bull; Drone Remote ID monitor</div></div>
 <div class="i" onclick="go(6)"><div class="n">BLE SNIFF</div><div class="d">AP: ouispy-blesniff &bull; Passive BLE adverts + USB-CDC</div></div>
+<div class="i" onclick="go(7)"><div class="n">VISUAL SCOUT</div><div class="d">AP: ouispy-scout &bull; GPS + Deflock DB + Camera stream for Pi/Coral</div></div>
 </div>
 <div class="ap">
 <input type="text" id="ap_ssid" placeholder="SSID" maxlength="32" value="%SSID%">
@@ -164,7 +165,7 @@ body{margin:0;height:100vh;height:-webkit-fill-available;font-family:monospace;b
 </div>
 </div>
 <script>
-var info={1:{t:'DETECTOR',s:'AP: snoopuntothem / astheysnoopuntous. Scans for BLE devices and alerts when specific targets are detected. Configure OUI prefixes and MAC addresses to monitor.'},2:{t:'FOXHUNTER',s:'AP: foxhunter / foxhunter. Track down a specific device using RSSI signal strength. Beeps get faster as you get closer to your target.'},3:{t:'FLOCK-YOU WIFI',s:'No AP - USB-CDC only. Passive 2.4 GHz promiscuous-mode detector for Flock Safety. Matches addr1/addr2 OUIs and the DeFlockJoplin wildcard-probe signature. Streams Flask-compatible JSON over USB and persists to SPIFFS; pull history via the CMD:DUMP_PREV protocol.'},4:{t:'PCAP',s:'AP: ouispy-pcap / packetsniffer. Passive WiFi packet capture. Wireshark-ready PCAP over USB-CDC, live web dashboard at http://192.168.4.1, channel hop across the full 2.4 GHz band, in-PSRAM session PCAP for browser download.'},5:{t:'SKY SPY',s:'No AP - serial JSON out. Monitors for FAA Remote ID broadcasts from drones. Detects Open Drone ID signals over WiFi and BLE.'},6:{t:'BLE SNIFF',s:'AP: ouispy-blesniff / sniffuntothem. Passive BLE advertising capture (channels 37/38/39). Wireshark-ready PCAP (linktype 256) over USB-CDC + live dashboard, 2 MB in-PSRAM session PCAP for browser download.'}};
+var info={1:{t:'DETECTOR',s:'AP: snoopuntothem / astheysnoopuntous. Scans for BLE devices and alerts when specific targets are detected. Configure OUI prefixes and MAC addresses to monitor.'},2:{t:'FOXHUNTER',s:'AP: foxhunter / foxhunter. Track down a specific device using RSSI signal strength. Beeps get faster as you get closer to your target.'},3:{t:'FLOCK-YOU WIFI',s:'No AP - USB-CDC only. Passive 2.4 GHz promiscuous-mode detector for Flock Safety. Matches addr1/addr2 OUIs and the DeFlockJoplin wildcard-probe signature. Streams Flask-compatible JSON over USB and persists to SPIFFS; pull history via the CMD:DUMP_PREV protocol.'},4:{t:'PCAP',s:'AP: ouispy-pcap / packetsniffer. Passive WiFi packet capture. Wireshark-ready PCAP over USB-CDC, live web dashboard at http://192.168.4.1, channel hop across the full 2.4 GHz band, in-PSRAM session PCAP for browser download.'},5:{t:'SKY SPY',s:'No AP - serial JSON out. Monitors for FAA Remote ID broadcasts from drones. Detects Open Drone ID signals over WiFi and BLE.'},6:{t:'BLE SNIFF',s:'AP: ouispy-blesniff / sniffuntothem. Passive BLE advertising capture (channels 37/38/39). Wireshark-ready PCAP (linktype 256) over USB-CDC + live dashboard, 2 MB in-PSRAM session PCAP for browser download.'},7:{t:'VISUAL SCOUT',s:'AP: ouispy-scout (open). GPS + Deflock camera DB proximity alerts. Streams OV2640 camera MJPEG on :81/stream for a Raspberry Pi 5 + Coral TPU running YOLOv8 visual detection. Configure Pi proxy URL at http://192.168.4.1 then press SYNC DB.'}};
 function go(m){var d=info[m];document.getElementById('yt').textContent=d.t;document.getElementById('ys').textContent=d.s;document.getElementById('x').style.display='none';document.getElementById('y').style.display='flex';fetch('/select?mode='+m)}
 function saveAP(){
 var s=document.getElementById('ap_ssid').value.trim();
@@ -320,7 +321,7 @@ static void startSelector() {
     selectorServer.on("/select", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (request->hasParam("mode")) {
             int mode = request->getParam("mode")->value().toInt();
-            if (mode >= 1 && mode <= 6) {
+            if (mode >= 1 && mode <= 7) {
                 Serial.printf("[OUI-SPY] USER SELECTED MODE %d - Storing and rebooting\n", mode);
                 
                 // Clear reset flag so double-reset detection doesn't override on next boot
@@ -431,8 +432,9 @@ static void startSelector() {
             case 4: ok = p.begin("pcap-mode", false); if (ok) { p.remove("apssid"); p.remove("appass"); p.end(); } break;
             case 5: /* mode 5 has no AP */ ok = true; break;
             case 6: ok = p.begin("blesniff", false); if (ok) { p.remove("ap_ssid"); p.remove("ap_pass"); p.end(); } break;
+            case 7: ok = p.begin("visual-scout", false); if (ok) { p.clear(); p.end(); } break;
             default:
-                request->send(400, "text/plain", "m must be 1-6");
+                request->send(400, "text/plain", "m must be 1-7");
                 return;
         }
         Serial.printf("[OUI-SPY] /reset_mode m=%d ok=%d\n", m, ok ? 1 : 0);
@@ -533,7 +535,7 @@ void setup() {
         Serial.flush();
 
         // Validate mode range
-        if (currentMode < 0 || currentMode > 6) {
+        if (currentMode < 0 || currentMode > 7) {
             Serial.printf("[OUI-SPY] Invalid stored mode %d, defaulting to selector\n", currentMode);
             currentMode = 0;
         }
@@ -596,6 +598,11 @@ void setup() {
         Serial.println("[OUI-SPY] AP will be: ouispy-blesniff  (dashboard http://192.168.4.1)");
         Serial.flush();
         blesniff_setup();
+    } else if (currentMode == 7) {
+        Serial.println("[OUI-SPY] >>> STARTING VISUAL SCOUT (mode 7) <<<");
+        Serial.println("[OUI-SPY] AP: ouispy-scout  config http://192.168.4.1  stream :81/stream");
+        Serial.flush();
+        visual_scout_setup();
     } else {
         Serial.printf("[OUI-SPY] ERROR: Unknown mode %d, defaulting to selector\n", currentMode);
         Serial.flush();
@@ -654,6 +661,7 @@ void loop() {
         case 4: pcap_loop(); break;
         case 5: skyspy_loop(); break;
         case 6: blesniff_loop(); break;
+        case 7: visual_scout_loop(); break;
         default:
             // Selector mode - web server handles everything
             selectorDNS.processNextRequest();  // Captive portal DNS
