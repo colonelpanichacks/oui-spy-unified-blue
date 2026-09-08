@@ -153,45 +153,7 @@
     max-width: 520px;
   }
 
-  /* ─── CHANNEL PICKER + FLASH BUTTON ─── */
-  .channel-pick {
-    display: flex; flex-wrap: wrap; gap: 6px;
-    margin: 10px 0 12px;
-  }
-  .channel-pick label {
-    flex: 1 1 220px;
-    display: flex; gap: 10px; align-items: flex-start;
-    padding: 10px 12px;
-    border: 1px solid rgba(0,255,102,0.25);
-    background: rgba(0,255,102,0.02);
-    cursor: pointer;
-    color: var(--text);
-    font-size: 13px;
-    line-height: 1.5;
-    transition: border-color 0.15s ease, background 0.15s ease;
-  }
-  .channel-pick label:hover { border-color: var(--green); }
-  .channel-pick label.on { border-color: var(--green); background: rgba(0,255,102,0.06); }
-  .channel-pick label.on.dev { border-color: var(--amber); background: rgba(255,176,0,0.06); }
-  .channel-pick input[type=radio] { margin: 3px 0 0 0; accent-color: var(--green); flex-shrink: 0; }
-  .channel-pick .chan-name {
-    color: var(--green); font-weight: 500; letter-spacing: 2px;
-    text-transform: uppercase; font-size: 12px;
-  }
-  .channel-pick label.dev .chan-name { color: var(--amber); }
-  .channel-pick .chan-desc { color: var(--muted); font-size: 12px; }
-  .dev-warn {
-    display: none;
-    color: var(--amber);
-    padding: 10px 14px;
-    border: 1px dashed var(--amber);
-    background: rgba(255,176,0,0.04);
-    margin: 8px 0;
-    font-size: 12px;
-    max-width: 520px;
-    text-align: left;
-  }
-  .dev-warn.on { display: block; }
+  /* ─── FLASH BUTTON ─── */
   .dev-warn b { color: var(--amber); }
   esp-web-install-button { display: inline-block; margin-top: 10px; }
   esp-web-install-button::part(button) {
@@ -333,29 +295,8 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
 
     <div class="step">
       <div class="n">2</div>
-      <h3>Pick a channel, then click Flash</h3>
-      <p>Chrome, Edge, or Opera on desktop. Your browser will show a list of serial ports — pick the XIAO. The install takes about 30 seconds.</p>
-
-      <div class="channel-pick" role="radiogroup" aria-label="Firmware channel">
-        <label class="on" data-chan="stable">
-          <input type="radio" name="chan" value="stable" checked>
-          <span>
-            <span class="chan-name">Stable / Blue</span><br>
-            <span class="chan-desc">The tested build. Four modes: Detector, Foxhunter, Flock-You WiFi, Sky Spy. What you want unless you're testing new features.</span>
-          </span>
-        </label>
-        <label class="dev" data-chan="dev">
-          <input type="radio" name="chan" value="dev">
-          <span>
-            <span class="chan-name">Dev / Experimental</span><br>
-            <span class="chan-desc">Cutting-edge builds from the dev branch — includes the new <b>PCAP</b> capture firmware and any work-in-progress modes. Expect bugs.</span>
-          </span>
-        </label>
-      </div>
-
-      <div class="dev-warn" id="devWarn">
-        <b>Heads up:</b> the dev channel ships unreviewed builds. Features may be broken, config layouts may change, and it can wipe your NVS on install. Only use it if you want to test the latest work — and don't be surprised if you have to reflash Stable afterward.
-      </div>
+      <h3>Click Flash</h3>
+      <p>Chrome, Edge, or Opera on desktop. Your browser will show a list of serial ports — pick the XIAO. The install takes about 30 seconds and wipes the board clean before installing.</p>
 
       <esp-web-install-button id="flashBtn" manifest="./manifest.json">
         <button slot="activate">&gt;&gt; CONNECT &amp; FLASH &lt;&lt;</button>
@@ -493,22 +434,5 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
 </main>
 
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
-<script>
-  (function () {
-    const btn  = document.getElementById('flashBtn');
-    const warn = document.getElementById('devWarn');
-    const manifests = { stable: './manifest.json', dev: './manifest-dev.json' };
-    document.querySelectorAll('.channel-pick input[name="chan"]').forEach(function (r) {
-      r.addEventListener('change', function () {
-        const chan = r.value;
-        btn.setAttribute('manifest', manifests[chan] || manifests.stable);
-        warn.classList.toggle('on', chan === 'dev');
-        document.querySelectorAll('.channel-pick label').forEach(function (l) {
-          l.classList.toggle('on', l.dataset.chan === chan);
-        });
-      });
-    });
-  })();
-</script>
 </body>
 </html>
