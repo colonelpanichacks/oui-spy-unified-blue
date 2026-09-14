@@ -6,3 +6,8 @@
 # firmware/*.bin
 __pycache__/
 .venv/
+.claude/
+CLAUDE.md
+AGENTS.md
+.specstory/
+.kimi/
