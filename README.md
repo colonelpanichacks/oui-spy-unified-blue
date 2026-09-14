@@ -35,35 +35,39 @@ BLE alert tool that continuously scans for specific target devices by OUI prefix
 - NeoPixel + buzzer feedback on detection
 - Web dashboard for managing targets and viewing scan results
 
-**Five signature classes.** OUI prefix and full MAC are typed into the config
-boxes. Company ID, 16-bit service UUID, and device-name substring cannot be
-expressed as text and are installed from the OUI Database.
+**Six signature classes.** OUI prefix and full MAC are typed into the config
+boxes. Company ID, 16-bit service UUID, device-name substring, and the Meta
+composite cannot be expressed as text and are installed from the OUI Database.
 
 **OUI Database.** A browsable list of known surveillance hardware — RING,
-AXON, FLOCK SAFETY, DJI, PARROT, SKYDIO — each with prefixes, category, and
-typical devices. AXON carries more than OUIs, so its button reads **+ Add
+AXON, FLOCK SAFETY, DJI, PARROT, SKYDIO, META / RAY-BAN — each with prefixes,
+category, and typical devices. AXON carries more than OUIs, so its button reads **+ Add
 all signatures**:
 
 | Vendor | Signatures |
 |---|---|
 | **AXON** | OUI `00:25:DF`, company ID `0x034D` (TASER International), service UUID `0xFC81` |
+| **META / RAY-BAN** | Composite: company ID `0x0D53` + service UUID `0xFD5F` in the same advert, or name `Ray-Ban` / `Wayfarer` / `Oakley Meta` |
 
 OUIs alone are the weakest signal — Axon hardware may never expose its OUI
 in an advertisement, so the company ID and service UUID do most of the work.
 Each added vendor renders one colour-coded line under the OUI box with an
 `x` to remove. Manual OUI entry is unaffected.
 
-**Meta / Ray-Ban detection.** No OUI-Database preset. The glasses use RPA
+**Meta / Ray-Ban detection.** **META / RAY-BAN** has its own OUI-Database
+card whose button reads **+ Add composite signature**. The glasses use RPA
 (rotating random MAC per BT spec), so OUI-based matching is pure noise, and
-CID-only or svc-UUID-only auto-installers were false-positive magnets.
-Detection is instead handled by a hardcoded composite matcher that runs on
-every advert regardless of user filter config and fires only when either:
-mfr company ID `0x0D53` (Luxottica) AND service UUID `0xFD5F` (Meta) are
-present in the same advert, or the complete local name contains `Ray-Ban`,
-`Wayfarer`, or `Oakley Meta`. Hits render with a red-pink `META` badge and
-are logged with `match_method: "meta_composite"`. Manually adding `0x0D53`,
-`0xFD5F`, or a Luxottica MAC via the target config UI still triggers via the
-normal filter path with its normal badge.
+CID-only or svc-UUID-only filters are false-positive magnets (`0xFD5F` is
+advertised by phones running Meta apps). The preset installs a single
+composite filter that fires only when either: mfr company ID `0x0D53`
+(Luxottica) AND service UUID `0xFD5F` (Meta) are present in the same advert,
+or the complete local name contains `Ray-Ban`, `Wayfarer`, or `Oakley Meta`.
+Hits render with a red-pink `META` badge (red-pink signature line) and are
+logged with `match_method: "meta_composite"`. Not installed = no Meta
+detection: remove it with the `x` on its signature line, or wipe it via
+**Clear All Filters**. Manually adding `0x0D53`, `0xFD5F`, or a Luxottica MAC
+via the target config UI still triggers via the normal single-signature
+filter path with its normal badge.
 
 **Burn-in is reversible.** Locking the config disables the AP permanently, but
 holding BOOT during power-on clears the lock and restores config mode. Older

@@ -91,10 +91,11 @@ enum FilterType : uint8_t {
     FT_COMPANY_ID      = 2,  // identifier = 4-char hex "0D53" (BT SIG mfr CID)
     FT_SERVICE_UUID_16 = 3,  // identifier = 4-char hex "FD5F" (BT SIG 16-bit svc UUID)
     FT_NAME_SUBSTRING  = 4,  // identifier = case-insensitive substring
-    // Synthetic type — never persisted, never user-added. Emitted only by
-    // the hardcoded Meta/Ray-Ban composite matcher (mfr CID 0x0D53 + svc
-    // UUID 0xFD5F in the SAME advert, or a name-substring hit). Kept at
-    // the end so existing NVS values 0-4 stay stable.
+    // Meta/Ray-Ban composite (mfr CID 0x0D53 + svc UUID 0xFD5F in the SAME
+    // advert, or a name-substring hit). User-installable via the META preset
+    // in the OUI Database and persisted like any other filter — no filter
+    // installed means no Meta detection. Kept at the end so existing NVS
+    // values 0-4 stay stable.
     FT_META_COMPOSITE  = 5,
 };
 
@@ -525,7 +526,7 @@ void loadConfiguration() {
             uint8_t rawType = preferences.getUChar(keyType.c_str(), 0xFF);
             if (rawType == 0xFF) {
                 filter.type = filter.isFullMAC ? FT_FULL_MAC : FT_MAC_PREFIX;
-            } else if (rawType <= FT_NAME_SUBSTRING) {
+            } else if (rawType <= FT_META_COMPOSITE) {
                 filter.type = (FilterType)rawType;
             } else {
                 filter.type = FT_MAC_PREFIX;  // corrupt value, fail safe
@@ -609,6 +610,9 @@ static String normalizeHexId(const String& in) {
     return out;
 }
 
+// Forward declaration — defined below; FT_META_COMPOSITE filters defer to it.
+bool matchesMetaComposite(NimBLEAdvertisedDevice* dev, const char*& outLabel);
+
 // Second-pass classifier for the DeviceInfo row / dashboard badge. We keep
 // matchesTargetFilter()'s signature untouched (upstream code depends on it),
 // so this helper replays the same rules to recover which filter class hit
@@ -663,9 +667,13 @@ static bool resolveMatchedFilterMeta(NimBLEAdvertisedDevice* dev,
                 }
                 break;
             }
-            case FT_META_COMPOSITE:
-                // Synthetic type, not user-installable — skip.
+            case FT_META_COMPOSITE: {
+                const char* metaLabel = nullptr;
+                if (matchesMetaComposite(dev, metaLabel)) {
+                    outType = f.type; outIdent = f.identifier; return true;
+                }
                 break;
+            }
         }
     }
     return false;
@@ -740,30 +748,40 @@ bool matchesTargetFilter(NimBLEAdvertisedDevice* dev, const String& deviceMAC,
                 }
                 break;
             }
-            case FT_META_COMPOSITE:
-                // Synthetic type, not user-installable — skip.
+            case FT_META_COMPOSITE: {
+                // Installed via the META preset; defer to the composite
+                // matcher. The label it returns ("META-RAYBAN (mfr+svc)" /
+                // "META-RAYBAN (name)") is more informative than the filter
+                // description, so it wins.
+                const char* metaLabel = nullptr;
+                if (matchesMetaComposite(dev, metaLabel)) {
+                    matchedDescription = metaLabel;
+                    return true;
+                }
                 break;
+            }
         }
     }
     return false;
 }
 
-// Hardcoded Meta / Ray-Ban composite matcher.
+// Meta / Ray-Ban composite matcher.
 //
-// Runs on every advert regardless of user filter config, and does NOT use
-// OUI signals. Meta glasses use RPA (rotating random MACs per BT spec), so
-// OUI-based detection is pure noise; that's why the OUI-Database preset
-// entries for Ray-Ban/Luxottica have been removed. This matcher fires when
-// BOTH conditions in condition A are present in the same advert, OR when
-// condition B fires:
+// Only runs while a FT_META_COMPOSITE filter is installed (via the META
+// preset in the OUI Database) — matchesTargetFilter calls it from that
+// case. Does NOT use OUI signals: Meta glasses use RPA (rotating random
+// MACs per BT spec), so OUI-based detection is pure noise, and CID-alone
+// or UUID-alone filters were false-positive magnets (0xFD5F is advertised
+// by phones running Meta apps). This matcher fires when BOTH conditions in
+// condition A are present in the same advert, OR when condition B fires:
 //   A. mfr data starts with company ID 0x0D53 (Luxottica, little-endian
 //      0x53 0x0D) AND service UUID list contains 0xFD5F (Meta).
 //   B. complete local name contains "Ray-Ban" / "Wayfarer" / "Oakley Meta"
 //      (case-insensitive substring).
 //
-// If a user manually installs 0x0D53, 0xFD5F, or a Luxottica MAC via the
-// target config UI, those still trigger via matchesTargetFilter as before.
-// This matcher is additive on top of that path.
+// A user manually installing 0x0D53, 0xFD5F, or a Luxottica MAC via the
+// target config UI still triggers via the normal single-signature cases in
+// matchesTargetFilter, with that filter's badge.
 bool matchesMetaComposite(NimBLEAdvertisedDevice* dev, const char*& outLabel) {
     outLabel = nullptr;
     if (!dev) return false;
@@ -879,16 +897,12 @@ static const char* bleClassifyMatch(NimBLEAdvertisedDevice* dev,
                 if (nameContains(name, filter.identifier)) return BLE_MM_NAME_SUBSTRING;
                 break;
             }
-            case FT_META_COMPOSITE:
-                // Synthetic type, not user-installable — skip.
+            case FT_META_COMPOSITE: {
+                const char* metaLabel = nullptr;
+                if (matchesMetaComposite(dev, metaLabel)) return BLE_MM_META_COMPOSITE;
                 break;
+            }
         }
-    }
-    // No user filter matched — the hit may be from the hardcoded composite
-    // Meta/Ray-Ban matcher, which runs additively in the onResult path.
-    const char* metaLabel = nullptr;
-    if (matchesMetaComposite(dev, metaLabel)) {
-        return BLE_MM_META_COMPOSITE;
     }
     return BLE_MM_UNKNOWN;
 }
@@ -1526,13 +1540,17 @@ struct PresetEntry {
     const char* description;
 };
 
-// Meta / Ray-Ban glasses have NO OUI-Database preset. The glasses use RPA
-// (rotating random MAC per BT spec), so OUI-based matching is pure noise;
-// the CID-alone and svc-UUID-alone auto-installers were also false-positive
-// magnets. Detection is handled by the hardcoded matchesMetaComposite()
-// matcher above: mfr CID 0x0D53 + svc UUID 0xFD5F in the same advert, or a
-// name-substring hit. User-added filters via the target config UI are
-// unaffected.
+// Meta / Ray-Ban smart glasses (Wayfarer, Headliner, Skyler, Oakley Meta).
+// One synthetic composite signature rather than separate CID/UUID entries:
+// the glasses use RPA (rotating random MAC per BT spec), so OUI matching is
+// pure noise, and CID-alone or UUID-alone filters were false-positive
+// magnets (0xFD5F is advertised by phones running Meta apps). The composite
+// requires mfr CID 0x0D53 (Luxottica) AND svc UUID 0xFD5F (Meta) in the
+// same advert, or a name-substring hit — see matchesMetaComposite().
+static const PresetEntry PRESET_META[] = {
+    { FT_META_COMPOSITE, "0x0D53+0xFD5F", "Composite: Luxottica CID + Meta svc UUID, or Ray-Ban/Wayfarer/Oakley Meta name" },
+};
+static const size_t PRESET_META_COUNT = sizeof(PRESET_META) / sizeof(PRESET_META[0]);
 
 // Axon body cameras (Body 3/4, Fleet dash, Taser 7/10).
 // Uses all three signal types: dedicated IEEE OUI 00:25:DF ("Axon
@@ -2146,6 +2164,7 @@ const char* getConfigHTML() {
         .sig-cid  { color: #ffb74d; }
         .sig-uuid { color: #81c784; }
         .sig-name { color: #ba9ffb; }
+        .sig-meta { color: #e94560; }
         .sig-sep  { color: #6b6b7d; }
         .sig-rm {
             margin-left: auto; background: none; border: none;
@@ -2199,6 +2218,15 @@ DD:EE:FF
                     <div class="oui-meta"><strong>Category:</strong> Body Camera / Law Enforcement</div>
                     <div class="oui-meta"><strong>Detection Range:</strong> Short-range BLE/WiFi</div>
                     <div class="oui-meta"><strong>Common Devices:</strong> Axon Body Camera, Axon Fleet</div>
+                    </details>
+                    <details>
+                    <summary><b>META / RAY-BAN</b> <code>composite</code></summary>
+                    <div class="oui-entries"><code>CID 0x0D53 + UUID 0xFD5F</code> <code>name: Ray-Ban / Wayfarer / Oakley Meta</code></div>
+                    <button type="button" class="oui-add-btn" onclick="addVendor('meta','META / RAY-BAN', null)">+ Add composite signature</button>
+                    <div class="oui-meta"><strong>Category:</strong> Smart Glasses</div>
+                    <div class="oui-meta"><strong>Detection Range:</strong> BLE range (~10-30 m)</div>
+                    <div class="oui-meta"><strong>Common Devices:</strong> Ray-Ban Meta (Wayfarer, Headliner, Skyler), Oakley Meta HSTN</div>
+                    <div class="oui-note">No OUI: the glasses rotate random MACs (RPA per BT spec). The composite requires Luxottica company ID 0x0D53 AND Meta service UUID 0xFD5F in the same advert, or the advertised name — single-signature CID/UUID filters false-positive on phones running Meta apps.</div>
                     </details>
                     <details>
                     <summary><b>FLOCK SAFETY</b> <code>1 OUI</code></summary>
@@ -2793,7 +2821,7 @@ DD:EE:FF:ab:cd:ef
             var VENDOR_OUIS = {
                 axon:   '00:25:DF'
             };
-            var VENDOR_LABELS = { axon: 'AXON' };
+            var VENDOR_LABELS = { axon: 'AXON', meta: 'META / RAY-BAN' };
 
             // Repopulate the signature lines on page load. Without this the
             // filters stay installed in NVS but the UI looks empty after a
@@ -2811,7 +2839,8 @@ DD:EE:FF:ab:cd:ef
 
             var VENDOR_SIGS = {
                 axon:   [ {t:'cid',  v:'0x034D', l:'CID'},
-                          {t:'uuid', v:'0xFC81', l:'UUID'} ]
+                          {t:'uuid', v:'0xFC81', l:'UUID'} ],
+                meta:   [ {t:'meta', v:'0x0D53+0xFD5F', l:'COMPOSITE'} ]
             };
 
             function addVendor(preset, label, ouiStr) {
@@ -3679,7 +3708,7 @@ void startConfigMode() {
     });
     
     // One-click add all known signatures for a device family.
-    // POST body/query: name=axon
+    // POST body/query: name=axon | meta
     server.on("/api/presets/apply", HTTP_POST, [](AsyncWebServerRequest *request) {
         lastConfigActivity = millis();
 
@@ -3693,9 +3722,12 @@ void startConfigMode() {
         if (presetName == "axon") {
             label = "Axon body cam";
             added = applyPreset(PRESET_AXON, PRESET_AXON_COUNT, "Axon body cam");
+        } else if (presetName == "meta") {
+            label = "Meta glasses";
+            added = applyPreset(PRESET_META, PRESET_META_COUNT, "Meta glasses");
         } else {
             request->send(400, "application/json",
-                "{\"ok\":false,\"error\":\"unknown preset — use name=axon\"}");
+                "{\"ok\":false,\"error\":\"unknown preset\"}");
             return;
         }
 
@@ -3718,7 +3750,8 @@ void startConfigMode() {
         n.toLowerCase();
 
         int removed = 0;
-        if (n == "axon")        removed = removePreset(PRESET_AXON,   PRESET_AXON_COUNT);
+        if (n == "axon")           removed = removePreset(PRESET_AXON, PRESET_AXON_COUNT);
+        else if (n == "meta")      removed = removePreset(PRESET_META, PRESET_META_COUNT);
         else { request->send(400, "application/json", "{\"ok\":false,\"error\":\"unknown preset\"}"); return; }
 
         request->send(200, "application/json",
@@ -3729,6 +3762,8 @@ void startConfigMode() {
     server.on("/api/presets/status", HTTP_GET, [](AsyncWebServerRequest *request) {
         String body = "{\"axon\":";
         body += presetInstalled(PRESET_AXON, PRESET_AXON_COUNT) ? "true" : "false";
+        body += ",\"meta\":";
+        body += presetInstalled(PRESET_META, PRESET_META_COUNT) ? "true" : "false";
         body += "}";
         request->send(200, "application/json", body);
     });
@@ -3764,19 +3799,9 @@ class MyAdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
         String matchedDescription;
         bool matchFound = matchesTargetFilter(advertisedDevice, mac, matchedDescription);
 
-        // Hardcoded Meta / Ray-Ban composite matcher, additive on top of
-        // the user filter list. Only fires when the user filter didn't
-        // already claim this advert, so a manual 0x0D53/0xFD5F/MAC entry
-        // still wins and keeps its own badge colour.
-        bool metaComposite = false;
-        if (!matchFound) {
-            const char* metaLabel = nullptr;
-            if (matchesMetaComposite(advertisedDevice, metaLabel)) {
-                matchFound         = true;
-                matchedDescription = metaLabel;
-                metaComposite      = true;
-            }
-        }
+        // Meta / Ray-Ban composite detection runs inside matchesTargetFilter
+        // when (and only when) the META preset is installed — no filter, no
+        // trigger.
 
         if (matchFound) {
             // Feed the BLE session subsystem BEFORE the existing beep/flash
@@ -3838,13 +3863,10 @@ class MyAdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
                 newDev.cooldownUntil = 0;
                 newDev.matchedFilter = matchedDescription.c_str();
                 newDev.filterDescription = matchedDescription;
-                if (metaComposite) {
-                    newDev.matchedType       = FT_META_COMPOSITE;
-                    newDev.matchedIdentifier = "0x0D53+0xFD5F";
-                } else {
-                    // Second pass to recover the specific filter class + raw
-                    // identifier for the dashboard match-type badge. Fills a
-                    // sane default if the resolver can't reproduce the hit.
+                // Second pass to recover the specific filter class + raw
+                // identifier for the dashboard match-type badge. Fills a
+                // sane default if the resolver can't reproduce the hit.
+                {
                     FilterType mt = FT_MAC_PREFIX;
                     String mid;
                     if (resolveMatchedFilterMeta(advertisedDevice, mac, mt, mid)) {
