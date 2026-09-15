@@ -1,0 +1,31 @@
+# Raspberry Pi 5 — Visual Scout detection pipeline
+# Install with: pip install -r requirements.txt
+#
+# For Coral Edge TPU support, ALSO run:
+#   echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
+#     | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+#   curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+#   sudo apt update
+#   sudo apt install libedgetpu1-std gasket-dkms
+#   pip install pycoral  (or: pip install pycoral @ https://github.com/google-coral/pycoral/releases)
+#
+# For NVMe SSD (Pi 5 M.2 HAT):
+#   sudo mkfs.ext4 /dev/nvme0n1
+#   sudo mkdir -p /mnt/ssd
+#   echo "/dev/nvme0n1 /mnt/ssd ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+#   sudo mount -a
+
+# Core
+requests>=2.31.0
+Pillow>=10.0.0
+numpy>=1.24.0
+opencv-python>=4.8.0
+
+# YOLO inference (CPU baseline)
+ultralytics>=8.0.0
+
+# Optional — Coral Edge TPU
+# pycoral  # install separately (see above)
+
+# Deflock downloader service
+# (standard library only — no extra deps needed for deflock_downloader.py)
