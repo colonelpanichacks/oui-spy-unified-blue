@@ -91,11 +91,12 @@ This is a port of the `promiscious` branch of `flock-you` — see that repo for 
 
 **Detection methods (WiFi only):**
 
-Detection uses signatures extracted directly from a Flock Safety ALPR camera firmware dump (Qualcomm MSM8953 + QCA9377, Android 8.1, codename `hpnotiq`):
+Detection uses a union signature set combining community field research and a real Flock Safety ALPR camera firmware dump (Qualcomm MSM8953 + QCA9377, Android 8.1, codename `hpnotiq`):
 
-- **addr2 OUI match** — transmitter-side match against two firmware-derived OUIs: `b4:1e:52` (Flock Safety's own IEEE-registered block) and `00:03:7f` (Qualcomm Atheros — default radio MACs burned into the camera firmware before OTA provisioning).
+- **addr2 OUI match** — transmitter-side match against 34 OUIs: 32 community prefixes (@NitekryDPaul 2026-07-16 + `82:6b:f2` from DeFlockJoplin) plus `b4:1e:52` (Flock Safety IEEE MA-L) and `00:03:7f` (Qualcomm Atheros QCA9377 default radio MACs).
 - **addr1 OUI match** — receiver-side technique: catches Flock STAs that appear only as the destination of probe responses or data frames during burst-sleep windows.
-- **Wildcard probe signature** — Probe Request (type=0 subtype=4) + zero-length SSID IE + firmware-derived OUI addr2. Top active detection tier. IE fingerprint tier (tier 4) is currently a stub pending a live QCA9377 probe-burst recapture.
+- **Wildcard probe + IE fingerprint (tier 4)** — Probe Request + zero-length SSID IE + known OUI + community LiteON/DeFlockJoplin IE signature. Tier 3 fires when IE does not match.
+- **BLE advert match (passive NimBLE, in-firmware)** — Penguin battery name/serial, mfg company ID `0x09C8`, Flock/Raven GATT service UUIDs. 10% duty cycle so WiFi keeps priority.
 
 **Features:**
 
