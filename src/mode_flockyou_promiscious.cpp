@@ -5,11 +5,15 @@
  * infrastructure. Wraps the standalone firmware from the `promiscious`
  * branch of colonelpanichacks/flock-you in an anonymous namespace.
  *
- * Detection methods (WiFi only — no AP, no BLE):
- *   - addr2 OUI match  (transmitter-side, @NitekryDPaul list)
+ * Detection methods (no AP, no BLE transmit — both radios passive):
+ *   - addr2 OUI match  (transmitter-side, union of @NitekryDPaul community
+ *                       list and firmware-dump OUIs)
  *   - addr1 OUI match  (receiver-side, @NitekryDPaul's sleeper-catch)
  *   - wildcard probe   (probe req + zero-length SSID + known OUI, the
- *                       DeFlockJoplin high-precision signature)
+ *                       DeFlockJoplin high-precision signature; tier 4 when
+ *                       the community IE fingerprint also matches)
+ *   - BLE advert match (firmware-derived: Penguin/FS-battery names, XUNTONG
+ *                       0x09C8 mfg data, Flock/Raven GATT service UUIDs)
  *
  * Outputs:
  *   - Live Flask-compatible JSON over USB-CDC (one line per detection)
@@ -27,6 +31,7 @@
 #include <string.h>
 #include <SPIFFS.h>
 #include <Preferences.h>
+#include <NimBLEDevice.h>   // BLE side of the Flock-You union signature set
 #include "modes.h"
 
 // Rename setup/loop so they don't collide with the unified main.cpp's
