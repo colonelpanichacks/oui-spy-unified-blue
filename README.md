@@ -91,9 +91,11 @@ This is a port of the `promiscious` branch of `flock-you` — see that repo for 
 
 **Detection methods (WiFi only):**
 
-- **addr2 OUI match** — transmitter-side match against the 39-OUI Flock Safety list (29 from @NitekryDPaul's original promiscuous-mode set, 10 from his April 2026 additions — two of the original 12 April adds, `94:2a:6f` and `f4:e2:c6`, were demoted as Ubiquiti false positives per his June 2026 update). All work of **OrdoOuroborous / [@NitekryDPaul](https://github.com/nitekry)**.
-- **addr1 OUI match** — the receiver-side technique: catches Flock STAs that appear only as the destination of probe responses or data frames during their burst-sleep windows. Mandatory multicast + locally-administered guards before the match. @NitekryDPaul's discovery.
-- **Wildcard probe signature** — Probe Request (type=0 subtype=4) + zero-length SSID IE + known-OUI addr2. The DeFlockJoplin high-precision signature (Joplin drive-test: 11/12 cameras caught with 2 false positives). Suppresses the broad addr2 alert on the same frame to avoid double-counting.
+Detection uses signatures extracted directly from a Flock Safety ALPR camera firmware dump (Qualcomm MSM8953 + QCA9377, Android 8.1, codename `hpnotiq`):
+
+- **addr2 OUI match** — transmitter-side match against two firmware-derived OUIs: `b4:1e:52` (Flock Safety's own IEEE-registered block) and `00:03:7f` (Qualcomm Atheros — default radio MACs burned into the camera firmware before OTA provisioning).
+- **addr1 OUI match** — receiver-side technique: catches Flock STAs that appear only as the destination of probe responses or data frames during burst-sleep windows.
+- **Wildcard probe signature** — Probe Request (type=0 subtype=4) + zero-length SSID IE + firmware-derived OUI addr2. Top active detection tier. IE fingerprint tier (tier 4) is currently a stub pending a live QCA9377 probe-burst recapture.
 
 **Features:**
 
