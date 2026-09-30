@@ -102,7 +102,7 @@
     arduino-cli compile -u -p /dev/cu.usbmodemXXXX \
       --fqbn esp32:esp32:arduino_nesso_n1 \
       --libraries libraries \
-      --build-property "build.extra_flags=-DNESSO_N1=1 -DNESSO_DISPLAY_UI=1 -DCONFIG_BT_NIMBLE_ENABLED=1 -Iraw" .
+      --build-property "build.extra_flags=-DNESSO_N1=1 -DNESSO_DISPLAY_UI=1 -DNESSO_NO_FLOCKYOU=1 -DCONFIG_BT_NIMBLE_ENABLED=1 -Iraw" .
 
   Replace /dev/cu.usbmodemXXXX with your port (arduino-cli board list).
 
@@ -111,6 +111,6 @@
     KEY2  — SIDE edge button. Not used for navigation in current firmware.
     Power — Separate side button. Single press reboots; long press = flash mode.
 
-  Default boot: Flock-You (WiFi AP "flockyou" / flockyou123).
+  Default boot: Mega_Maid (WiFi AP "megamaid" / megamaid123).
 
 ==============================================================================

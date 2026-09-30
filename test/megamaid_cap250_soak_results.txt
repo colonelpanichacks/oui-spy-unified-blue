@@ -1,0 +1,32 @@
+=== MEGA MAID CAP-250 SOAK VALIDATION ===
+CONST MAX_DETECTIONS=250
+CONST NEAR_CAP_WARN_THRESHOLD=240
+CONST AT_CAP_FULL=250
+CONST MM_HTTP_MIN_HEAP=24576
+STATIC no_near_cap_http_kill OK
+STATIC near_cap_spiffs_helper OK
+STATIC at_cap_full_gate OK
+STATIC detections_near_cap_spiffs OK
+STATIC export_near_cap_spiffs OK
+STATIC export_busy_gate OK
+STATIC det_page_export_decoupled OK
+STATIC save_export_block_narrow OK
+STATIC stream_cleanup OK
+STATIC prev_copy_streaming OK
+STATIC copy_insecure_context OK
+STATIC no_export_tmp_copy OK
+STATIC no_reboot_to_export OK
+STATIC battery_filter_api OK
+STATIC battery_ui_snapshot OK
+STATIC key1_menu_hold_guard OK
+STATIC captive_ios_routes OK
+BUILD with_flockyou_globals=167412
+BUILD no_flockyou_cap250_globals=135588
+BUILD flockyou_removed_bytes=31824
+BUILD cap250_static_budget_bytes=135588
+BUILD cap250_heap_headroom_bytes=192092
+HOST near_cap_export_shape OK count=245
+serial_port=/dev/cu.usbmodem14401
+WARN serial_capture: No module named 'serial'
+WARN live_export: HTTP Error 403: Forbidden
+OVERALL PASS

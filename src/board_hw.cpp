@@ -10,10 +10,16 @@ static void boardEnsureWire() {
   Wire.begin(SDA, SCL);
 }
 
+static bool boardKeysInputReady = false;
+
 static void boardEnsureKeysInput() {
   boardEnsureWire();
+  if (boardKeysInputReady) {
+    return;
+  }
   pinMode(KEY1, INPUT_PULLUP);
   pinMode(KEY2, INPUT_PULLUP);
+  boardKeysInputReady = true;
 }
 
 static bool boardKeyPressed(ExpanderPin key) {

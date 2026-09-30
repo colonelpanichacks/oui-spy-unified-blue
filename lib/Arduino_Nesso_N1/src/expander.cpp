@@ -24,6 +24,250 @@ static uint8_t readRegister(uint8_t address, uint8_t reg) {
   return Wire.read();
 }
 
+static constexpr uint8_t kGaugeReadRetries = 3;
+static constexpr uint8_t kGaugeRetryDelayMs = 1;
+static constexpr unsigned long kBatteryFilterRefreshMs = 5000;
+static constexpr uint8_t kSocDoubleReadMaxDelta = 8;
+static constexpr uint8_t kVoltageSocMaxDelta = 25;
+static constexpr uint8_t kMaxSocDeltaPerUpdate = 10;
+static constexpr float kStableVoltageDeltaV = 0.05f;
+static constexpr float kHighVoltageThresholdV = 3.85f;
+static constexpr uint8_t kLowSocAtHighVoltage = 30;
+static constexpr uint8_t kEmaSmallChangeThreshold = 3;
+
+static float sLastGoodVoltage = 3.7f;
+static uint16_t sLastGoodPercent = 50;
+static uint16_t sFilteredPercent = 50;
+static float sFilteredVoltage = 3.7f;
+static float sLastAcceptedVoltage = 3.7f;
+static unsigned long sLastFilterRefreshMs = 0;
+static bool sHasGoodGaugeReading = false;
+
+static bool readGaugeRegister8(uint8_t reg, uint8_t &out);
+static bool readGaugeRegister16(uint8_t reg, uint16_t &out);
+
+enum BatteryRejectReason : uint8_t {
+  BATTERY_ACCEPT = 0,
+  BATTERY_REJECT_DOUBLE_READ,
+  BATTERY_REJECT_VOLTAGE_SOC,
+  BATTERY_REJECT_MAX_DELTA,
+  BATTERY_REJECT_RAW_READ,
+};
+
+static uint8_t socFromVoltage(float volts) {
+  struct OcvPoint {
+    float v;
+    uint8_t pct;
+  };
+  static const OcvPoint kCurve[] = {
+      {2.50f, 0},  {3.30f, 0},  {3.40f, 5},  {3.60f, 20},
+      {3.70f, 45}, {3.80f, 50}, {4.00f, 85}, {4.20f, 100},
+  };
+  if (volts <= kCurve[0].v) {
+    return 0;
+  }
+  if (volts >= kCurve[7].v) {
+    return 100;
+  }
+  for (uint8_t i = 0; i < 7; ++i) {
+    if (volts <= kCurve[i + 1].v) {
+      const float span = kCurve[i + 1].v - kCurve[i].v;
+      if (span <= 0.0f) {
+        return kCurve[i + 1].pct;
+      }
+      const float t = (volts - kCurve[i].v) / span;
+      return (uint8_t)(kCurve[i].pct + t * (float)(kCurve[i + 1].pct - kCurve[i].pct) + 0.5f);
+    }
+  }
+  return 50;
+}
+
+static uint8_t absDeltaU8(uint8_t a, uint8_t b) {
+  return (a > b) ? (a - b) : (b - a);
+}
+
+static bool readRawSoc(uint8_t &soc) {
+  if (readGaugeRegister8(NessoBattery::BQ27220_STATE_OF_CHARGE, soc) && soc <= 100) {
+    return true;
+  }
+  uint16_t current_capacity = 0;
+  uint16_t total_capacity = 0;
+  if (readGaugeRegister16(NessoBattery::BQ27220_REMAIN_CAPACITY, current_capacity) &&
+      readGaugeRegister16(NessoBattery::BQ27220_FULL_CAPACITY, total_capacity) &&
+      total_capacity > 0) {
+    const uint16_t pct = (uint16_t)((uint32_t)current_capacity * 100 / total_capacity);
+    if (pct <= 100) {
+      soc = (uint8_t)pct;
+      return true;
+    }
+  }
+  return false;
+}
+
+struct RawBatterySnapshot {
+  float volts = 0.0f;
+  uint8_t soc = 0;
+  uint8_t soc2 = 0;
+  bool valid = false;
+};
+
+static bool readRawBatterySnapshot(RawBatterySnapshot &snap) {
+  uint16_t raw_mv = 0;
+  if (!readGaugeRegister16(NessoBattery::BQ27220_VOLTAGE, raw_mv)) {
+    return false;
+  }
+  snap.volts = (float)raw_mv / 1000.0f;
+  if (snap.volts < 2.5f || snap.volts > 4.35f) {
+    return false;
+  }
+  if (!readRawSoc(snap.soc)) {
+    return false;
+  }
+  if (!readGaugeRegister8(NessoBattery::BQ27220_STATE_OF_CHARGE, snap.soc2) || snap.soc2 > 100) {
+    snap.soc2 = snap.soc;
+  }
+  snap.valid = true;
+  return true;
+}
+
+static BatteryRejectReason checkBatteryPlausibility(
+    const RawBatterySnapshot &snap, uint16_t filteredPercent, float lastAcceptedVoltage, bool charging) {
+  if (absDeltaU8(snap.soc, snap.soc2) > kSocDoubleReadMaxDelta) {
+    return BATTERY_REJECT_DOUBLE_READ;
+  }
+
+  const uint8_t ocvEstimate = socFromVoltage(snap.volts);
+  if (snap.volts > kHighVoltageThresholdV && snap.soc < kLowSocAtHighVoltage) {
+    return BATTERY_REJECT_VOLTAGE_SOC;
+  }
+  if (absDeltaU8(snap.soc, ocvEstimate) > kVoltageSocMaxDelta &&
+      fabsf(snap.volts - lastAcceptedVoltage) < kStableVoltageDeltaV) {
+    return BATTERY_REJECT_VOLTAGE_SOC;
+  }
+
+  const int socDelta = (int)snap.soc - (int)filteredPercent;
+  if (abs(socDelta) > kMaxSocDeltaPerUpdate &&
+      fabsf(snap.volts - lastAcceptedVoltage) < kStableVoltageDeltaV) {
+    if (!(charging && socDelta > 0)) {
+      return BATTERY_REJECT_MAX_DELTA;
+    }
+  }
+  return BATTERY_ACCEPT;
+}
+
+static uint16_t applyBatteryEma(uint16_t filtered, uint8_t rawSoc) {
+  const int delta = abs((int)rawSoc - (int)filtered);
+  if (delta <= kEmaSmallChangeThreshold) {
+    return (uint16_t)(((filtered * 4) + rawSoc + 2) / 5);
+  }
+  return rawSoc;
+}
+
+static bool isBatteryCharging() {
+  uint8_t status = readRegister(NessoBattery::AW32001_I2C_ADDR, NessoBattery::AW3200_SYS_STATUS);
+  const uint8_t charge_status = (status >> 3) & 0b11;
+  return charge_status == NessoBattery::CHARGING || charge_status == NessoBattery::PRE_CHARGE;
+}
+
+#ifdef NESSO_BATTERY_DEBUG
+static void logBatteryReject(BatteryRejectReason reason, const RawBatterySnapshot &snap) {
+  const char *label = "unknown";
+  switch (reason) {
+    case BATTERY_REJECT_DOUBLE_READ: label = "double_read"; break;
+    case BATTERY_REJECT_VOLTAGE_SOC: label = "voltage_soc"; break;
+    case BATTERY_REJECT_MAX_DELTA: label = "max_delta"; break;
+    case BATTERY_REJECT_RAW_READ: label = "raw_read"; break;
+    default: break;
+  }
+  Serial.printf(
+      "[battery] reject=%s v=%.2f soc=%u soc2=%u filtered=%u\n",
+      label, snap.volts, snap.soc, snap.soc2, sFilteredPercent);
+}
+#endif
+
+static void refreshBatteryFilter(bool force) {
+  const unsigned long now = millis();
+  if (!force && sLastFilterRefreshMs != 0 && (now - sLastFilterRefreshMs) < kBatteryFilterRefreshMs) {
+    return;
+  }
+  sLastFilterRefreshMs = now;
+
+  RawBatterySnapshot snap;
+  if (!readRawBatterySnapshot(snap)) {
+#ifdef NESSO_BATTERY_DEBUG
+    Serial.println("[battery] reject=raw_read");
+#endif
+    return;
+  }
+
+  const bool charging = isBatteryCharging();
+
+  if (!sHasGoodGaugeReading) {
+    sFilteredPercent = snap.soc;
+    sFilteredVoltage = snap.volts;
+    sLastAcceptedVoltage = snap.volts;
+    sLastGoodPercent = snap.soc;
+    sLastGoodVoltage = snap.volts;
+    sHasGoodGaugeReading = true;
+    return;
+  }
+
+  const BatteryRejectReason reason =
+      checkBatteryPlausibility(snap, sFilteredPercent, sLastAcceptedVoltage, charging);
+  if (reason != BATTERY_ACCEPT) {
+#ifdef NESSO_BATTERY_DEBUG
+    logBatteryReject(reason, snap);
+#endif
+    return;
+  }
+
+  sFilteredPercent = applyBatteryEma(sFilteredPercent, snap.soc);
+  sFilteredVoltage = snap.volts;
+  sLastAcceptedVoltage = snap.volts;
+  sLastGoodPercent = sFilteredPercent;
+  sLastGoodVoltage = snap.volts;
+}
+
+static bool readGaugeRegister8(uint8_t reg, uint8_t &out) {
+  const uint8_t addr = NessoBattery::BQ27220_I2C_ADDR;
+  for (uint8_t attempt = 0; attempt < kGaugeReadRetries; ++attempt) {
+    Wire.beginTransmission(addr);
+    Wire.write(reg);
+    if (Wire.endTransmission(false) != 0) {
+      delay(kGaugeRetryDelayMs);
+      continue;
+    }
+    if (Wire.requestFrom(addr, (uint8_t)1) != 1) {
+      delay(kGaugeRetryDelayMs);
+      continue;
+    }
+    out = Wire.read();
+    return true;
+  }
+  return false;
+}
+
+static bool readGaugeRegister16(uint8_t reg, uint16_t &out) {
+  const uint8_t addr = NessoBattery::BQ27220_I2C_ADDR;
+  for (uint8_t attempt = 0; attempt < kGaugeReadRetries; ++attempt) {
+    Wire.beginTransmission(addr);
+    Wire.write(reg);
+    if (Wire.endTransmission(false) != 0) {
+      delay(kGaugeRetryDelayMs);
+      continue;
+    }
+    if (Wire.requestFrom(addr, (uint8_t)2) != 2) {
+      delay(kGaugeRetryDelayMs);
+      continue;
+    }
+    const uint8_t lsb = Wire.read();
+    const uint8_t msb = Wire.read();
+    out = (uint16_t)((msb << 8) | lsb);
+    return true;
+  }
+  return false;
+}
+
 static void writeBitRegister(uint8_t address, uint8_t reg, uint8_t bit, uint8_t value) {
   uint8_t val = readRegister(address, reg);
   if (value) {
@@ -227,35 +471,52 @@ void NessoBattery::setHiZ(bool enable) {
   writeBitRegister(AW32001_I2C_ADDR, AW3200_POWER_ON_CFG, 4, enable);
 }
 
+void NessoBattery::getBatteryStatus(float &volts, uint16_t &percent) {
+  refreshBatteryFilter(true);
+  volts = sHasGoodGaugeReading ? sFilteredVoltage : 0.0f;
+  percent = sHasGoodGaugeReading ? sFilteredPercent : 0;
+}
+
 float NessoBattery::getVoltage() {
-  uint16_t voltage = (readRegister(BQ27220_I2C_ADDR, BQ27220_VOLTAGE + 1) << 8) | readRegister(BQ27220_I2C_ADDR, BQ27220_VOLTAGE);
-  return (float)voltage / 1000.0f;
+  refreshBatteryFilter(false);
+  return sHasGoodGaugeReading ? sFilteredVoltage : 0.0f;
 }
 
 float NessoBattery::getCurrent() {
-  int16_t current = (readRegister(BQ27220_I2C_ADDR, BQ27220_CURRENT + 1) << 8) | readRegister(BQ27220_I2C_ADDR, BQ27220_CURRENT);
-  return (float)current / 1000.0f;
+  uint16_t raw = 0;
+  if (!readGaugeRegister16(BQ27220_CURRENT, raw)) {
+    return 0.0f;
+  }
+  return (float)((int16_t)raw) / 1000.0f;
 }
 
 uint16_t NessoBattery::getChargeLevel() {
-  uint16_t current_capacity = readRegister(BQ27220_I2C_ADDR, BQ27220_REMAIN_CAPACITY + 1) << 8 | readRegister(BQ27220_I2C_ADDR, BQ27220_REMAIN_CAPACITY);
-  uint16_t total_capacity = readRegister(BQ27220_I2C_ADDR, BQ27220_FULL_CAPACITY + 1) << 8 | readRegister(BQ27220_I2C_ADDR, BQ27220_FULL_CAPACITY);
-  return (current_capacity * 100) / total_capacity;
+  refreshBatteryFilter(false);
+  return sHasGoodGaugeReading ? sFilteredPercent : 0;
 }
 
 int16_t NessoBattery::getAvgPower() {
-  int16_t avg_power = readRegister(BQ27220_I2C_ADDR, BQ27220_AVG_POWER + 1) << 8 | readRegister(BQ27220_I2C_ADDR, BQ27220_AVG_POWER);
-  return avg_power;
+  uint16_t raw = 0;
+  if (!readGaugeRegister16(BQ27220_AVG_POWER, raw)) {
+    return 0;
+  }
+  return (int16_t)raw;
 }
 
 float NessoBattery::getTemperature() {
-  uint16_t temp = readRegister(BQ27220_I2C_ADDR, BQ27220_TEMPERATURE + 1) << 8 | readRegister(BQ27220_I2C_ADDR, BQ27220_TEMPERATURE);
-  return ((float)temp / 10.0f) - 273.15f;
+  uint16_t raw = 0;
+  if (!readGaugeRegister16(BQ27220_TEMPERATURE, raw)) {
+    return 0.0f;
+  }
+  return ((float)raw / 10.0f) - 273.15f;
 }
 
 uint16_t NessoBattery::getCycleCount() {
-  uint16_t cycle_count = readRegister(BQ27220_I2C_ADDR, BQ27220_CYCLE_COUNT + 1) << 8 | readRegister(BQ27220_I2C_ADDR, BQ27220_CYCLE_COUNT);
-  return cycle_count;
+  uint16_t raw = 0;
+  if (!readGaugeRegister16(BQ27220_CYCLE_COUNT, raw)) {
+    return 0;
+  }
+  return raw;
 }
 
 ExpanderPin LORA_LNA_ENABLE(5);

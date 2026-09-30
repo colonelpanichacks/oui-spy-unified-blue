@@ -21,6 +21,7 @@
 #include <Preferences.h>
 #include "board_pins.h"
 #include "board_hw.h"
+#include "board_gps.h"
 #include "nesso_ui.h"
 #include "nimble_compat.h"
 #include "modes.h"

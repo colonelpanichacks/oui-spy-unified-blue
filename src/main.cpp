@@ -18,15 +18,115 @@
 #include "modes.h"
 #include "board_pins.h"
 #include "board_hw.h"
+#include "board_gps.h"
 #include "nesso_ui.h"
 
 #define BOOT_HOLD_TIME 1500  // ms - hold boot button this long to force selector
+#define SELECTOR_CONFIRM_MAX_MS 1200  // KEY1 tap (shorter than hold-for-menu)
+#ifdef NESSO_NO_FLOCKYOU
+#define DEFAULT_BOOT_MODE 6  // Mega_Maid
+#else
 #define DEFAULT_BOOT_MODE 4  // Flock-You
+#endif
 
 static Preferences prefs;
 static AsyncWebServer selectorServer(80);
 static DNSServer selectorDNS;
 static int currentMode = 0;
+
+#ifdef NESSO_NO_FLOCKYOU
+static const int kSelectorModes[] = {1, 2, 5, 6};
+static const char* kSelectorNames[] = {"DETECTOR", "FOXHUNTER", "SKY SPY", "MEGA MAID"};
+static const int kSelectorModeCount = 4;
+#else
+static const int kSelectorModes[] = {1, 2, 4, 5, 6};
+static const char* kSelectorNames[] = {"DETECTOR", "FOXHUNTER", "FLOCK-YOU", "SKY SPY", "MEGA MAID"};
+static const int kSelectorModeCount = 5;
+#endif
+static int selectorHighlight = 0;
+
+static void selectorApplyMode(int mode) {
+#ifdef NESSO_NO_FLOCKYOU
+    if (mode != 1 && mode != 2 && mode != 5 && mode != 6) {
+#else
+    if (mode != 1 && mode != 2 && mode != 4 && mode != 5 && mode != 6) {
+#endif
+        return;
+    }
+    Serial.printf("[OUI-SPY] SELECT MODE %d - storing and rebooting\n", mode);
+
+    Preferences resetPrefs;
+    resetPrefs.begin("ouispy-rst", false);
+    resetPrefs.putBool("flag", false);
+    resetPrefs.end();
+
+    prefs.begin("unified-mode", false);
+    prefs.putInt("mode", mode);
+    prefs.putBool("selector", false);
+    prefs.end();
+
+    prefs.begin("unified-mode", true);
+    int verify = prefs.getInt("mode", -1);
+    prefs.end();
+    Serial.printf("[OUI-SPY] NVS VERIFY: wrote %d, read back %d - %s\n",
+                  mode, verify, (verify == mode) ? "OK" : "MISMATCH!");
+    Serial.flush();
+
+    nessoUiSetStatus("Rebooting...");
+    delay(500);
+    ESP.restart();
+}
+
+static void selectorUpdateDisplay() {
+    nessoUiSetSelectorChoice(kSelectorNames[selectorHighlight],
+                             selectorHighlight, kSelectorModeCount);
+}
+
+static void selectorNavBeep() {
+    boardLedcConfigure(BUZZER_FREQ);
+    boardBuzzerAttach();
+    boardLedcSetDuty(50);
+    delay(30);
+    boardLedcSetDuty(0);
+}
+
+static void checkSelectorButtons() {
+    if (currentMode != 0) {
+        return;
+    }
+
+    static bool key2WasDown = false;
+    bool key2Down = boardSecondaryButtonPressed();
+    if (key2Down && !key2WasDown) {
+        selectorHighlight = (selectorHighlight + 1) % kSelectorModeCount;
+        selectorUpdateDisplay();
+        selectorNavBeep();
+        Serial.printf("[OUI-SPY] Selector highlight: %s (mode %d)\n",
+                      kSelectorNames[selectorHighlight],
+                      kSelectorModes[selectorHighlight]);
+    }
+    key2WasDown = key2Down;
+
+    static bool key1WasDown = false;
+    static unsigned long key1DownMs = 0;
+    bool key1Down = boardMenuButtonPressed();
+    if (key1Down && !key1WasDown) {
+        key1WasDown = true;
+        key1DownMs = millis();
+    } else if (!key1Down && key1WasDown) {
+        key1WasDown = false;
+        unsigned long held = millis() - key1DownMs;
+        if (held > 50 && held < SELECTOR_CONFIRM_MAX_MS) {
+            int mode = kSelectorModes[selectorHighlight];
+            Serial.printf("[OUI-SPY] KEY1 confirm -> mode %d (%s)\n",
+                          mode, kSelectorNames[selectorHighlight]);
+            selectorNavBeep();
+            delay(80);
+            selectorNavBeep();
+            selectorApplyMode(mode);
+        }
+    }
+}
 
 static void requestSelectorOnReboot() {
     prefs.begin("unified-mode", false);
@@ -55,11 +155,15 @@ static int resolveBootMode(bool forceSelector) {
         return 0;
     }
 
-    if (stored == 1 || stored == 2 || stored == 5) {
+#ifdef NESSO_NO_FLOCKYOU
+    if (stored == 4) {
+        return 6;  // Legacy Flock-You NVS -> Mega_Maid
+    }
+#endif
+    if (stored == 1 || stored == 2 || stored == 5 || stored == 6) {
         return stored;
     }
 
-    // Missing key, mode 0, mode 4, or invalid -> Flock-You
     return DEFAULT_BOOT_MODE;
 }
 
@@ -136,6 +240,7 @@ static void randomizeMAC() {
 // ============================================================================
 // Selector Web UI HTML
 // ============================================================================
+#ifdef NESSO_NO_FLOCKYOU
 static const char SELECTOR_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>OUI SPY</title>
@@ -176,8 +281,8 @@ body{margin:0;height:100vh;height:-webkit-fill-available;font-family:monospace;b
 <div class="m">
 <div class="i" onclick="go(1)"><div class="n">DETECTOR</div><div class="d">BLE Alert Tool for Specific Devices</div></div>
 <div class="i" onclick="go(2)"><div class="n">FOXHUNTER</div><div class="d">RSSI Proximity Tracker</div></div>
-<div class="i" onclick="go(4)"><div class="n">FLOCK-YOU</div><div class="d">Surveillance Detector &bull; AP: flockyou</div></div>
 <div class="i" onclick="go(5)"><div class="n">SKY SPY</div><div class="d">Drone Remote ID Monitor</div></div>
+<div class="i" onclick="go(6)"><div class="n">MEGA MAID</div><div class="d">BLE + WiFi MAC/OUI collector &bull; time-sliced AP</div></div>
 </div>
 <div class="ap">
 <input type="text" id="ap_ssid" placeholder="SSID" maxlength="32" value="%SSID%">
@@ -194,7 +299,7 @@ body{margin:0;height:100vh;height:-webkit-fill-available;font-family:monospace;b
 </div>
 </div>
 <script>
-var info={1:{t:'DETECTOR',s:'Scans for BLE devices and alerts when specific targets are detected. Configure OUI prefixes and MAC addresses to monitor.'},2:{t:'FOXHUNTER',s:'Track down a specific device using RSSI signal strength. Beeps get faster as you get closer to your target.'},4:{t:'FLOCK-YOU',s:'Detects Flock Safety surveillance cameras via BLE. Serves web dashboard on AP flockyou with live detections, pattern DB, and JSON/CSV export.'},5:{t:'SKY SPY',s:'Monitors for FAA Remote ID broadcasts from drones. Detects Open Drone ID signals over WiFi and BLE.'}};
+var info={1:{t:'DETECTOR',s:'Scans for BLE devices and alerts when specific targets are detected. Configure OUI prefixes and MAC addresses to monitor.'},2:{t:'FOXHUNTER',s:'Track down a specific device using RSSI signal strength. Beeps get faster as you get closer to your target.'},5:{t:'SKY SPY',s:'Monitors for FAA Remote ID broadcasts from drones. Detects Open Drone ID signals over WiFi and BLE.'},6:{t:'MEGA MAID',s:'Collects all BLE and WiFi MAC addresses (no watchlist). Boots into dashboard mode (megamaid AP + web export). Double-click KEY1 to start collection mode (50/50 BLE/WiFi).'}};
 function go(m){var d=info[m];document.getElementById('yt').textContent=d.t;document.getElementById('ys').textContent=d.s;document.getElementById('x').style.display='none';document.getElementById('y').style.display='flex';fetch('/select?mode='+m)}
 function saveAP(){
 var s=document.getElementById('ap_ssid').value.trim();
@@ -209,6 +314,82 @@ if(r.ok){ft.textContent='SAVED! REBOOTING...'}else{ft.textContent='ERROR'}
 function saveBZ(on){fetch('/buzzer?on='+(on?'1':'0'))}
 </script></body></html>
 )rawliteral";
+#else
+static const char SELECTOR_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OUI SPY</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{height:100%;height:-webkit-fill-available;overflow:hidden}
+body{margin:0;height:100vh;height:-webkit-fill-available;font-family:monospace;background:#000;color:#0f0;display:flex;flex-direction:column;padding:4px;overflow:hidden}
+.t{flex:1;display:flex;flex-direction:column;border:2px solid #0f0;padding:6px;overflow:hidden;min-height:0}
+.h{text-align:center;padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #0f0;flex-shrink:0}
+.ti{font-size:24px;font-weight:bold;letter-spacing:2px}
+.s{font-size:8px;margin-top:1px;opacity:.7}
+#x{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.m{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.i{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;border:2px solid #0f0;border-bottom:0;cursor:pointer;background:#000;text-align:center;min-height:0;overflow:hidden}
+.i:last-child{border-bottom:2px solid #0f0}
+.i:active{background:#0f0;color:#000}
+.n{font-size:18px;font-weight:bold;letter-spacing:1px}
+.d{font-size:9px;opacity:.7;margin-top:1px}
+.ap{display:flex;gap:3px;align-items:center;margin-top:4px;border-top:1px solid #0f0;padding-top:4px;flex-shrink:0}
+.ap input{flex:1;padding:4px;background:#000;color:#0f0;border:1px solid #0f0;font-family:monospace;font-size:11px;min-width:0}
+.ap input:focus{outline:none;border-color:#fff;color:#fff}
+.ap .sb{padding:4px 7px;background:#0f0;color:#000;border:none;font-family:monospace;font-size:10px;font-weight:bold;cursor:pointer;white-space:nowrap}
+.ap .sb:active{background:#fff}
+.bz{display:flex;align-items:center;white-space:nowrap;cursor:pointer;font-size:9px;gap:2px;opacity:.7}
+.bz:hover{opacity:1}
+.bz input{margin:0;cursor:pointer}
+.f{padding-top:2px;margin-top:3px;font-size:7px;text-align:center;opacity:.5;flex-shrink:0}
+.boot{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px}
+.bt{font-size:28px;font-weight:bold;margin-bottom:16px;letter-spacing:2px}
+.bs{font-size:12px;line-height:1.5;margin-bottom:16px;opacity:.9;max-width:500px}
+.br{font-size:13px}
+@keyframes b{0%,50%{opacity:1}51%,100%{opacity:0}}
+.blink{animation:b 1s infinite}
+</style></head><body>
+<div class="t">
+<div class="h"><div class="ti">OUI SPY</div><div class="s">FIRMWARE SELECTOR</div></div>
+<div id="x">
+<div class="m">
+<div class="i" onclick="go(1)"><div class="n">DETECTOR</div><div class="d">BLE Alert Tool for Specific Devices</div></div>
+<div class="i" onclick="go(2)"><div class="n">FOXHUNTER</div><div class="d">RSSI Proximity Tracker</div></div>
+<div class="i" onclick="go(4)"><div class="n">FLOCK-YOU</div><div class="d">BLE + WiFi Flock detect &bull; time-sliced AP</div></div>
+<div class="i" onclick="go(5)"><div class="n">SKY SPY</div><div class="d">Drone Remote ID Monitor</div></div>
+<div class="i" onclick="go(6)"><div class="n">MEGA MAID</div><div class="d">BLE + WiFi MAC/OUI collector &bull; time-sliced AP</div></div>
+</div>
+<div class="ap">
+<input type="text" id="ap_ssid" placeholder="SSID" maxlength="32" value="%SSID%">
+<input type="text" id="ap_pass" placeholder="PASSWORD" maxlength="63" value="%PASS%">
+<button class="sb" onclick="saveAP()">SET</button>
+<label class="bz"><input type="checkbox" id="bz" onchange="saveBZ(this.checked)" %BUZZER%>BZR</label>
+</div>
+<div class="f" id="ft">Hold BOOT 2s for menu &bull; MAC randomized</div>
+</div>
+<div id="y" class="boot" style="display:none">
+<div class="bt" id="yt"></div>
+<div class="bs" id="ys"></div>
+<div class="br">REBOOTING<span class="blink">_</span></div>
+</div>
+</div>
+<script>
+var info={1:{t:'DETECTOR',s:'Scans for BLE devices and alerts when specific targets are detected. Configure OUI prefixes and MAC addresses to monitor.'},2:{t:'FOXHUNTER',s:'Track down a specific device using RSSI signal strength. Beeps get faster as you get closer to your target.'},4:{t:'FLOCK-YOU',s:'Detects Flock Safety cameras via BLE and WiFi promiscuous sniffing. Collect mode: 50/50 BLE/WiFi. Double-click KEY1 for dashboard mode with time-sliced AP (flockyou) and web export.'},5:{t:'SKY SPY',s:'Monitors for FAA Remote ID broadcasts from drones. Detects Open Drone ID signals over WiFi and BLE.'},6:{t:'MEGA MAID',s:'Collects all BLE and WiFi MAC addresses (no watchlist). Boots into dashboard mode (megamaid AP + web export). Double-click KEY1 to start collection mode (50/50 BLE/WiFi).'}};
+function go(m){var d=info[m];document.getElementById('yt').textContent=d.t;document.getElementById('ys').textContent=d.s;document.getElementById('x').style.display='none';document.getElementById('y').style.display='flex';fetch('/select?mode='+m)}
+function saveAP(){
+var s=document.getElementById('ap_ssid').value.trim();
+var p=document.getElementById('ap_pass').value.trim();
+var ft=document.getElementById('ft');
+if(s.length<1||s.length>32){ft.textContent='SSID must be 1-32 chars';return}
+if(p.length>0&&p.length<8){ft.textContent='Password must be 8+ chars or empty';return}
+ft.textContent='SAVING...';
+fetch('/saveap?ssid='+encodeURIComponent(s)+'&pass='+encodeURIComponent(p)).then(function(r){
+if(r.ok){ft.textContent='SAVED! REBOOTING...'}else{ft.textContent='ERROR'}
+}).catch(function(){ft.textContent='ERROR'})}
+function saveBZ(on){fetch('/buzzer?on='+(on?'1':'0'))}
+</script></body></html>
+)rawliteral";
+#endif
 
 // ============================================================================
 // Boot Jingle for Selector - Zelda "Secret Discovered" Style
@@ -344,40 +525,23 @@ static void startSelector() {
     selectorServer.on("/select", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (request->hasParam("mode")) {
             int mode = request->getParam("mode")->value().toInt();
-            // Mode 3 (UniPwn) is not part of this firmware; only 1,2,4,5 exist.
-            if (mode == 1 || mode == 2 || mode == 4 || mode == 5) {
-                Serial.printf("[OUI-SPY] USER SELECTED MODE %d - Storing and rebooting\n", mode);
-                
-                // Clear reset flag so double-reset detection doesn't override on next boot
-                Preferences resetPrefs;
-                resetPrefs.begin("ouispy-rst", false);
-                resetPrefs.putBool("flag", false);
-                resetPrefs.end();
-                
-                // Write mode to NVS
-                prefs.begin("unified-mode", false);
-                prefs.putInt("mode", mode);
-                prefs.putBool("selector", false);
-                prefs.end();
-                
-                // Verify the write by reading it back
-                prefs.begin("unified-mode", true);
-                int verify = prefs.getInt("mode", -1);
-                prefs.end();
-                Serial.printf("[OUI-SPY] NVS VERIFY: wrote %d, read back %d - %s\n", 
-                    mode, verify, (verify == mode) ? "OK" : "MISMATCH!");
-                Serial.flush();
-                
+#ifdef NESSO_NO_FLOCKYOU
+            if (mode == 1 || mode == 2 || mode == 5 || mode == 6) {
+#else
+            if (mode == 1 || mode == 2 || mode == 4 || mode == 5 || mode == 6) {
+#endif
                 request->send(200, "text/plain", "OK");
-                delay(1500);  // Extra time for NVS to settle
-                Serial.printf("[OUI-SPY] REBOOTING INTO MODE %d NOW\n", mode);
-                Serial.flush();
-                ESP.restart();
+                delay(1500);
+                selectorApplyMode(mode);
                 return;
             }
         }
         Serial.println("[OUI-SPY] Invalid mode selection rejected");
-        request->send(400, "text/plain", "Invalid mode (1, 2, 4, 5)");
+#ifdef NESSO_NO_FLOCKYOU
+        request->send(400, "text/plain", "Invalid mode (1, 2, 5, 6)");
+#else
+        request->send(400, "text/plain", "Invalid mode (1, 2, 4, 5, 6)");
+#endif
     });
     
     // Save AP settings endpoint
@@ -442,6 +606,7 @@ static void startSelector() {
     Serial.flush();
     boardLedInit();
     nessoUiSetMode("Selector");
+    nessoUiSetGpsIndicator(NESSO_GPS_HIDDEN);
     
     Serial.println("[SELECTOR] Playing startup jingle...");
     Serial.flush();
@@ -521,6 +686,10 @@ void setup() {
         Serial.flush();
         delay(100);
         nessoUiSetMode("Selector");
+        nessoUiSetGpsIndicator(NESSO_GPS_HIDDEN);
+        nessoUiSetSelectorActive(true);
+        selectorHighlight = 0;
+        selectorUpdateDisplay();
         startSelector();
         Serial.println("[OUI-SPY] startSelector() returned");
         Serial.flush();
@@ -529,30 +698,51 @@ void setup() {
         Serial.println("[OUI-SPY] AP will be: snoopuntothem");
         Serial.flush();
         nessoUiSetMode("Detector");
+        nessoUiSetGpsIndicator(NESSO_GPS_SEARCHING);
+        boardGpsClockBegin();
         detector_setup();
     } else if (currentMode == 2) {
         Serial.println("[OUI-SPY] >>> STARTING FOXHUNTER (mode 2) <<<");
         Serial.println("[OUI-SPY] AP will be: foxhunter");
         Serial.flush();
         nessoUiSetMode("Foxhunter");
+        nessoUiSetGpsIndicator(NESSO_GPS_SEARCHING);
+        boardGpsClockBegin();
         foxhunter_setup();
+#ifndef NESSO_NO_FLOCKYOU
     } else if (currentMode == 4) {
         Serial.println("[OUI-SPY] >>> STARTING FLOCK-YOU (mode 4) <<<");
-        Serial.println("[OUI-SPY] AP: flockyou (web dashboard at 192.168.4.1)");
+        Serial.println("[OUI-SPY] Collect: 50/50 BLE+WiFi | Dashboard: time-sliced AP flockyou");
         Serial.flush();
         nessoUiSetMode("Flock-You");
         flockyou_setup();
+#endif
     } else if (currentMode == 5) {
         Serial.println("[OUI-SPY] >>> STARTING SKY SPY (mode 5) <<<");
         Serial.println("[OUI-SPY] No WiFi AP (BLE only)");
         Serial.flush();
         nessoUiSetMode("Sky Spy");
+        nessoUiSetGpsIndicator(NESSO_GPS_SEARCHING);
+        boardGpsClockBegin();
         skyspy_setup();
+    } else if (currentMode == 6) {
+        Serial.println("[OUI-SPY] >>> STARTING MEGA MAID (mode 6) <<<");
+        Serial.println("[OUI-SPY] Boot: dashboard AP megamaid — triple-click KEY1 for collection");
+        Serial.flush();
+        nessoUiSetMode("Mega Maid");
+        megamaid_setup();
     } else {
+#ifdef NESSO_NO_FLOCKYOU
+        Serial.printf("[OUI-SPY] ERROR: Unknown mode %d, defaulting to Mega_Maid\n", currentMode);
+        Serial.flush();
+        nessoUiSetMode("Mega Maid");
+        megamaid_setup();
+#else
         Serial.printf("[OUI-SPY] ERROR: Unknown mode %d, defaulting to Flock-You\n", currentMode);
         Serial.flush();
         nessoUiSetMode("Flock-You");
         flockyou_setup();
+#endif
     }
     
     Serial.println("[OUI-SPY] ========== MODE STARTED ==========\n");
@@ -567,6 +757,12 @@ static bool bootBtnActive = false;
 static bool bootBtnMidBeep = false;
 
 static void checkBootButtonLoop() {
+    // Mega_Maid uses KEY1 for export gestures (double/triple-click). Never treat hold as
+    // "return to selector" — that looked like an unexpected reboot at cap-full export.
+    if (currentMode == 6) {
+        nessoResetBootButtonHold();
+        return;
+    }
     if (boardBootButtonPressed()) {
         if (!bootBtnActive) {
             bootBtnActive = true;
@@ -606,25 +802,52 @@ static void checkBootButtonLoop() {
         bootBtnActive = false;
         bootBtnMidBeep = false;
         boardLedOff();
-        nessoUiSetStatus("");
+        nessoUiClearHoldPrompt();
     }
 }
 
-void loop() {
-    // ALWAYS check KEY1 (front) - hold ~1.5s from ANY mode to return to selector
+void nessoResetBootButtonHold() {
+    bootBtnActive = false;
+    bootBtnMidBeep = false;
+    bootBtnStart = 0;
+    boardLedOff();
+}
+
+void nessoPollInput() {
+    if (boardBootButtonPressed() || boardSecondaryButtonPressed()) {
+        nessoUiNoteActivity();
+    }
     checkBootButtonLoop();
     nessoUiTick();
+}
+
+void loop() {
+    // Mega_Maid: run mode loop before KEY1 hold-for-menu so triple-click export is not
+    // mistaken for a 1.5s hold reboot (especially at cap-full when clicks are slower).
+    if (currentMode == 6) {
+        megamaid_loop();
+    }
+
+    nessoPollInput();
+
+    if (currentMode == 1 || currentMode == 2 || currentMode == 5) {
+        nessoUiSetGpsIndicator(boardGpsTimeValid() ? NESSO_GPS_FIX : NESSO_GPS_SEARCHING);
+    }
     
     // Route to active mode's loop
     switch (currentMode) {
         case 1: detector_loop(); break;
         case 2: foxhunter_loop(); break;
 
+#ifndef NESSO_NO_FLOCKYOU
         case 4: flockyou_loop(); break;
+#endif
         case 5: skyspy_loop(); break;
+        case 6: break;
         default:
-            // Selector mode - web server handles everything
-            selectorDNS.processNextRequest();  // Captive portal DNS
+            // Selector mode - web UI + KEY2 cycle / KEY1 confirm
+            checkSelectorButtons();
+            selectorDNS.processNextRequest();
             // LED breathing animation
             {
                 static unsigned long lastLed = 0;

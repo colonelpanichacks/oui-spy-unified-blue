@@ -1,0 +1,14 @@
+[MEGA-MAID] HTTP watchdog restart (heapLow=0 idle=1)
+[MEGA-MAID] HTTP watchdog restart (heapLow=0 idle=1)
+[MEGA-MAID] Web server stopped
+[MEGA-MAID] Captive DNS stopped
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=123944 largest=108532
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] HTTP restart heap=123944 largest=108532 det=0
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=123944
+[MEGA-MAID] HTTP watchdog restart (heapLow=0 idle=1)
+[MEGA-MAID] Web server stopped
+[MEGA-MAID] Captive DNS stopped
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=123944 largest=108532
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] HTTP restart heap=123944 largest=108532 det=0

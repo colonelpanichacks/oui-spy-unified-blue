@@ -1,0 +1,2 @@
+{"v":1,"count":1,"bytes":202,"crc":"0xEF59A355"}        
+[{"mac":"b8:82:f2:36:75:92","name":"","rssi":-78,"method":"wifi_probe","first":32721,"last":33325,"count":10,"channel":1,"ssid":"Verizon_4DWZTC","probed_ssids":["Verizon_4DWZTC"]}]

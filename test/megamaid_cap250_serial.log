@@ -1,0 +1,57 @@
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x42088d18
+SPIWP:0xee
+mode:DIO, clock div:2
+load:0x40875730,len:0x1278
+load:0x4086b910,len:0xdd0
+load:0x4086e610,len:0x3154
+entry 0x4086b910
+E (356) esp_core_dump_flash: No core dump partition found!
+E (357) esp_core_dump_flash: No core dump partition found!
+[  1868][E][AP.cpp:201] begin(): Failed to start AP!
+[  1873][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3002: ESP_ERR_WIFI_NOT_STARTED
+[MEGA-MAID] SPIFFS ready
+[MEGA-MAID] No valid prior session to promote
+[MEGA-MAID] Prior session on SPIFFS (49518 bytes) — export via dashboard HISTORY
+
+========================================
+  MEGA MAID BLE + WiFi MAC Collector
+  Build: 2026-07-25a
+  Buzzer: ON
+  GPS: auto-detect (M5 Unit GPS v1.1 (Grove UART))
+========================================
+[MEGA-MAID] Boot sound (buzzer ON)
+[MEGA-MAID] *caw caw caw*
+[MEGA-MAID] Dashboard transition started (skipSave=1)
+[MEGA-MAID] BLE scan paused (stack kept alive for AP)
+[  6898][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3001: ESP_ERR_WIFI_NOT_INIT
+[MEGA-MAID] softAP up 192.168.4.1
+[MEGA-MAID] Dashboard AP recycled — HTTP binds after 2000ms settle (heap=174576)
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=157580 largest=139252
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] HTTP restart heap=152772 largest=135156 det=0
+[MEGA-MAID] Dashboard ready heap=152772
+[MEGA-MAID] Dashboard: triple-click KEY1 for collection mode
+[MEGA-MAID] Collect: double-click KEY1 to pause/resume scan
+[MEGA-MAID] Hold KEY1 at power-on for mode selector
+[MEGA-MAID] BLE: all advertisements | WiFi: MACs + SSIDs/probes
+[MEGA-MAID] Ready
+
+[MEGA-MAID] Hardware GPS module detected (NMEA data received)
+[MEGA-MAID] First GPS fix acquired! Sats:8 Lat:45.266236 Lon:-92.806791
+[GPS] Time sync: 2026-07-25T19:38:17Z
+[MEGA-MAID] HTTP watchdog restart (heapLow=0 idle=1)
+[MEGA-MAID] Web server stopped
+[MEGA-MAID] Captive DNS stopped
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=152464 largest=135156
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] HTTP restart heap=152464 largest=135156 det=0
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=152464
+[MEGA-MAID] HTTP watchdog restart (heapLow=0 idle=1)
+[MEGA-MAID] Web server stopped
+[MEGA-MAID] Captive DNS stopped
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=152464 largest=135156
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] HTTP restart heap=152464 largest=135156 det=0

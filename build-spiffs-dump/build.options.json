@@ -1,0 +1,9 @@
+{
+  "additionalFiles": "",
+  "compiler.optimization_flags": "-Os",
+  "customBuildProperties": "",
+  "fqbn": "esp32:esp32:arduino_nesso_n1",
+  "hardwareFolders": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10,/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10",
+  "otherLibrariesFolders": "/Users/nicholastenbrink/projects/nesso/oui_spy_nesso/.arduino-cli-user/libraries,/Users/nicholastenbrink/projects/nesso/.arduino-cli-user/libraries",
+  "sketchLocation": "/Users/nicholastenbrink/projects/nesso/test/spiffs_dump"
+}

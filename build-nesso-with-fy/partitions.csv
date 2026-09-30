@@ -1,0 +1,8 @@
+# Nesso N1 (16MB flash): large OTA app slot + SPIFFS for Flock-You session files.
+# The stock Arduino "default" scheme puts FAT at 0x610000 — SPIFFS.begin() fails
+# with "spiffs partition could not be found" because there is no spiffs subtype.
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x5000,
+otadata,  data, ota,     0xe000,  0x2000,
+app0,     app,  ota_0,   0x10000, 0x700000,
+spiffs,   data, spiffs,  0x710000,0x8F0000,

@@ -1,0 +1,26 @@
+=== MEGA MAID CAP-300 SOAK VALIDATION ===
+CONST MAX_DETECTIONS=300
+CONST NEAR_CAP_THRESHOLD=290
+CONST MM_HTTP_MIN_HEAP=24576
+BUILD with_flockyou_globals=167412
+BUILD no_flockyou_cap250_globals=135588
+BUILD no_flockyou_cap300_globals=149844
+BUILD flockyou_removed_bytes=31824
+BUILD cap300_vs_cap250_bytes=14256
+BUILD cap300_heap_headroom_bytes=177836
+HOST near_cap_export_shape OK count=295
+serial_port=/dev/cu.usbmodem14401
+SERIAL ok_markers=9
+SERIAL no_crash_markers OK
+SERIAL saw:heap=
+SERIAL saw:Web server started
+SERIAL saw:Ready
+WARN live_export: <urlopen error timed out>
+FLASH OK port=/dev/cu.usbmodem14401 globals=149844
+SERIAL dashboard_heap=139536 largest=122868 det=0 (>> MM_HTTP_MIN_HEAP 24576)
+LIVE dashboard_join OK profile=dashboard
+LIVE export_json OK len=0
+LIVE history OK len=25 bytes=3289
+LIVE no OOM/heapLow=1/fallback in boot serial log
+NOTE full_290_hit_collect requires wardrive; near-cap export shape validated at 295 on host
+OVERALL PASS

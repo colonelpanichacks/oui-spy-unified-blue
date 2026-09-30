@@ -1,0 +1,2761 @@
+[
+  {
+    "mac": "60:6c:63:4f:97:b8",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 50986,
+    "last": 170588,
+    "count": 228,
+    "channel": 1,
+    "ssid": "HitronF97B0-EasyConnect",
+    "probed_ssids": [
+      "HitronF97B0-EasyConnect"
+    ]
+  },
+  {
+    "mac": "ac:8b:a9:4a:92:e2",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 108411,
+    "last": 151067,
+    "count": 263,
+    "channel": 1,
+    "ssid": "CityofMarineFire",
+    "probed_ssids": [
+      "CityofMarineFire"
+    ]
+  },
+  {
+    "mac": "ac:4d:16:fc:cf:06",
+    "name": "",
+    "rssi": -93,
+    "method": "ble_adv",
+    "first": 110568,
+    "last": 144818,
+    "count": 4,
+    "channel": 0
+  },
+  {
+    "mac": "68:f0:b1:e7:51:71",
+    "name": "",
+    "rssi": -91,
+    "method": "ble_adv",
+    "first": 115108,
+    "last": 115108,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "64:e8:33:0d:1e:54",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 116098,
+    "last": 116098,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "ac:8b:a9:4e:9c:ca",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 116112,
+    "last": 165760,
+    "count": 494,
+    "channel": 1,
+    "ssid": "CityofMarineGuest",
+    "probed_ssids": [
+      "CityofMarineGuest"
+    ]
+  },
+  {
+    "mac": "44:15:24:ed:f4:f7",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr1",
+    "first": 116153,
+    "last": 116153,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "0c:95:05:55:84:cc",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr2",
+    "first": 116167,
+    "last": 116189,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "28:2e:89:7d:fd:e5",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr1",
+    "first": 116736,
+    "last": 167849,
+    "count": 379,
+    "channel": 1
+  },
+  {
+    "mac": "4e:fa:08:06:25:1e",
+    "name": "",
+    "rssi": -34,
+    "method": "wifi_probe",
+    "first": 117083,
+    "last": 117098,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "b8:09:8a:d5:d9:a3",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_probe",
+    "first": 119304,
+    "last": 151017,
+    "count": 39,
+    "channel": 1
+  },
+  {
+    "mac": "fc:3c:d7:c7:3d:ac",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 124784,
+    "last": 128426,
+    "count": 6,
+    "channel": 1,
+    "ssid": "Marsel Home",
+    "probed_ssids": [
+      "Marsel Home"
+    ]
+  },
+  {
+    "mac": "dc:e9:94:03:40:85",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_addr1",
+    "first": 125802,
+    "last": 125802,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "7e:92:77:cb:52:03",
+    "name": "",
+    "rssi": -83,
+    "method": "wifi_probe",
+    "first": 125843,
+    "last": 125857,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "64:d2:c4:ab:fd:09",
+    "name": "",
+    "rssi": -88,
+    "method": "ble_adv",
+    "first": 125938,
+    "last": 125938,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "20:6a:94:12:48:58",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 126670,
+    "last": 166566,
+    "count": 10,
+    "channel": 1,
+    "ssid": "wifib",
+    "probed_ssids": [
+      "wifib"
+    ]
+  },
+  {
+    "mac": "7b:ed:94:86:19:a5",
+    "name": "4",
+    "rssi": -39,
+    "method": "ble_adv",
+    "first": 127150,
+    "last": 694310,
+    "count": 55,
+    "channel": 0
+  },
+  {
+    "mac": "0c:95:05:65:de:b4",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_addr2",
+    "first": 127610,
+    "last": 127610,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "48:a2:e6:bd:02:ff",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_addr1",
+    "first": 127651,
+    "last": 127651,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "d2:f4:a2:c7:2d:61",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 129231,
+    "last": 129231,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "3a:b9:f9:79:7a:9e",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_probe",
+    "first": 132262,
+    "last": 132276,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "2c:a7:74:de:24:b1",
+    "name": "",
+    "rssi": -101,
+    "method": "ble_adv",
+    "first": 132889,
+    "last": 132889,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "e8:ed:d6:84:ec:f1",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 134202,
+    "last": 173311,
+    "count": 254,
+    "channel": 1,
+    "ssid": "The Marine Bank Guest",
+    "probed_ssids": [
+      "The Marine Bank Guest"
+    ]
+  },
+  {
+    "mac": "94:f3:92:a1:b3:f9",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 136462,
+    "last": 160240,
+    "count": 80,
+    "channel": 1,
+    "ssid": "The Marine Bank Guest",
+    "probed_ssids": [
+      "The Marine Bank Guest"
+    ]
+  },
+  {
+    "mac": "6a:df:24:e8:b4:98",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 137414,
+    "last": 137414,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "32:e7:54:7d:ec:85",
+    "name": "",
+    "rssi": -68,
+    "method": "wifi_probe",
+    "first": 137441,
+    "last": 137694,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "0c:7f:ed:ca:03:e1",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 138114,
+    "last": 172329,
+    "count": 90,
+    "channel": 1,
+    "ssid": "WIFI Printer",
+    "probed_ssids": [
+      "WIFI Printer"
+    ]
+  },
+  {
+    "mac": "e8:ed:d6:84:ec:f0",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 139208,
+    "last": 172317,
+    "count": 200,
+    "channel": 1,
+    "ssid": "SSB-Marine-Corp",
+    "probed_ssids": [
+      "SSB-Marine-Corp"
+    ]
+  },
+  {
+    "mac": "40:ed:00:11:4f:44",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_probe",
+    "first": 140221,
+    "last": 140233,
+    "count": 4,
+    "channel": 1
+  },
+  {
+    "mac": "94:f3:92:a1:b3:f8",
+    "name": "",
+    "rssi": -86,
+    "method": "wifi_probe",
+    "first": 140503,
+    "last": 148547,
+    "count": 43,
+    "channel": 1,
+    "ssid": "SSB-Marine-Corp",
+    "probed_ssids": [
+      "SSB-Marine-Corp"
+    ]
+  },
+  {
+    "mac": "7c:0a:3f:9b:fd:a2",
+    "name": "",
+    "rssi": -85,
+    "method": "wifi_addr1",
+    "first": 141597,
+    "last": 141597,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "e8:ed:d6:84:ed:00",
+    "name": "",
+    "rssi": -82,
+    "method": "wifi_addr1",
+    "first": 141877,
+    "last": 162627,
+    "count": 23,
+    "channel": 1
+  },
+  {
+    "mac": "94:f3:92:a1:b4:08",
+    "name": "",
+    "rssi": -83,
+    "method": "wifi_addr1",
+    "first": 142551,
+    "last": 148440,
+    "count": 15,
+    "channel": 1
+  },
+  {
+    "mac": "f4:92:bf:86:9e:28",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr2",
+    "first": 144137,
+    "last": 182126,
+    "count": 15,
+    "channel": 1
+  },
+  {
+    "mac": "48:ad:9a:73:b6:8f",
+    "name": "",
+    "rssi": -83,
+    "method": "wifi_addr1",
+    "first": 145240,
+    "last": 145255,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "ea:d8:d1:97:2c:0d",
+    "name": "",
+    "rssi": -94,
+    "method": "ble_adv",
+    "first": 145633,
+    "last": 145633,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "44:61:32:e1:e0:85",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_addr1",
+    "first": 146238,
+    "last": 146250,
+    "count": 4,
+    "channel": 1
+  },
+  {
+    "mac": "98:25:4a:fa:c7:95",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 146747,
+    "last": 159990,
+    "count": 24,
+    "channel": 1,
+    "ssid": "Lesser Frog and Toad",
+    "probed_ssids": [
+      "Lesser Frog and Toad"
+    ]
+  },
+  {
+    "mac": "f0:09:0d:ac:60:07",
+    "name": "",
+    "rssi": -60,
+    "method": "wifi_probe",
+    "first": 147326,
+    "last": 147662,
+    "count": 15,
+    "channel": 1,
+    "probed_ssids": [
+      "PfYqRQDHkmaZLEgN3tCUb2ZYwzZf6m"
+    ]
+  },
+  {
+    "mac": "4d:44:93:49:df:e6",
+    "name": "",
+    "rssi": -98,
+    "method": "ble_adv",
+    "first": 147759,
+    "last": 147759,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "78:8c:b5:35:c5:28",
+    "name": "",
+    "rssi": -86,
+    "method": "wifi_probe_resp",
+    "first": 150130,
+    "last": 153435,
+    "count": 4,
+    "channel": 1,
+    "ssid": "SCVM51",
+    "probed_ssids": [
+      "SCVM51"
+    ]
+  },
+  {
+    "mac": "f4:f2:6d:ad:e7:05",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe_resp",
+    "first": 150174,
+    "last": 154113,
+    "count": 17,
+    "channel": 1,
+    "ssid": "MGSWIFI_EXT",
+    "probed_ssids": [
+      "MGSWIFI_EXT"
+    ]
+  },
+  {
+    "mac": "88:f4:da:0f:ff:cd",
+    "name": "",
+    "rssi": -83,
+    "method": "wifi_addr1",
+    "first": 150749,
+    "last": 150763,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "3e:00:ce:ff:a3:c2",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 150830,
+    "last": 150857,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "10:2c:b1:e6:3e:1f",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_probe",
+    "first": 150870,
+    "last": 173092,
+    "count": 14,
+    "channel": 1
+  },
+  {
+    "mac": "a0:68:7e:bd:6c:01",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 151779,
+    "last": 165398,
+    "count": 42,
+    "channel": 1,
+    "ssid": "ARRIS-E84D",
+    "probed_ssids": [
+      "ARRIS-E84D"
+    ]
+  },
+  {
+    "mac": "0c:7f:ed:ca:03:8e",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 151825,
+    "last": 172317,
+    "count": 58,
+    "channel": 1,
+    "ssid": "WIFI Printer",
+    "probed_ssids": [
+      "WIFI Printer"
+    ]
+  },
+  {
+    "mac": "60:b7:6e:76:ad:1e",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 152456,
+    "last": 160824,
+    "count": 18,
+    "channel": 1,
+    "ssid": "crackhouse",
+    "probed_ssids": [
+      "crackhouse"
+    ]
+  },
+  {
+    "mac": "84:cc:a8:5b:f6:bc",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_addr2",
+    "first": 153407,
+    "last": 153407,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "0c:7f:ed:ca:03:8d",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_addr2",
+    "first": 154232,
+    "last": 154232,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "b4:7c:9c:1b:e8:7a",
+    "name": "",
+    "rssi": -78,
+    "method": "wifi_probe",
+    "first": 155999,
+    "last": 156395,
+    "count": 11,
+    "channel": 1
+  },
+  {
+    "mac": "b6:c1:c9:8a:c5:45",
+    "name": "",
+    "rssi": -86,
+    "method": "wifi_probe",
+    "first": 156395,
+    "last": 156395,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "74:df:bf:1c:c8:28",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr1",
+    "first": 156608,
+    "last": 156608,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "42:36:24:9a:ad:b0",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_probe",
+    "first": 157663,
+    "last": 157663,
+    "count": 1,
+    "channel": 1,
+    "ssid": "The Marine Bank Guest",
+    "probed_ssids": [
+      "The Marine Bank Guest"
+    ]
+  },
+  {
+    "mac": "e2:c4:b0:40:23:4c",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 158255,
+    "last": 158255,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "b8:78:2e:3d:23:b9",
+    "name": "",
+    "rssi": -100,
+    "method": "ble_adv",
+    "first": 159628,
+    "last": 159628,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "0c:7f:ed:ca:03:e0",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr2",
+    "first": 159872,
+    "last": 172365,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "88:57:1d:a5:d3:0d",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 160219,
+    "last": 161516,
+    "count": 4,
+    "channel": 1,
+    "ssid": "[range]_E30AJT7113546A",
+    "probed_ssids": [
+      "[range]_E30AJT7113546A"
+    ]
+  },
+  {
+    "mac": "d4:3b:04:cf:be:5d",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_addr1",
+    "first": 161457,
+    "last": 161469,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "00:23:38:34:69:ca",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 170732,
+    "last": 174890,
+    "count": 6,
+    "channel": 1,
+    "ssid": "hillside1854",
+    "probed_ssids": [
+      "hillside1854"
+    ]
+  },
+  {
+    "mac": "c4:41:1e:07:ef:8d",
+    "name": "",
+    "rssi": -75,
+    "method": "wifi_addr1",
+    "first": 171128,
+    "last": 175856,
+    "count": 9,
+    "channel": 1
+  },
+  {
+    "mac": "74:9b:e8:29:97:b8",
+    "name": "",
+    "rssi": -86,
+    "method": "wifi_probe",
+    "first": 171155,
+    "last": 179390,
+    "count": 46,
+    "channel": 1,
+    "ssid": "Marine",
+    "probed_ssids": [
+      "Marine"
+    ]
+  },
+  {
+    "mac": "e8:fb:1c:f1:8b:16",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 173033,
+    "last": 173053,
+    "count": 4,
+    "channel": 1,
+    "probed_ssids": [
+      "AESF05N112S2"
+    ]
+  },
+  {
+    "mac": "c8:a6:ef:0e:b8:a3",
+    "name": "",
+    "rssi": -93,
+    "method": "ble_adv",
+    "first": 173620,
+    "last": 173620,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "68:d7:9a:3d:94:f3",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr2",
+    "first": 174418,
+    "last": 185411,
+    "count": 20,
+    "channel": 1
+  },
+  {
+    "mac": "68:d7:9a:6c:53:27",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr2",
+    "first": 178294,
+    "last": 183140,
+    "count": 7,
+    "channel": 1
+  },
+  {
+    "mac": "d0:c1:93:28:40:91",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr1",
+    "first": 178336,
+    "last": 184630,
+    "count": 14,
+    "channel": 1
+  },
+  {
+    "mac": "68:8f:2e:be:9a:b8",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe_resp",
+    "first": 178364,
+    "last": 184509,
+    "count": 43,
+    "channel": 1,
+    "ssid": "Smith",
+    "probed_ssids": [
+      "Smith"
+    ]
+  },
+  {
+    "mac": "68:d7:9a:40:cf:93",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 179051,
+    "last": 179069,
+    "count": 2,
+    "channel": 1,
+    "ssid": "Alien2",
+    "probed_ssids": [
+      "Alien2"
+    ]
+  },
+  {
+    "mac": "90:84:0d:d5:1e:39",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 179070,
+    "last": 179377,
+    "count": 6,
+    "channel": 1,
+    "ssid": "Rancho Del Oro",
+    "probed_ssids": [
+      "Rancho Del Oro"
+    ]
+  },
+  {
+    "mac": "4c:bc:e9:47:2e:fe",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr1",
+    "first": 179337,
+    "last": 179337,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "60:6c:63:4d:51:98",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_addr2",
+    "first": 180643,
+    "last": 180643,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "60:32:b1:46:ab:83",
+    "name": "",
+    "rssi": -85,
+    "method": "wifi_probe",
+    "first": 181903,
+    "last": 181921,
+    "count": 2,
+    "channel": 1,
+    "ssid": "SkyNet",
+    "probed_ssids": [
+      "SkyNet"
+    ]
+  },
+  {
+    "mac": "84:0b:7c:87:55:f8",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 182067,
+    "last": 190661,
+    "count": 32,
+    "channel": 1,
+    "ssid": "Hudsonhouse",
+    "probed_ssids": [
+      "Hudsonhouse"
+    ]
+  },
+  {
+    "mac": "24:4b:03:85:65:4d",
+    "name": "",
+    "rssi": -90,
+    "method": "ble_adv",
+    "first": 182463,
+    "last": 182463,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "bc:3e:07:29:ed:f8",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe_resp",
+    "first": 184509,
+    "last": 196779,
+    "count": 159,
+    "channel": 1,
+    "ssid": "HAGUE03",
+    "probed_ssids": [
+      "HAGUE03"
+    ]
+  },
+  {
+    "mac": "04:e3:1a:b7:d4:00",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_addr1",
+    "first": 184527,
+    "last": 191515,
+    "count": 63,
+    "channel": 1,
+    "probed_ssids": [
+      "we.piranha",
+      "we.connect.etna",
+      "we.connect.yellowstone"
+    ]
+  },
+  {
+    "mac": "b0:e4:d5:0c:84:32",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr2",
+    "first": 185615,
+    "last": 191089,
+    "count": 43,
+    "channel": 1,
+    "ssid": "thirteen",
+    "probed_ssids": [
+      "thirteen"
+    ]
+  },
+  {
+    "mac": "30:b7:d4:b5:4a:88",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 187135,
+    "last": 187150,
+    "count": 2,
+    "channel": 1,
+    "ssid": "Harriet",
+    "probed_ssids": [
+      "Harriet"
+    ]
+  },
+  {
+    "mac": "20:ef:bd:60:b0:3f",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 187552,
+    "last": 187572,
+    "count": 4,
+    "channel": 1,
+    "ssid": "Hudson_house",
+    "probed_ssids": [
+      "Hudson_house"
+    ]
+  },
+  {
+    "mac": "b0:e4:d5:09:1a:22",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 187730,
+    "last": 193157,
+    "count": 55,
+    "channel": 1,
+    "ssid": "thirteen",
+    "probed_ssids": [
+      "thirteen"
+    ]
+  },
+  {
+    "mac": "e0:70:ea:80:f4:a8",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_probe",
+    "first": 187840,
+    "last": 190578,
+    "count": 18,
+    "channel": 1,
+    "ssid": "DIRECT-A4-HP DeskJet 4100 series",
+    "probed_ssids": [
+      "DIRECT-A4-HP DeskJet 4100 series"
+    ]
+  },
+  {
+    "mac": "2c:aa:8e:88:01:cd",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr2",
+    "first": 190173,
+    "last": 190173,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "78:d2:94:74:2e:2b",
+    "name": "",
+    "rssi": -85,
+    "method": "wifi_addr2",
+    "first": 190578,
+    "last": 195419,
+    "count": 28,
+    "channel": 1,
+    "ssid": "Mazeltov",
+    "probed_ssids": [
+      "Mazeltov"
+    ]
+  },
+  {
+    "mac": "30:c9:22:d9:3a:7c",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_addr1",
+    "first": 190593,
+    "last": 195385,
+    "count": 5,
+    "channel": 1
+  },
+  {
+    "mac": "b0:e4:d5:09:1a:21",
+    "name": "",
+    "rssi": -99,
+    "method": "ble_adv",
+    "first": 190615,
+    "last": 190615,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "b0:5a:da:89:5d:fa",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_probe",
+    "first": 191244,
+    "last": 194622,
+    "count": 14,
+    "channel": 1,
+    "ssid": "HP-Print-FA-Officejet Pro 8610",
+    "probed_ssids": [
+      "HP-Print-FA-Officejet Pro 8610"
+    ]
+  },
+  {
+    "mac": "f0:03:8c:fd:97:a4",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 191390,
+    "last": 191408,
+    "count": 2,
+    "channel": 1,
+    "ssid": "willie1",
+    "probed_ssids": [
+      "willie1"
+    ]
+  },
+  {
+    "mac": "00:1a:13:a4:ae:9f",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_probe",
+    "first": 193670,
+    "last": 193878,
+    "count": 6,
+    "channel": 1
+  },
+  {
+    "mac": "18:60:41:d0:df:15",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_probe",
+    "first": 197352,
+    "last": 204944,
+    "count": 81,
+    "channel": 1,
+    "ssid": "TMOBILE-DF13",
+    "probed_ssids": [
+      "TMOBILE-DF13"
+    ]
+  },
+  {
+    "mac": "9c:20:7b:b8:0b:82",
+    "name": "",
+    "rssi": -78,
+    "method": "wifi_addr1",
+    "first": 200732,
+    "last": 200732,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "98:e7:f4:ae:5d:14",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr1",
+    "first": 203741,
+    "last": 203741,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "c4:41:1e:1a:52:d5",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 206201,
+    "last": 220668,
+    "count": 72,
+    "channel": 1,
+    "ssid": "Net2.4",
+    "probed_ssids": [
+      "Net2.4"
+    ]
+  },
+  {
+    "mac": "84:34:97:b5:a5:08",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 209222,
+    "last": 209242,
+    "count": 4,
+    "channel": 1,
+    "ssid": "Frontier1856",
+    "probed_ssids": [
+      "Frontier1856"
+    ]
+  },
+  {
+    "mac": "0c:ee:99:39:f1:df",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 210933,
+    "last": 214432,
+    "count": 8,
+    "channel": 1,
+    "ssid": "CGNM-90A8",
+    "probed_ssids": [
+      "CGNM-90A8"
+    ]
+  },
+  {
+    "mac": "98:e7:f4:ae:5d:15",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 213402,
+    "last": 213422,
+    "count": 4,
+    "channel": 1,
+    "ssid": "DIRECT-14-HP ENVY 7640 series",
+    "probed_ssids": [
+      "DIRECT-14-HP ENVY 7640 series"
+    ]
+  },
+  {
+    "mac": "b0:39:56:4c:2c:b3",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_probe",
+    "first": 215385,
+    "last": 217494,
+    "count": 6,
+    "channel": 1,
+    "ssid": "NETGEAR21",
+    "probed_ssids": [
+      "NETGEAR21"
+    ]
+  },
+  {
+    "mac": "60:6c:63:4f:d0:d8",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 216415,
+    "last": 220224,
+    "count": 24,
+    "channel": 1,
+    "ssid": "Kathys WiFi",
+    "probed_ssids": [
+      "Kathys WiFi"
+    ]
+  },
+  {
+    "mac": "bc:3e:07:9a:63:a8",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 216432,
+    "last": 216455,
+    "count": 4,
+    "channel": 1,
+    "ssid": "Oh Gosh",
+    "probed_ssids": [
+      "Oh Gosh"
+    ]
+  },
+  {
+    "mac": "f4:b7:e2:60:28:79",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 216503,
+    "last": 216503,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "70:7d:a1:98:68:ea",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr1",
+    "first": 217494,
+    "last": 217888,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "cc:58:30:79:94:0e",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 217902,
+    "last": 217930,
+    "count": 4,
+    "channel": 1
+  },
+  {
+    "mac": "14:22:3b:12:45:22",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 219420,
+    "last": 228526,
+    "count": 92,
+    "channel": 1,
+    "ssid": "Lordstanleymesh",
+    "probed_ssids": [
+      "Lordstanleymesh"
+    ]
+  },
+  {
+    "mac": "cc:6a:10:d4:ed:6d",
+    "name": "",
+    "rssi": -78,
+    "method": "wifi_addr2",
+    "first": 222746,
+    "last": 222758,
+    "count": 4,
+    "channel": 1
+  },
+  {
+    "mac": "5a:04:cf:9a:2a:83",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 226448,
+    "last": 226448,
+    "count": 1,
+    "channel": 1,
+    "ssid": "Lordstanleymesh",
+    "probed_ssids": [
+      "Lordstanleymesh"
+    ]
+  },
+  {
+    "mac": "52:f4:4f:b9:0a:05",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 226465,
+    "last": 226465,
+    "count": 1,
+    "channel": 1,
+    "ssid": "Lordstanleymesh",
+    "probed_ssids": [
+      "Lordstanleymesh"
+    ]
+  },
+  {
+    "mac": "48:4e:fc:46:f4:20",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 231684,
+    "last": 234546,
+    "count": 20,
+    "channel": 1,
+    "ssid": "Frontier7408",
+    "probed_ssids": [
+      "Frontier7408"
+    ]
+  },
+  {
+    "mac": "cc:6a:10:19:22:2a",
+    "name": "",
+    "rssi": -85,
+    "method": "wifi_probe",
+    "first": 239189,
+    "last": 239579,
+    "count": 8,
+    "channel": 1,
+    "ssid": "Pallas Home",
+    "probed_ssids": [
+      "Pallas Home"
+    ]
+  },
+  {
+    "mac": "fc:45:c3:83:87:cf",
+    "name": "",
+    "rssi": -81,
+    "method": "wifi_addr2",
+    "first": 241234,
+    "last": 241249,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "f8:d0:27:34:d8:8d",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_addr2",
+    "first": 241249,
+    "last": 242816,
+    "count": 16,
+    "channel": 1
+  },
+  {
+    "mac": "26:12:af:68:a7:9f",
+    "name": "",
+    "rssi": -74,
+    "method": "wifi_probe",
+    "first": 243589,
+    "last": 244056,
+    "count": 5,
+    "channel": 1,
+    "probed_ssids": [
+      "MANNAINN"
+    ]
+  },
+  {
+    "mac": "cc:9e:a2:50:45:e4",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_addr1",
+    "first": 245880,
+    "last": 245880,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "38:86:f7:ea:aa:7b",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr2",
+    "first": 245892,
+    "last": 250488,
+    "count": 31,
+    "channel": 1
+  },
+  {
+    "mac": "24:29:34:cb:c8:71",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr1",
+    "first": 245911,
+    "last": 250488,
+    "count": 39,
+    "channel": 1,
+    "ssid": "Wifi001",
+    "probed_ssids": [
+      "Wifi001"
+    ]
+  },
+  {
+    "mac": "00:bd:3e:4e:31:13",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr2",
+    "first": 249593,
+    "last": 249605,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "8e:7b:dc:7e:66:ff",
+    "name": "",
+    "rssi": -79,
+    "method": "wifi_probe",
+    "first": 264609,
+    "last": 453473,
+    "count": 7,
+    "channel": 1,
+    "probed_ssids": [
+      "cascade-guest"
+    ]
+  },
+  {
+    "mac": "14:eb:b6:81:fa:82",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 325215,
+    "last": 325232,
+    "count": 2,
+    "channel": 1,
+    "ssid": "Krustykrab_EXT",
+    "probed_ssids": [
+      "Krustykrab_EXT"
+    ]
+  },
+  {
+    "mac": "20:0d:b0:d7:54:f9",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 327049,
+    "last": 327064,
+    "count": 4,
+    "channel": 1,
+    "ssid": "FiOS-FU758",
+    "probed_ssids": [
+      "FiOS-FU758"
+    ]
+  },
+  {
+    "mac": "60:14:b3:00:27:e7",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 339934,
+    "last": 350451,
+    "count": 64,
+    "channel": 1,
+    "ssid": "barn",
+    "probed_ssids": [
+      "barn"
+    ]
+  },
+  {
+    "mac": "48:31:b7:7b:46:28",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr1",
+    "first": 342554,
+    "last": 357949,
+    "count": 13,
+    "channel": 1
+  },
+  {
+    "mac": "74:a3:34:74:0c:df",
+    "name": "",
+    "rssi": -90,
+    "method": "ble_adv",
+    "first": 346520,
+    "last": 346520,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "bc:30:d9:1d:6e:6b",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_addr2",
+    "first": 349009,
+    "last": 349009,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "18:a5:ff:d5:bf:96",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_probe",
+    "first": 354475,
+    "last": 354494,
+    "count": 2,
+    "channel": 1,
+    "ssid": "SVECTMOBILE",
+    "probed_ssids": [
+      "SVECTMOBILE"
+    ]
+  },
+  {
+    "mac": "5c:47:5e:18:0c:8a",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 376511,
+    "last": 376547,
+    "count": 9,
+    "channel": 1,
+    "ssid": "RingOfSecurity-CwTgXyHlU",
+    "probed_ssids": [
+      "RingOfSecurity-CwTgXyHlU"
+    ]
+  },
+  {
+    "mac": "c0:74:ad:6b:92:09",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 378989,
+    "last": 390158,
+    "count": 84,
+    "channel": 1,
+    "ssid": "Abrahamson-WiFi",
+    "probed_ssids": [
+      "Abrahamson-WiFi"
+    ]
+  },
+  {
+    "mac": "24:94:cb:84:f2:b0",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 383436,
+    "last": 384053,
+    "count": 7,
+    "channel": 1,
+    "ssid": "Frontier7472",
+    "probed_ssids": [
+      "Frontier7472"
+    ]
+  },
+  {
+    "mac": "5c:fc:e1:1d:10:19",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 390170,
+    "last": 392063,
+    "count": 6,
+    "channel": 1,
+    "ssid": "NewThermostat_1D1019",
+    "probed_ssids": [
+      "NewThermostat_1D1019"
+    ]
+  },
+  {
+    "mac": "20:6a:94:98:d7:58",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 392047,
+    "last": 393577,
+    "count": 6,
+    "channel": 1,
+    "ssid": "Alex",
+    "probed_ssids": [
+      "Alex"
+    ]
+  },
+  {
+    "mac": "24:94:cb:4d:ea:20",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_probe",
+    "first": 395253,
+    "last": 399052,
+    "count": 42,
+    "channel": 1,
+    "ssid": "Frontier0800",
+    "probed_ssids": [
+      "Frontier0800"
+    ]
+  },
+  {
+    "mac": "00:26:ab:5c:85:45",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 412071,
+    "last": 419325,
+    "count": 22,
+    "channel": 1,
+    "ssid": "Torkelson1",
+    "probed_ssids": [
+      "Torkelson1"
+    ]
+  },
+  {
+    "mac": "b0:2a:43:b9:07:1b",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 414878,
+    "last": 414895,
+    "count": 2,
+    "channel": 1,
+    "ssid": "Google WiFi",
+    "probed_ssids": [
+      "Google WiFi"
+    ]
+  },
+  {
+    "mac": "04:17:b6:64:c3:22",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 418576,
+    "last": 428481,
+    "count": 84,
+    "channel": 1
+  },
+  {
+    "mac": "ac:ae:19:01:64:04",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 419325,
+    "last": 419336,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "54:5a:a6:59:94:91",
+    "name": "",
+    "rssi": -86,
+    "method": "wifi_probe",
+    "first": 426588,
+    "last": 426608,
+    "count": 4,
+    "channel": 1,
+    "probed_ssids": [
+      "Our House"
+    ]
+  },
+  {
+    "mac": "10:2c:b1:a9:3e:fc",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 436481,
+    "last": 445917,
+    "count": 24,
+    "channel": 1
+  },
+  {
+    "mac": "b0:4a:39:92:02:4b",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_probe",
+    "first": 443201,
+    "last": 448855,
+    "count": 6,
+    "channel": 1,
+    "probed_ssids": [
+      "Bettendorf3"
+    ]
+  },
+  {
+    "mac": "10:2c:b1:da:48:56",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr2",
+    "first": 445903,
+    "last": 445917,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "20:6a:94:98:ce:48",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 449870,
+    "last": 493573,
+    "count": 79,
+    "channel": 1,
+    "ssid": "ETPHONE HOME",
+    "probed_ssids": [
+      "ETPHONE HOME"
+    ]
+  },
+  {
+    "mac": "c8:d9:d2:e8:f5:79",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr1",
+    "first": 451264,
+    "last": 489844,
+    "count": 21,
+    "channel": 1
+  },
+  {
+    "mac": "00:80:ae:3c:bb:2d",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 468475,
+    "last": 493794,
+    "count": 40,
+    "channel": 1,
+    "ssid": "hugh543957",
+    "probed_ssids": [
+      "hugh543957"
+    ]
+  },
+  {
+    "mac": "70:df:f7:7f:52:30",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 484757,
+    "last": 487310,
+    "count": 4,
+    "channel": 1,
+    "ssid": "Frontier4384",
+    "probed_ssids": [
+      "Frontier4384"
+    ]
+  },
+  {
+    "mac": "00:80:ae:48:e0:a2",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 495489,
+    "last": 499160,
+    "count": 27,
+    "channel": 1,
+    "ssid": "hugh543957",
+    "probed_ssids": [
+      "hugh543957"
+    ]
+  },
+  {
+    "mac": "74:df:bf:20:98:92",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_addr1",
+    "first": 498374,
+    "last": 501303,
+    "count": 11,
+    "channel": 1
+  },
+  {
+    "mac": "72:2a:6b:14:a9:4d",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 498441,
+    "last": 498441,
+    "count": 1,
+    "channel": 1,
+    "ssid": "hugh543957",
+    "probed_ssids": [
+      "hugh543957"
+    ]
+  },
+  {
+    "mac": "00:06:78:87:48:42",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_probe",
+    "first": 499097,
+    "last": 499160,
+    "count": 11,
+    "channel": 1,
+    "probed_ssids": [
+      "Buckhome_5G"
+    ]
+  },
+  {
+    "mac": "20:6a:94:14:8c:e8",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 503619,
+    "last": 506142,
+    "count": 35,
+    "channel": 1,
+    "ssid": "The Cabin",
+    "probed_ssids": [
+      "The Cabin"
+    ]
+  },
+  {
+    "mac": "74:9b:e8:0f:84:88",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr2",
+    "first": 515293,
+    "last": 522658,
+    "count": 33,
+    "channel": 1,
+    "ssid": "GHOST",
+    "probed_ssids": [
+      "GHOST"
+    ]
+  },
+  {
+    "mac": "44:2b:f9:ac:3d:45",
+    "name": "",
+    "rssi": -100,
+    "method": "ble_adv",
+    "first": 523437,
+    "last": 523437,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "f8:1d:0f:b2:dc:58",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 525763,
+    "last": 533637,
+    "count": 30,
+    "channel": 1,
+    "ssid": "Mike Honcho",
+    "probed_ssids": [
+      "Mike Honcho"
+    ]
+  },
+  {
+    "mac": "64:db:a0:0e:9c:66",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 526369,
+    "last": 526369,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "44:61:32:50:3a:fb",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr2",
+    "first": 530038,
+    "last": 531175,
+    "count": 6,
+    "channel": 1
+  },
+  {
+    "mac": "10:e8:a7:c3:09:60",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 531176,
+    "last": 531187,
+    "count": 6,
+    "channel": 1
+  },
+  {
+    "mac": "a0:68:7e:07:9a:40",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr2",
+    "first": 531433,
+    "last": 531444,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "74:9b:e8:17:72:78",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 536945,
+    "last": 546567,
+    "count": 32,
+    "channel": 1,
+    "ssid": "Home",
+    "probed_ssids": [
+      "Home"
+    ]
+  },
+  {
+    "mac": "10:2c:6b:bc:c1:76",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_probe",
+    "first": 540703,
+    "last": 540723,
+    "count": 4,
+    "channel": 1,
+    "ssid": "happyfire943",
+    "probed_ssids": [
+      "happyfire943"
+    ]
+  },
+  {
+    "mac": "74:9b:e8:aa:27:18",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 551567,
+    "last": 551582,
+    "count": 5,
+    "channel": 1
+  },
+  {
+    "mac": "9c:53:22:97:d9:78",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_probe",
+    "first": 551595,
+    "last": 552181,
+    "count": 4,
+    "channel": 1,
+    "ssid": "Timber_Ext",
+    "probed_ssids": [
+      "Timber_Ext"
+    ]
+  },
+  {
+    "mac": "94:f3:92:a1:eb:19",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_probe_resp",
+    "first": 554650,
+    "last": 578716,
+    "count": 234,
+    "channel": 1,
+    "ssid": "The Marine Bank Guest",
+    "probed_ssids": [
+      "The Marine Bank Guest"
+    ]
+  },
+  {
+    "mac": "94:f3:92:a1:eb:28",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_addr1",
+    "first": 554669,
+    "last": 564769,
+    "count": 11,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3a:62:bf",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_addr1",
+    "first": 555575,
+    "last": 579930,
+    "count": 23,
+    "channel": 1
+  },
+  {
+    "mac": "94:f3:92:a1:eb:18",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_probe_resp",
+    "first": 555833,
+    "last": 578716,
+    "count": 229,
+    "channel": 1,
+    "ssid": "SSB-Marine-Corp",
+    "probed_ssids": [
+      "SSB-Marine-Corp"
+    ]
+  },
+  {
+    "mac": "c8:26:e2:6a:0a:5a",
+    "name": "",
+    "rssi": -86,
+    "method": "wifi_addr1",
+    "first": 556093,
+    "last": 584636,
+    "count": 17,
+    "channel": 1
+  },
+  {
+    "mac": "34:68:95:76:89:f5",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 558634,
+    "last": 558646,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "00:72:ee:34:63:68",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr1",
+    "first": 558646,
+    "last": 558646,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "3c:3b:ad:5e:e5:bf",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr1",
+    "first": 562463,
+    "last": 567278,
+    "count": 6,
+    "channel": 1
+  },
+  {
+    "mac": "9c:4f:5f:9e:28:9f",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 562977,
+    "last": 583274,
+    "count": 48,
+    "channel": 1,
+    "ssid": "compliant-prod",
+    "probed_ssids": [
+      "compliant-prod"
+    ]
+  },
+  {
+    "mac": "c8:26:e2:6a:0c:e0",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 567278,
+    "last": 585664,
+    "count": 16,
+    "channel": 1
+  },
+  {
+    "mac": "e0:63:da:7a:7a:3d",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 568139,
+    "last": 571257,
+    "count": 10,
+    "channel": 1,
+    "ssid": "SFR_Guest",
+    "probed_ssids": [
+      "SFR_Guest"
+    ]
+  },
+  {
+    "mac": "b4:b5:b6:60:0b:f0",
+    "name": "",
+    "rssi": -85,
+    "method": "wifi_probe",
+    "first": 568406,
+    "last": 568423,
+    "count": 2,
+    "channel": 1,
+    "ssid": "SFR_Guest",
+    "probed_ssids": [
+      "SFR_Guest"
+    ]
+  },
+  {
+    "mac": "00:30:44:18:f6:bd",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_probe",
+    "first": 568423,
+    "last": 571290,
+    "count": 19,
+    "channel": 1,
+    "ssid": "WCRM",
+    "probed_ssids": [
+      "WCRM"
+    ]
+  },
+  {
+    "mac": "c8:26:e2:6a:0a:74",
+    "name": "",
+    "rssi": -78,
+    "method": "wifi_probe",
+    "first": 568959,
+    "last": 568971,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3a:39:de",
+    "name": "",
+    "rssi": -75,
+    "method": "wifi_addr1",
+    "first": 571539,
+    "last": 572057,
+    "count": 10,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3a:53:72",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr1",
+    "first": 572302,
+    "last": 582026,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "74:37:5f:e7:11:03",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_addr1",
+    "first": 572314,
+    "last": 572314,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3a:4d:5b",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr1",
+    "first": 573264,
+    "last": 583275,
+    "count": 10,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3b:ed:f2",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr1",
+    "first": 574601,
+    "last": 574889,
+    "count": 7,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3b:f8:ac",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_addr1",
+    "first": 575399,
+    "last": 575905,
+    "count": 8,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3a:45:f7",
+    "name": "",
+    "rssi": -86,
+    "method": "wifi_addr1",
+    "first": 576583,
+    "last": 584621,
+    "count": 5,
+    "channel": 1
+  },
+  {
+    "mac": "c0:d2:f3:3a:39:e6",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_addr1",
+    "first": 577340,
+    "last": 577967,
+    "count": 9,
+    "channel": 1
+  },
+  {
+    "mac": "10:e8:a7:af:83:a8",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_probe",
+    "first": 578460,
+    "last": 578716,
+    "count": 5,
+    "channel": 1
+  },
+  {
+    "mac": "74:97:79:1f:4e:33",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_addr1",
+    "first": 578716,
+    "last": 581240,
+    "count": 4,
+    "channel": 1
+  },
+  {
+    "mac": "f8:9e:28:7e:43:9e",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_addr2",
+    "first": 579233,
+    "last": 594293,
+    "count": 53,
+    "channel": 1,
+    "ssid": "Fed_coop",
+    "probed_ssids": [
+      "Fed_coop"
+    ]
+  },
+  {
+    "mac": "c0:d2:f3:25:1f:af",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 582026,
+    "last": 582026,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "00:1f:54:c1:d2:c1",
+    "name": "",
+    "rssi": -72,
+    "method": "wifi_addr2",
+    "first": 582302,
+    "last": 598466,
+    "count": 3,
+    "channel": 1
+  },
+  {
+    "mac": "2c:c8:1b:e5:99:9f",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 582314,
+    "last": 601165,
+    "count": 32,
+    "channel": 1,
+    "ssid": "Scandia Creamery",
+    "probed_ssids": [
+      "Scandia Creamery"
+    ]
+  },
+  {
+    "mac": "34:b7:da:15:d5:c0",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 583464,
+    "last": 591548,
+    "count": 6,
+    "channel": 1,
+    "ssid": "mojo",
+    "probed_ssids": [
+      "mojo"
+    ]
+  },
+  {
+    "mac": "7a:e5:e1:4e:30:3c",
+    "name": "",
+    "rssi": -101,
+    "method": "ble_adv",
+    "first": 584041,
+    "last": 584041,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "64:16:66:e0:d0:bf",
+    "name": "",
+    "rssi": -81,
+    "method": "wifi_addr1",
+    "first": 587367,
+    "last": 587382,
+    "count": 6,
+    "channel": 1
+  },
+  {
+    "mac": "00:1f:54:c1:f0:ae",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_addr2",
+    "first": 588266,
+    "last": 616336,
+    "count": 42,
+    "channel": 1
+  },
+  {
+    "mac": "2c:c8:1b:72:c1:86",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_addr1",
+    "first": 588277,
+    "last": 616336,
+    "count": 49,
+    "channel": 1
+  },
+  {
+    "mac": "24:6f:28:2d:5e:28",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_addr2",
+    "first": 591537,
+    "last": 591537,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "24:cd:8d:15:d8:b4",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr1",
+    "first": 596407,
+    "last": 596407,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "00:1f:54:c1:d2:ca",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_addr2",
+    "first": 597842,
+    "last": 598434,
+    "count": 7,
+    "channel": 1
+  },
+  {
+    "mac": "84:0b:7c:7e:a9:c8",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_probe",
+    "first": 603850,
+    "last": 616834,
+    "count": 35,
+    "channel": 1,
+    "ssid": "CMPete",
+    "probed_ssids": [
+      "CMPete"
+    ]
+  },
+  {
+    "mac": "74:9b:e8:27:5c:18",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_probe",
+    "first": 604447,
+    "last": 623629,
+    "count": 89,
+    "channel": 1,
+    "ssid": "M&M",
+    "probed_ssids": [
+      "M&M"
+    ]
+  },
+  {
+    "mac": "20:6a:94:9f:ce:98",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_probe",
+    "first": 606519,
+    "last": 616336,
+    "count": 8,
+    "channel": 1,
+    "ssid": "Midco21396",
+    "probed_ssids": [
+      "Midco21396"
+    ]
+  },
+  {
+    "mac": "64:52:99:ec:04:6a",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_addr2",
+    "first": 607880,
+    "last": 607924,
+    "count": 4,
+    "channel": 1
+  },
+  {
+    "mac": "68:8f:2e:d4:b9:28",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 610275,
+    "last": 661284,
+    "count": 151,
+    "channel": 1,
+    "ssid": "DShome",
+    "probed_ssids": [
+      "DShome"
+    ]
+  },
+  {
+    "mac": "64:db:a0:12:b7:8c",
+    "name": "",
+    "rssi": -68,
+    "method": "wifi_addr2",
+    "first": 610292,
+    "last": 621859,
+    "count": 17,
+    "channel": 1
+  },
+  {
+    "mac": "18:a5:ff:ca:de:ee",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_addr2",
+    "first": 610870,
+    "last": 611471,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "70:9c:d1:36:c5:77",
+    "name": "",
+    "rssi": -87,
+    "method": "wifi_addr1",
+    "first": 610881,
+    "last": 611471,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "54:78:c9:cd:12:4a",
+    "name": "",
+    "rssi": -79,
+    "method": "wifi_probe",
+    "first": 611765,
+    "last": 612543,
+    "count": 18,
+    "channel": 1
+  },
+  {
+    "mac": "00:1d:7e:e0:d9:60",
+    "name": "",
+    "rssi": -81,
+    "method": "wifi_addr1",
+    "first": 612027,
+    "last": 612543,
+    "count": 13,
+    "channel": 1
+  },
+  {
+    "mac": "18:c8:e7:45:95:09",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_addr2",
+    "first": 618037,
+    "last": 618066,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "ac:91:9b:d3:b6:5a",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 618066,
+    "last": 619190,
+    "count": 4,
+    "channel": 1,
+    "ssid": "Verizon_SXCQ4G",
+    "probed_ssids": [
+      "Verizon_SXCQ4G"
+    ]
+  },
+  {
+    "mac": "80:e5:40:ef:93:c0",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 627700,
+    "last": 641839,
+    "count": 57,
+    "channel": 1,
+    "ssid": "Frontier8864",
+    "probed_ssids": [
+      "Frontier8864"
+    ]
+  },
+  {
+    "mac": "c4:db:ad:09:64:2c",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr2",
+    "first": 627720,
+    "last": 627720,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "f8:0d:60:55:d8:61",
+    "name": "",
+    "rssi": -90,
+    "method": "wifi_probe",
+    "first": 629165,
+    "last": 629181,
+    "count": 2,
+    "channel": 1,
+    "ssid": "Rusty1",
+    "probed_ssids": [
+      "Rusty1"
+    ]
+  },
+  {
+    "mac": "b0:19:21:99:da:22",
+    "name": "",
+    "rssi": -85,
+    "method": "wifi_probe",
+    "first": 652587,
+    "last": 656476,
+    "count": 10,
+    "channel": 1,
+    "ssid": "Holland Deco",
+    "probed_ssids": [
+      "Holland Deco"
+    ]
+  },
+  {
+    "mac": "94:9f:3e:04:ea:b8",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_addr1",
+    "first": 659543,
+    "last": 665659,
+    "count": 20,
+    "channel": 1,
+    "probed_ssids": [
+      "caldwell wireless"
+    ]
+  },
+  {
+    "mac": "68:8f:2e:12:6c:38",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 662664,
+    "last": 680694,
+    "count": 65,
+    "channel": 1,
+    "ssid": "OtherGoose",
+    "probed_ssids": [
+      "OtherGoose"
+    ]
+  },
+  {
+    "mac": "34:3e:a4:d9:28:8c",
+    "name": "",
+    "rssi": -82,
+    "method": "wifi_probe",
+    "first": 663940,
+    "last": 663957,
+    "count": 4,
+    "channel": 1,
+    "ssid": "LilasInternet",
+    "probed_ssids": [
+      "LilasInternet"
+    ]
+  },
+  {
+    "mac": "12:27:48:00:e0:79",
+    "name": "QHM-E079",
+    "rssi": -100,
+    "method": "ble_adv",
+    "first": 676016,
+    "last": 676016,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "84:0b:7c:7f:49:38",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe_resp",
+    "first": 682358,
+    "last": 761336,
+    "count": 393,
+    "channel": 1,
+    "ssid": "Moby_130",
+    "probed_ssids": [
+      "Moby_130"
+    ]
+  },
+  {
+    "mac": "04:4e:af:38:3a:16",
+    "name": "",
+    "rssi": -93,
+    "method": "wifi_addr1",
+    "first": 682375,
+    "last": 758957,
+    "count": 69,
+    "channel": 1
+  },
+  {
+    "mac": "fc:d7:49:97:4c:b0",
+    "name": "",
+    "rssi": -91,
+    "method": "wifi_addr2",
+    "first": 685225,
+    "last": 687346,
+    "count": 8,
+    "channel": 1,
+    "ssid": "The Flinstones",
+    "probed_ssids": [
+      "The Flinstones"
+    ]
+  },
+  {
+    "mac": "24:5a:4c:6b:7b:68",
+    "name": "",
+    "rssi": -82,
+    "method": "wifi_probe",
+    "first": 698232,
+    "last": 776533,
+    "count": 746,
+    "channel": 1,
+    "ssid": "The Shack",
+    "probed_ssids": [
+      "The Shack"
+    ]
+  },
+  {
+    "mac": "70:73:ea:43:76:31",
+    "name": "4",
+    "rssi": -69,
+    "method": "ble_adv",
+    "first": 702498,
+    "last": 772511,
+    "count": 5,
+    "channel": 0
+  },
+  {
+    "mac": "78:45:58:37:08:93",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_probe",
+    "first": 704384,
+    "last": 776533,
+    "count": 587,
+    "channel": 1,
+    "ssid": "The Shack",
+    "probed_ssids": [
+      "The Shack"
+    ]
+  },
+  {
+    "mac": "70:2c:1f:5f:9a:52",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 704644,
+    "last": 776533,
+    "count": 503,
+    "channel": 1,
+    "ssid": "[range] Samsung",
+    "probed_ssids": [
+      "[range] Samsung"
+    ]
+  },
+  {
+    "mac": "f2:22:0a:2f:ee:39",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 707214,
+    "last": 707214,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "24:4b:03:a1:11:08",
+    "name": "",
+    "rssi": -88,
+    "method": "wifi_addr1",
+    "first": 707720,
+    "last": 733650,
+    "count": 9,
+    "channel": 1
+  },
+  {
+    "mac": "5c:86:c1:08:f7:86",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_probe",
+    "first": 709407,
+    "last": 776001,
+    "count": 190,
+    "channel": 1,
+    "ssid": "SAMSUNGSMART",
+    "probed_ssids": [
+      "SAMSUNGSMART"
+    ]
+  },
+  {
+    "mac": "94:9f:3e:8b:0a:63",
+    "name": "",
+    "rssi": -84,
+    "method": "wifi_probe",
+    "first": 717750,
+    "last": 764161,
+    "count": 56,
+    "channel": 1,
+    "ssid": "Sonos_H9HfbIogo38mkVvoFCdan9ikqj",
+    "probed_ssids": [
+      "Sonos_H9HfbIogo38mkVvoFCdan9ikqj"
+    ]
+  },
+  {
+    "mac": "40:af:9f:93:6b:25",
+    "name": "",
+    "rssi": -94,
+    "method": "ble_adv",
+    "first": 724362,
+    "last": 724362,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "94:9f:3e:8b:0a:62",
+    "name": "",
+    "rssi": -82,
+    "method": "wifi_addr2",
+    "first": 725763,
+    "last": 755998,
+    "count": 13,
+    "channel": 1
+  },
+  {
+    "mac": "74:9b:e8:99:da:e2",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_probe",
+    "first": 729324,
+    "last": 749759,
+    "count": 12,
+    "channel": 1,
+    "ssid": "Rasmuss3n",
+    "probed_ssids": [
+      "Rasmuss3n"
+    ]
+  },
+  {
+    "mac": "48:d6:d5:dd:16:5a",
+    "name": "",
+    "rssi": -95,
+    "method": "wifi_addr2",
+    "first": 734386,
+    "last": 736121,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "60:ab:d2:66:27:31",
+    "name": "LE-Bose Micro SoundLink",
+    "rssi": -97,
+    "method": "ble_adv",
+    "first": 742408,
+    "last": 742408,
+    "count": 1,
+    "channel": 0
+  },
+  {
+    "mac": "0c:83:cc:09:c2:57",
+    "name": "",
+    "rssi": -94,
+    "method": "wifi_addr2",
+    "first": 747994,
+    "last": 747994,
+    "count": 1,
+    "channel": 1
+  },
+  {
+    "mac": "0a:b4:54:4e:5d:eb",
+    "name": "",
+    "rssi": -89,
+    "method": "wifi_probe",
+    "first": 759948,
+    "last": 759976,
+    "count": 2,
+    "channel": 1
+  },
+  {
+    "mac": "9a:66:ee:ef:9f:d8",
+    "name": "",
+    "rssi": -58,
+    "method": "wifi_probe",
+    "first": 767116,
+    "last": 773139,
+    "count": 4,
+    "channel": 1,
+    "ssid": "The Shack",
+    "probed_ssids": [
+      "The Shack"
+    ]
+  },
+  {
+    "mac": "ba:1d:62:f9:a2:e8",
+    "name": "",
+    "rssi": -92,
+    "method": "wifi_probe",
+    "first": 774075,
+    "last": 774094,
+    "count": 2,
+    "channel": 1,
+    "ssid": "rdburris",
+    "probed_ssids": [
+      "rdburris"
+    ]
+  }
+]

@@ -21,3 +21,9 @@ build-nesso/
 
 # Upstream import sidecars from sync.sh (for manual merge, not committed)
 *.upstream
+
+# Local Flock-You field-test capture (updated between sessions)
+test/flockyou_test_detections.json
+
+test/playwright/node_modules/
+test/playwright/report/

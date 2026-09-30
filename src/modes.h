@@ -13,6 +13,12 @@ void foxhunter_loop();
 void flockyou_setup();
 void flockyou_loop();
 
+// Mode 6: Mega_Maid
+void megamaid_setup();
+void megamaid_loop();
+// True while Mega_Maid must not treat KEY1 hold as "return to selector" (collect / export transition).
+bool megamaidKey1MenuHoldBlocked(void);
+
 // Mode 5: Sky Spy
 void skyspy_setup();
 void skyspy_loop();

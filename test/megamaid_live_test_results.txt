@@ -1,0 +1,17 @@
+=== MEGA MAID LIVE TEST ===
+iface: en0
+device_ap: joined megamaid on en0
+STATS OK profile=dashboard total=0
+OK html:modeBadge
+OK html:exportSummary
+OK html:COPY JSON
+OK html:copyModal
+OK html:copyExec
+OK html:ClipboardItem
+OK html:radio_profile
+EXPORT OK len=0
+HISTORY OK len=250
+HISTORY_JSON OK bytes=50665
+REF methods=['ble_adv', 'wifi_addr1', 'wifi_addr2', 'wifi_beacon', 'wifi_probe', 'wifi_probe_resp']
+wifi_restore: joined The Shack on en0
+OVERALL PASS

@@ -1,8 +1,8 @@
 /*
  * Mode 4: Flock-You
  * Surveillance device detector with web dashboard.
- * Scans BLE for Flock Safety, Raven, and surveillance device patterns.
- * Serves detection dashboard via WiFi AP "flockyou" / "flockyou123".
+ * Scans BLE and WiFi promiscuous for Flock Safety, Raven, and surveillance patterns.
+ * Dashboard mode serves detection export via time-sliced WiFi AP "flockyou".
  * Detections stored in memory; exportable as JSON or CSV.
  */
 
@@ -24,11 +24,10 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
-#ifndef NESSO_N1
 #include <TinyGPS++.h>
-#endif
 #include "board_pins.h"
 #include "board_hw.h"
+#include "board_gps.h"
 #include "board_neopixel.h"
 #include "nesso_ui.h"
 #include "nimble_compat.h"
@@ -39,6 +38,7 @@
 #define loop  flockyou_ns_loop
 
 namespace {
+#include "raw/fy_wifi_sniff.cpp"
 #include "raw/flockyou.cpp"
 } // anonymous namespace
 

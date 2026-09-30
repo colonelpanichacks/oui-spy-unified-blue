@@ -24,6 +24,7 @@
 struct id_data {
   uint8_t  mac[6];
   int      rssi;
+  uint32_t first_seen;
   uint32_t last_seen;
   char     op_id[ODID_ID_SIZE + 1];
   char     uav_id[ODID_ID_SIZE + 1];
@@ -100,9 +101,11 @@ public:
     if (!mac) return;
 
     id_data* UAV = next_uav(const_cast<uint8_t*>(mac));
-    if (memcmp(UAV->mac, mac, 6) != 0) {
+    const bool is_new = (memcmp(UAV->mac, mac, 6) != 0);
+    if (is_new) {
       memset(UAV, 0, sizeof(*UAV));
       memcpy(UAV->mac, mac, 6);
+      UAV->first_seen = millis();
     }
     UAV->last_seen = millis();
     UAV->rssi = device->getRSSI();
@@ -190,10 +193,16 @@ void send_json_fast(const id_data *UAV) {
   snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
            UAV->mac[0], UAV->mac[1], UAV->mac[2],
            UAV->mac[3], UAV->mac[4], UAV->mac[5]);
-  char json_msg[256];
+  char json_msg[320];
   snprintf(json_msg, sizeof(json_msg),
-    "{\"mac\":\"%s\",\"rssi\":%d,\"drone_lat\":%.6f,\"drone_long\":%.6f,\"drone_altitude\":%d,\"pilot_lat\":%.6f,\"pilot_long\":%.6f,\"basic_id\":\"%s\"}",
-    mac_str, UAV->rssi, UAV->lat_d, UAV->long_d, UAV->altitude_msl,
+    "{\"mac\":\"%s\",\"rssi\":%d,\"first\":%llu,\"last\":%llu,\"count\":1,"
+    "\"method\":\"drone_remote_id\","
+    "\"drone_lat\":%.6f,\"drone_long\":%.6f,\"drone_altitude\":%d,"
+    "\"pilot_lat\":%.6f,\"pilot_long\":%.6f,\"basic_id\":\"%s\"}",
+    mac_str, UAV->rssi,
+    (unsigned long long)boardGpsUptimeToEpochMs(UAV->first_seen),
+    (unsigned long long)boardGpsUptimeToEpochMs(UAV->last_seen),
+    UAV->lat_d, UAV->long_d, UAV->altitude_msl,
     UAV->base_lat_d, UAV->base_long_d, UAV->uav_id);
   Serial.println(json_msg);
   nessoUiFlashAlert();
@@ -260,7 +269,12 @@ void callback(void *buffer, wifi_promiscuous_pkt_type_t type) {
       }
       
       id_data* storedUAV = next_uav(UAV.mac);
+      const uint32_t kept_first =
+          (storedUAV->mac[0] != 0 && memcmp(storedUAV->mac, UAV.mac, 6) == 0)
+              ? storedUAV->first_seen
+              : UAV.last_seen;
       *storedUAV = UAV;
+      storedUAV->first_seen = kept_first;
       storedUAV->flag = 1;
       
       // Trigger buzzer alert (thread-safe, non-blocking)
@@ -319,7 +333,12 @@ void callback(void *buffer, wifi_promiscuous_pkt_type_t type) {
           }
           
           id_data* storedUAV = next_uav(UAV.mac);
+          const uint32_t kept_first =
+              (storedUAV->mac[0] != 0 && memcmp(storedUAV->mac, UAV.mac, 6) == 0)
+                  ? storedUAV->first_seen
+                  : UAV.last_seen;
           *storedUAV = UAV;
+          storedUAV->first_seen = kept_first;
           storedUAV->flag = 1;
           
           // Trigger buzzer alert (thread-safe, non-blocking)

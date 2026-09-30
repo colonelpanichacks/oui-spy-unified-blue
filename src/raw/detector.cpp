@@ -1873,13 +1873,16 @@ void startConfigMode() {
             json += "\"rssi\":" + String(devices[i].rssi) + ",";
             json += "\"filter\":\"" + filterDesc + "\",";
             json += "\"alias\":\"" + alias + "\",";
-            json += "\"lastSeen\":" + String(devices[i].lastSeen) + ",";
+            json += "\"firstSeen\":" + String((unsigned long long)boardGpsUptimeToEpochMs(devices[i].firstSeen)) + ",";
+            json += "\"lastSeen\":" + String((unsigned long long)boardGpsUptimeToEpochMs(devices[i].lastSeen)) + ",";
             json += "\"timeSince\":" + String(timeSince);
             json += "}";
         }
         
         json += "],";
-        json += "\"currentTime\":" + String(currentTime);
+        json += "\"currentTime\":" + String(currentTime) + ",";
+        json += "\"gpsTimeValid\":" + String(boardGpsTimeValid() ? "true" : "false") + ",";
+        json += "\"gpsTimeMs\":" + String((unsigned long long)boardGpsNowEpochMs());
         json += "}";
         
         request->send(200, "application/json", json);

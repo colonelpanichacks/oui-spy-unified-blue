@@ -1,16 +1,13 @@
 // ============================================================================
 // FLOCK-YOU: Surveillance Device Detector with Web Dashboard
 // ============================================================================
-// Detection methods (BLE only - WiFi radio used for AP):
-//   1. BLE MAC prefix matching (known Flock Safety OUIs)
-//   2. BLE device name pattern matching (case-insensitive substring)
-//   3. BLE manufacturer company ID matching (0x09C8 XUNTONG) [from wgreenberg]
-//   4. Raven gunshot detector service UUID matching
-//   5. Raven firmware version estimation from service UUID patterns
+// Detection methods:
+//   BLE: MAC prefix, device name, manufacturer ID, Raven UUID
+//   WiFi promiscuous: OUI match (addr1/addr2), DeFlockJoplin wildcard probe
 //
-// Default: COLLECT mode — BLE at ~100% radio duty, WiFi off (max data capture).
-// Double-click KEY1 (front button) toggles DASHBOARD mode: ~70% BLE / ~30% WiFi
-// so the softAP can beacon and clients reach http://192.168.4.1.
+// Default: COLLECT mode — 50% BLE / 50% WiFi promiscuous (time-sliced).
+// Double-click KEY1 toggles DASHBOARD mode: softAP always on; BLE/WiFi sniff
+// alternate on the remaining radio time (50/50). WiFi sniff stays on AP channel.
 // Hold KEY1 ~1.5s (handled in main.cpp) still returns to the mode selector.
 // AP "flockyou" / "flockyou123" — only active in dashboard mode.
 // All detections stored in memory, exportable as JSON or CSV
@@ -28,18 +25,12 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include "esp_wifi.h"
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
-
-#ifndef NESSO_N1
-#define GPS_RX_PIN 44
-#define GPS_TX_PIN 43
-#define GPS_BAUD   9600
-#define GPS_HDOP_SCALE 5.0f
-#endif
 #define FY_NEOPIXEL_BRIGHTNESS 50
 #define FY_NEOPIXEL_DETECTION_BRIGHTNESS 200
 
@@ -56,11 +47,16 @@
 #define BLE_SCAN_DURATION 2      // seconds per scan
 #define BLE_SCAN_INTERVAL 3000   // ms between clearing cached scan results
 
-// ESP32-C6 radio sharing: one antenna, BLE scan window vs softAP idle time.
+// ESP32-C6 radio sharing: explicit time slices (one consumer at a time).
 #define FY_BLE_SLOT_MS              100
-#define FY_BLE_COLLECT_WINDOW_MS      99   // ~100% BLE (default collect mode)
-#define FY_BLE_DASHBOARD_WINDOW_MS    70   // ~70% BLE / ~30% WiFi for softAP
-#define FY_KEY1_DCLICK_MS             450  // max gap between KEY1 clicks
+#define FY_CYCLE_MS                 1000
+#define FY_COLLECT_BLE_MS           500
+#define FY_COLLECT_WIFI_MS          500
+#define FY_DASH_BLE_MS              500   // dashboard: alternate with WiFi sniff
+#define FY_DASH_WIFI_MS             500
+#define FY_BLE_DASHBOARD_WINDOW_MS   70   // BLE scan window while softAP is up
+#define FY_AP_SETTLE_MS             1500
+#define FY_KEY1_DCLICK_MS           450
 
 // Detection storage
 #define MAX_DETECTIONS 200
@@ -159,6 +155,7 @@ struct FYDetection {
     int count;
     bool isRaven;
     char ravenFW[16];
+    uint8_t channel;   // WiFi channel (0 = BLE / N/A)
     // GPS from phone (wardriving)
     double gpsLat;
     double gpsLon;
@@ -190,13 +187,24 @@ static DNSServer flockyouDNS;
 static bool fyRoutesRegistered = false;
 static bool fyServerStarted = false;
 static bool fyDnsStarted = false;
+static bool fyDashboardApUp = false;
 static unsigned long fyApStartMs = 0;
 
 enum FyRadioProfile : uint8_t {
-    FY_RADIO_COLLECT = 0,    // WiFi off, max BLE duty (default)
-    FY_RADIO_DASHBOARD = 1,  // softAP up, 70/30 BLE/WiFi split
+    FY_RADIO_COLLECT = 0,    // 50/50 BLE / WiFi sniff
+    FY_RADIO_DASHBOARD = 1,  // AP always on; 50/50 BLE / WiFi sniff
 };
+
+enum FyRadioSlice : uint8_t {
+    FY_SLICE_BLE = 0,
+    FY_SLICE_WIFI_SNIFF = 1,
+    FY_SLICE_AP = 2,
+};
+
 static FyRadioProfile fyRadioProfile = FY_RADIO_COLLECT;
+static FyRadioSlice fyCurrentSlice = FY_SLICE_BLE;
+static unsigned long fySliceStartMs = 0;
+static unsigned long fyLastSliceTickMs = 0;
 static bool fyKey1WasDown = false;
 static uint8_t fyKey1ClickCount = 0;
 static unsigned long fyKey1LastReleaseMs = 0;
@@ -210,8 +218,7 @@ static unsigned long fyGPSLastUpdate = 0;
 static bool fyGPSIsHardware = false;
 #define GPS_STALE_MS 30000
 
-#ifndef NESSO_N1
-// Hardware GPS state (Seeed L76K GNSS module on UART1)
+// Hardware GPS (UART1; board pins/baud in board_gps.h)
 static TinyGPSPlus fyGPS;
 static HardwareSerial fyGPSSerial(1);
 static bool fyHWGPSDetected = false;
@@ -219,7 +226,7 @@ static bool fyHWGPSFix = false;
 static int  fyHWGPSSats = 0;
 static unsigned long fyHWGPSLastChar = 0;
 #define GPS_HW_TIMEOUT_MS 5000
-#endif
+static unsigned long fyLastDashboardGpsPollMs = 0;
 
 // Session persistence (SPIFFS)
 #define FY_SESSION_FILE  "/session.json"
@@ -454,6 +461,11 @@ static bool fyGPSIsFresh() {
     return fyGPSValid && (millis() - fyGPSLastUpdate < GPS_STALE_MS);
 }
 
+static void fyUpdateGpsIndicator() {
+    nessoUiSetGpsIndicator(
+        fyGPSIsFresh() ? NESSO_GPS_FIX : NESSO_GPS_SEARCHING);
+}
+
 // Atomic snapshot: returns true and fills out-params if GPS is fresh & valid.
 // Safe to call from BLE callback context — never races with producer.
 static bool fyGPSSnapshot(double& lat, double& lon, float& acc) {
@@ -476,6 +488,7 @@ static void fyGPSUpdate(double lat, double lon, float acc, bool fromHardware) {
     fyGPSLastUpdate = millis();
     fyGPSIsHardware = fromHardware;
     xSemaphoreGive(fyGPSMutex);
+    fyUpdateGpsIndicator();
 }
 
 // Stamp a detection with current GPS if available (used at first-sight and re-sight)
@@ -529,7 +542,6 @@ static uint32_t fyCRC32Update(uint32_t crc, const uint8_t* data, size_t len) {
 // ============================================================================
 
 static void fyProcessHardwareGPS() {
-#ifndef NESSO_N1
     // Read all available UART bytes into TinyGPSPlus parser
     while (fyGPSSerial.available()) {
         char c = fyGPSSerial.read();
@@ -574,7 +586,22 @@ static void fyProcessHardwareGPS() {
             xSemaphoreGive(fyGPSMutex);
         }
     }
-#endif
+
+    boardGpsClockSyncFromParser(fyGPS);
+    fyUpdateGpsIndicator();
+}
+
+static void fyProcessDashboardHardwareGPS() {
+    unsigned long now = millis();
+    if (now - fyLastDashboardGpsPollMs < GPS_DASHBOARD_POLL_MS) {
+        return;
+    }
+    fyLastDashboardGpsPollMs = now;
+    fyProcessHardwareGPS();
+}
+
+static uint64_t fyExportMs(unsigned long uptimeMs) {
+    return boardGpsUptimeToEpochMs(uptimeMs);
 }
 
 // ============================================================================
@@ -583,7 +610,7 @@ static void fyProcessHardwareGPS() {
 
 static int fyAddDetection(const char* mac, const char* name, int rssi,
                           const char* method, bool isRaven = false,
-                          const char* ravenFW = "") {
+                          const char* ravenFW = "", uint8_t channel = 0) {
     if (!fyMutex || xSemaphoreTake(fyMutex, pdMS_TO_TICKS(100)) != pdTRUE) return -1;
 
     // Update existing by MAC
@@ -592,6 +619,9 @@ static int fyAddDetection(const char* mac, const char* name, int rssi,
             fyDet[i].count++;
             fyDet[i].lastSeen = millis();
             fyDet[i].rssi = rssi;
+            if (channel > 0) {
+                fyDet[i].channel = channel;
+            }
             if (name && name[0]) {
                 strncpy(fyDet[i].name, name, sizeof(fyDet[i].name) - 1);
             }
@@ -614,6 +644,7 @@ static int fyAddDetection(const char* mac, const char* name, int rssi,
             }
         }
         d.rssi = rssi;
+        d.channel = channel;
         strncpy(d.method, method, sizeof(d.method) - 1);
         d.firstSeen = millis();
         d.lastSeen = millis();
@@ -630,6 +661,66 @@ static int fyAddDetection(const char* mac, const char* name, int rssi,
 
     xSemaphoreGive(fyMutex);
     return -1;
+}
+
+static void fyEmitDetectionSideEffects(int idx, const char* addrStr,
+                                       const char* name, int rssi,
+                                       const char* method, bool isRaven,
+                                       const char* ravenFW, uint8_t channel) {
+    printf("[FLOCK-YOU] DETECTED: %s %s RSSI:%d [%s] count:%d\n",
+           addrStr, name ? name : "", rssi, method,
+           idx >= 0 ? fyDet[idx].count : 0);
+
+    char gpsBuf[80] = "";
+    {
+        double sLat, sLon; float sAcc;
+        if (fyGPSSnapshot(sLat, sLon, sAcc)) {
+            snprintf(gpsBuf, sizeof(gpsBuf),
+                ",\"gps\":{\"latitude\":%.8f,\"longitude\":%.8f,\"accuracy\":%.1f}",
+                sLat, sLon, sAcc);
+        }
+    }
+    if (channel > 0) {
+        uint16_t freq = (channel >= 1 && channel <= 14) ? (uint16_t)(2407 + 5 * channel) : 0;
+        printf("{\"detection_method\":\"%s\",\"protocol\":\"wifi_2_4ghz\","
+               "\"mac_address\":\"%s\",\"device_name\":\"%s\","
+               "\"rssi\":%d,\"channel\":%u,\"frequency\":%u%s}\n",
+               method, addrStr, name ? name : "", rssi,
+               (unsigned)channel, (unsigned)freq, gpsBuf);
+    } else if (isRaven) {
+        printf("{\"detection_method\":\"%s\",\"protocol\":\"bluetooth_le\","
+               "\"mac_address\":\"%s\",\"device_name\":\"%s\","
+               "\"rssi\":%d,\"is_raven\":true,\"raven_fw\":\"%s\"%s}\n",
+               method, addrStr, name ? name : "", rssi, ravenFW, gpsBuf);
+    } else {
+        printf("{\"detection_method\":\"%s\",\"protocol\":\"bluetooth_le\","
+               "\"mac_address\":\"%s\",\"device_name\":\"%s\","
+               "\"rssi\":%d%s}\n",
+               method, addrStr, name ? name : "", rssi, gpsBuf);
+    }
+
+    if (!fyTriggered) {
+        fyTriggered = true;
+        fyDetectBeep();
+    }
+    fyDeviceInRange = true;
+    fyLastDetTime = millis();
+    fyLastHB = millis();
+}
+
+static void fyProcessWiFiAlerts() {
+    FyWiFiAlert alert;
+    while (fyWiFiSniffPopAlert(&alert)) {
+        char macStr[18];
+        snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+                 alert.mac[0], alert.mac[1], alert.mac[2],
+                 alert.mac[3], alert.mac[4], alert.mac[5]);
+        const char* method = fyWiFiAlertMethod(alert.type);
+        int idx = fyAddDetection(macStr, "", alert.rssi, method, false, "",
+                                 alert.channel);
+        fyEmitDetectionSideEffects(idx, macStr, "", alert.rssi, method,
+                                   false, "", alert.channel);
+    }
 }
 
 // ============================================================================
@@ -697,43 +788,9 @@ class FYBLECallbacks : public NimBLEAdvertisedDeviceCallbacks {
 
         if (detected) {
             int idx = fyAddDetection(addrStr.c_str(), name.c_str(), rssi,
-                                     method, isRaven, ravenFW);
-
-            // Human-readable log
-            printf("[FLOCK-YOU] DETECTED: %s %s RSSI:%d [%s] count:%d\n",
-                   addrStr.c_str(), name.c_str(), rssi, method,
-                   idx >= 0 ? fyDet[idx].count : 0);
-
-            // JSON serial output (Flask-compatible format for live ingestion)
-            // Build GPS fragment atomically via snapshot (no race on fyGPSLat/Lon)
-            char gpsBuf[80] = "";
-            {
-                double sLat, sLon; float sAcc;
-                if (fyGPSSnapshot(sLat, sLon, sAcc)) {
-                    snprintf(gpsBuf, sizeof(gpsBuf),
-                        ",\"gps\":{\"latitude\":%.8f,\"longitude\":%.8f,\"accuracy\":%.1f}",
-                        sLat, sLon, sAcc);
-                }
-            }
-            if (isRaven) {
-                printf("{\"detection_method\":\"%s\",\"protocol\":\"bluetooth_le\","
-                       "\"mac_address\":\"%s\",\"device_name\":\"%s\","
-                       "\"rssi\":%d,\"is_raven\":true,\"raven_fw\":\"%s\"%s}\n",
-                       method, addrStr.c_str(), name.c_str(), rssi, ravenFW, gpsBuf);
-            } else {
-                printf("{\"detection_method\":\"%s\",\"protocol\":\"bluetooth_le\","
-                       "\"mac_address\":\"%s\",\"device_name\":\"%s\","
-                       "\"rssi\":%d%s}\n",
-                       method, addrStr.c_str(), name.c_str(), rssi, gpsBuf);
-            }
-
-            if (!fyTriggered) {
-                fyTriggered = true;
-                fyDetectBeep();
-            }
-            fyDeviceInRange = true;
-            fyLastDetTime = millis();
-            fyLastHB = millis();
+                                     method, isRaven, ravenFW, 0);
+            fyEmitDetectionSideEffects(idx, addrStr.c_str(), name.c_str(), rssi,
+                                       method, isRaven, ravenFW, 0);
         }
     }
 };
@@ -749,11 +806,12 @@ static void writeDetectionsJSON(AsyncResponseStream *resp) {
             if (i > 0) resp->print(",");
             resp->printf(
                 "{\"mac\":\"%s\",\"name\":\"%s\",\"rssi\":%d,\"method\":\"%s\","
-                "\"first\":%lu,\"last\":%lu,\"count\":%d,"
-                "\"raven\":%s,\"fw\":\"%s\"",
+                "\"first\":%" PRIu64 ",\"last\":%" PRIu64 ",\"count\":%d,"
+                "\"raven\":%s,\"fw\":\"%s\",\"channel\":%u",
                 fyDet[i].mac, fyDet[i].name, fyDet[i].rssi, fyDet[i].method,
-                fyDet[i].firstSeen, fyDet[i].lastSeen, fyDet[i].count,
-                fyDet[i].isRaven ? "true" : "false", fyDet[i].ravenFW);
+                fyExportMs(fyDet[i].firstSeen), fyExportMs(fyDet[i].lastSeen), fyDet[i].count,
+                fyDet[i].isRaven ? "true" : "false", fyDet[i].ravenFW,
+                (unsigned)fyDet[i].channel);
             // Append GPS if present
             if (fyDet[i].hasGPS) {
                 resp->printf(",\"gps\":{\"lat\":%.8f,\"lon\":%.8f,\"acc\":%.1f}",
@@ -791,21 +849,23 @@ static size_t fySerializeDet(const FYDetection& d, char* dst, size_t cap) {
     if (d.hasGPS) {
         n = snprintf(dst, cap,
             "{\"mac\":\"%s\",\"name\":\"%s\",\"rssi\":%d,\"method\":\"%s\","
-            "\"first\":%lu,\"last\":%lu,\"count\":%d,"
-            "\"raven\":%s,\"fw\":\"%s\","
+            "\"first\":%" PRIu64 ",\"last\":%" PRIu64 ",\"count\":%d,"
+            "\"raven\":%s,\"fw\":\"%s\",\"channel\":%u,"
             "\"gps\":{\"lat\":%.8f,\"lon\":%.8f,\"acc\":%.1f}}",
             d.mac, d.name, d.rssi, d.method,
-            d.firstSeen, d.lastSeen, d.count,
+            fyExportMs(d.firstSeen), fyExportMs(d.lastSeen), d.count,
             d.isRaven ? "true" : "false", d.ravenFW,
+            (unsigned)d.channel,
             d.gpsLat, d.gpsLon, d.gpsAcc);
     } else {
         n = snprintf(dst, cap,
             "{\"mac\":\"%s\",\"name\":\"%s\",\"rssi\":%d,\"method\":\"%s\","
-            "\"first\":%lu,\"last\":%lu,\"count\":%d,"
-            "\"raven\":%s,\"fw\":\"%s\"}",
+            "\"first\":%" PRIu64 ",\"last\":%" PRIu64 ",\"count\":%d,"
+            "\"raven\":%s,\"fw\":\"%s\",\"channel\":%u}",
             d.mac, d.name, d.rssi, d.method,
-            d.firstSeen, d.lastSeen, d.count,
-            d.isRaven ? "true" : "false", d.ravenFW);
+            fyExportMs(d.firstSeen), fyExportMs(d.lastSeen), d.count,
+            d.isRaven ? "true" : "false", d.ravenFW,
+            (unsigned)d.channel);
     }
     return (n > 0 && (size_t)n < cap) ? (size_t)n : 0;
 }
@@ -1186,10 +1246,152 @@ refresh();setInterval(refresh,2500);
 )rawliteral";
 
 // ============================================================================
-// RADIO PROFILE (collect vs dashboard)
+// RADIO PROFILE (collect vs dashboard) + time-sliced scheduler
 // ============================================================================
 
 static void fyRegisterRoutes();
+static void fyTryStartServer();
+static void fyStopDashboardServices();
+
+static const char* fySliceName(FyRadioSlice slice) {
+    switch (slice) {
+        case FY_SLICE_BLE: return "BLE";
+        case FY_SLICE_WIFI_SNIFF: return "WIFI";
+        case FY_SLICE_AP: return "AP";
+        default: return "?";
+    }
+}
+
+static uint16_t fySliceDurationMs(FyRadioSlice slice) {
+    if (fyRadioProfile == FY_RADIO_COLLECT) {
+        if (slice == FY_SLICE_BLE) return FY_COLLECT_BLE_MS;
+        if (slice == FY_SLICE_WIFI_SNIFF) return FY_COLLECT_WIFI_MS;
+        return 0;
+    }
+    if (slice == FY_SLICE_BLE) return FY_DASH_BLE_MS;
+    if (slice == FY_SLICE_WIFI_SNIFF) return FY_DASH_WIFI_MS;
+    return 0;
+}
+
+static FyRadioSlice fyNextSlice(FyRadioSlice slice) {
+    if (fyRadioProfile == FY_RADIO_COLLECT) {
+        return (slice == FY_SLICE_BLE) ? FY_SLICE_WIFI_SNIFF : FY_SLICE_BLE;
+    }
+    return (slice == FY_SLICE_BLE) ? FY_SLICE_WIFI_SNIFF : FY_SLICE_BLE;
+}
+
+static bool fyStartDashboardAp() {
+    if (fyDashboardApUp) {
+        return true;
+    }
+    fyWiFiSniffSetApCoexist(false);
+    fyWiFiSniffStop();
+#ifndef FY_DIAG_DISABLE_BLE
+    if (fyBLEScan && fyBLEScan->isScanning()) {
+        fyBLEScan->stop();
+    }
+#endif
+    WiFi.mode(WIFI_AP);
+    delay(100);
+    if (!WiFi.softAP(FY_AP_SSID, FY_AP_PASS)) {
+        printf("[FLOCK-YOU] softAP start FAILED\n");
+        return false;
+    }
+    fyApStartMs = millis();
+    fyDashboardApUp = true;
+    printf("[FLOCK-YOU] softAP up (continuous) %s\n",
+           WiFi.softAPIP().toString().c_str());
+    return true;
+}
+
+static void fyStopDashboardAp() {
+    fyStopDashboardServices();
+    if (fyDashboardApUp) {
+        WiFi.softAPdisconnect(true);
+        fyDashboardApUp = false;
+    }
+    WiFi.mode(WIFI_OFF);
+    delay(20);
+    fyWiFiSniffSetApCoexist(false);
+}
+
+static void fyEnterBleSlice() {
+    fyWiFiSniffStop();
+    fyWiFiSniffSetApCoexist(false);
+#ifndef FY_DIAG_DISABLE_BLE
+    if (fyRadioProfile == FY_RADIO_COLLECT) {
+        WiFi.softAPdisconnect(true);
+        WiFi.mode(WIFI_OFF);
+        delay(20);
+    }
+    if (fyBLEScan) {
+        if (fyBLEScan->isScanning()) {
+            fyBLEScan->stop();
+        }
+        fyBLEScan->setInterval(FY_BLE_SLOT_MS);
+        if (fyRadioProfile == FY_RADIO_DASHBOARD) {
+            fyBLEScan->setWindow(FY_BLE_DASHBOARD_WINDOW_MS);
+        } else {
+            fyBLEScan->setWindow(FY_BLE_SLOT_MS);
+        }
+        fyBLEScan->start(0, false);
+        fyLastBleScan = millis();
+    }
+#endif
+    printf("[FLOCK-YOU] slice=BLE%s\n",
+           fyRadioProfile == FY_RADIO_DASHBOARD ? " (AP up)" : "");
+}
+
+static void fyEnterWifiSniffSlice() {
+#ifndef FY_DIAG_DISABLE_BLE
+    if (fyBLEScan && fyBLEScan->isScanning()) {
+        fyBLEScan->stop();
+    }
+#endif
+    if (fyRadioProfile == FY_RADIO_COLLECT) {
+        fyStopDashboardServices();
+        WiFi.softAPdisconnect(true);
+        delay(20);
+        fyWiFiSniffSetApCoexist(false);
+    } else {
+        fyWiFiSniffSetApCoexist(true);
+    }
+    fyWiFiSniffStart();
+    printf("[FLOCK-YOU] slice=WIFI ch=%u%s\n",
+           fyWiFiSniffCurrentChannel(),
+           fyRadioProfile == FY_RADIO_DASHBOARD ? " (AP up)" : "");
+}
+
+static void fyEnterSlice(FyRadioSlice slice) {
+    switch (slice) {
+        case FY_SLICE_BLE: fyEnterBleSlice(); break;
+        case FY_SLICE_WIFI_SNIFF: fyEnterWifiSniffSlice(); break;
+        case FY_SLICE_AP: break;  // unused — AP stays up in dashboard
+    }
+}
+
+static void fyRadioSchedulerReset() {
+    fySliceStartMs = millis();
+    fyLastSliceTickMs = fySliceStartMs;
+    fyCurrentSlice = FY_SLICE_BLE;
+    fyEnterSlice(fyCurrentSlice);
+}
+
+static void fyRadioSchedulerTick() {
+    unsigned long now = millis();
+
+    if (fyCurrentSlice == FY_SLICE_WIFI_SNIFF) {
+        fyWiFiSniffTick();
+    }
+
+    if (now - fySliceStartMs < fySliceDurationMs(fyCurrentSlice)) {
+        return;
+    }
+
+    fyCurrentSlice = fyNextSlice(fyCurrentSlice);
+    fySliceStartMs = now;
+    fyEnterSlice(fyCurrentSlice);
+}
 
 static void fyModeConfirmBeep() {
     boardLedcConfigure(BUZZER_FREQ);
@@ -1197,25 +1399,6 @@ static void fyModeConfirmBeep() {
     boardLedcSetDuty(40);
     delay(60);
     boardLedcSetDuty(0);
-}
-
-static void fyApplyBleDuty(uint16_t windowMs) {
-#ifndef FY_DIAG_DISABLE_BLE
-    if (!fyBLEScan) {
-        return;
-    }
-    bool wasScanning = fyBLEScan->isScanning();
-    if (wasScanning) {
-        fyBLEScan->stop();
-    }
-    fyBLEScan->setInterval(FY_BLE_SLOT_MS);
-    fyBLEScan->setWindow(windowMs);
-    fyBLEScan->start(0, false);
-    fyLastBleScan = millis();
-    printf("[FLOCK-YOU] BLE duty %ums/%ums (%s)\n",
-           windowMs, FY_BLE_SLOT_MS,
-           fyRadioProfile == FY_RADIO_COLLECT ? "COLLECT" : "DASHBOARD");
-#endif
 }
 
 static void fyStopDashboardServices() {
@@ -1235,13 +1418,12 @@ static void fyEnterCollectMode() {
     if (fyRadioProfile == FY_RADIO_COLLECT) {
         return;
     }
-    printf("[FLOCK-YOU] COLLECT mode: BLE ~100%%, WiFi off\n");
-    fyStopDashboardServices();
-    WiFi.softAPdisconnect(true);
-    WiFi.mode(WIFI_OFF);
-    delay(50);
+    printf("[FLOCK-YOU] COLLECT mode: 50%% BLE / 50%% WiFi sniff\n");
+    boardGpsApplyProfile(fyGPSSerial, GPS_PROFILE_COLLECT);
+    fyStopDashboardAp();
+    fyWiFiSniffStop();
     fyRadioProfile = FY_RADIO_COLLECT;
-    fyApplyBleDuty(FY_BLE_COLLECT_WINDOW_MS);
+    fyRadioSchedulerReset();
     nessoUiSetStatus("Collect mode");
     fyModeConfirmBeep();
 }
@@ -1250,25 +1432,22 @@ static void fyEnterDashboardMode() {
     if (fyRadioProfile == FY_RADIO_DASHBOARD) {
         return;
     }
-    printf("[FLOCK-YOU] DASHBOARD mode: BLE ~70%% / WiFi ~30%%\n");
-    fyApplyBleDuty(FY_BLE_DASHBOARD_WINDOW_MS);
-
-    WiFi.mode(WIFI_AP);
-    delay(100);
-    if (!WiFi.softAP(FY_AP_SSID, FY_AP_PASS)) {
-        printf("[FLOCK-YOU] softAP start FAILED — staying in collect mode\n");
-        fyApplyBleDuty(FY_BLE_COLLECT_WINDOW_MS);
-        nessoUiSetStatus("AP failed");
-        return;
-    }
-    fyApStartMs = millis();
+    printf("[FLOCK-YOU] DASHBOARD mode: AP always on, 50/50 BLE/WiFi sniff\n");
+    boardGpsApplyProfile(fyGPSSerial, GPS_PROFILE_DASHBOARD);
+    fyLastDashboardGpsPollMs = millis();
     fyRadioProfile = FY_RADIO_DASHBOARD;
     if (!fyRoutesRegistered) {
         fyRegisterRoutes();
     }
+    if (!fyStartDashboardAp()) {
+        fyRadioProfile = FY_RADIO_COLLECT;
+        nessoUiSetStatus("AP failed");
+        return;
+    }
+    fyRadioSchedulerReset();
     nessoUiSetStatus("Dashboard: flockyou");
-    printf("[FLOCK-YOU] AP: %s / %s  http://%s\n",
-           FY_AP_SSID, FY_AP_PASS, WiFi.softAPIP().toString().c_str());
+    printf("[FLOCK-YOU] AP: %s / %s  http://192.168.4.1\n",
+           FY_AP_SSID, FY_AP_PASS);
     fyModeConfirmBeep();
 }
 
@@ -1335,46 +1514,38 @@ static void fyRegisterRoutes() {
             xSemaphoreGive(fyMutex);
         }
         const char* gpsSrc = "none";
-#ifndef NESSO_N1
         if (fyGPSIsHardware && fyHWGPSFix) gpsSrc = "hw";
-        else
-#endif
-        if (fyGPSIsFresh()) gpsSrc = "phone";
-        char buf[320];
-#ifdef NESSO_N1
+        else if (fyGPSIsFresh()) gpsSrc = "phone";
+        char buf[480];
         snprintf(buf, sizeof(buf),
-            "{\"total\":%d,\"raven\":%d,\"ble\":\"active\","
+            "{\"total\":%d,\"raven\":%d,"
+            "\"ble\":\"%s\",\"wifi_sniff\":\"%s\","
+            "\"radio_profile\":\"%s\",\"radio_slice\":\"%s\","
             "\"gps_valid\":%s,\"gps_age\":%lu,\"gps_tagged\":%d,"
-            "\"gps_src\":\"%s\",\"gps_sats\":%d,\"gps_hw_detected\":%s}",
+            "\"gps_src\":\"%s\",\"gps_sats\":%d,\"gps_hw_detected\":%s,"
+            "\"gps_time_valid\":%s,\"gps_time_ms\":%" PRIu64 "}",
             fyDetCount, raven,
-            fyGPSIsFresh() ? "true" : "false",
-            fyGPSValid ? (millis() - fyGPSLastUpdate) : 0UL,
-            withGPS,
-            gpsSrc, 0, "false");
-#else
-        snprintf(buf, sizeof(buf),
-            "{\"total\":%d,\"raven\":%d,\"ble\":\"active\","
-            "\"gps_valid\":%s,\"gps_age\":%lu,\"gps_tagged\":%d,"
-            "\"gps_src\":\"%s\",\"gps_sats\":%d,\"gps_hw_detected\":%s}",
-            fyDetCount, raven,
+            fyCurrentSlice == FY_SLICE_BLE ? "active" : "idle",
+            (fyCurrentSlice == FY_SLICE_WIFI_SNIFF && fyWiFiSniffIsActive()) ? "active" : "idle",
+            fyRadioProfile == FY_RADIO_COLLECT ? "collect" : "dashboard",
+            fySliceName(fyCurrentSlice),
             fyGPSIsFresh() ? "true" : "false",
             fyGPSValid ? (millis() - fyGPSLastUpdate) : 0UL,
             withGPS,
             gpsSrc, fyHWGPSSats,
-            fyHWGPSDetected ? "true" : "false");
-#endif
+            fyHWGPSDetected ? "true" : "false",
+            boardGpsTimeValid() ? "true" : "false",
+            boardGpsNowEpochMs());
         r->send(200, "application/json", buf);
     });
 
     // API: Receive GPS from phone browser (ignored when hardware GPS has fix)
     fyServer.on("/api/gps", HTTP_GET, [](AsyncWebServerRequest *r) {
-#ifndef NESSO_N1
         if (fyHWGPSFix) {
             r->send(200, "application/json",
                 "{\"status\":\"ignored\",\"reason\":\"hw_gps_active\"}");
             return;
         }
-#endif
         if (r->hasParam("lat") && r->hasParam("lon")) {
             double lat = r->getParam("lat")->value().toDouble();
             double lon = r->getParam("lon")->value().toDouble();
@@ -1425,20 +1596,20 @@ static void fyRegisterRoutes() {
     fyServer.on("/api/export/csv", HTTP_GET, [](AsyncWebServerRequest *r) {
         AsyncResponseStream *resp = r->beginResponseStream("text/csv");
         resp->addHeader("Content-Disposition", "attachment; filename=\"flockyou_detections.csv\"");
-        resp->println("mac,name,rssi,method,first_seen_ms,last_seen_ms,count,is_raven,raven_fw,latitude,longitude,gps_accuracy");
+        resp->println("mac,name,rssi,method,channel,first_seen_ms,last_seen_ms,count,is_raven,raven_fw,latitude,longitude,gps_accuracy");
         if (fyMutex && xSemaphoreTake(fyMutex, pdMS_TO_TICKS(500)) == pdTRUE) {
             for (int i = 0; i < fyDetCount; i++) {
                 FYDetection& d = fyDet[i];
                 if (d.hasGPS) {
-                    resp->printf("\"%s\",\"%s\",%d,\"%s\",%lu,%lu,%d,%s,\"%s\",%.8f,%.8f,%.1f\n",
-                        d.mac, d.name, d.rssi, d.method,
-                        d.firstSeen, d.lastSeen, d.count,
+                    resp->printf("\"%s\",\"%s\",%d,\"%s\",%u,%" PRIu64 ",%" PRIu64 ",%d,%s,\"%s\",%.8f,%.8f,%.1f\n",
+                        d.mac, d.name, d.rssi, d.method, (unsigned)d.channel,
+                        fyExportMs(d.firstSeen), fyExportMs(d.lastSeen), d.count,
                         d.isRaven ? "true" : "false", d.ravenFW,
                         d.gpsLat, d.gpsLon, d.gpsAcc);
                 } else {
-                    resp->printf("\"%s\",\"%s\",%d,\"%s\",%lu,%lu,%d,%s,\"%s\",,,\n",
-                        d.mac, d.name, d.rssi, d.method,
-                        d.firstSeen, d.lastSeen, d.count,
+                    resp->printf("\"%s\",\"%s\",%d,\"%s\",%u,%" PRIu64 ",%" PRIu64 ",%d,%s,\"%s\",,,\n",
+                        d.mac, d.name, d.rssi, d.method, (unsigned)d.channel,
+                        fyExportMs(d.firstSeen), fyExportMs(d.lastSeen), d.count,
                         d.isRaven ? "true" : "false", d.ravenFW);
                 }
             }
@@ -1564,8 +1735,8 @@ static void fyTryStartServer() {
         return;
     }
 
-    // Let the AP + lwIP stack settle before opening TCP listeners (ESP32-C6).
-    if (millis() - fyApStartMs < 1500) {
+    // Cumulative AP time must reach FY_AP_SETTLE_MS (time-sliced dashboard).
+    if (!fyDashboardApUp || millis() - fyApStartMs < FY_AP_SETTLE_MS) {
         return;
     }
 
@@ -1615,10 +1786,9 @@ void setup() {
     fyMutex    = xSemaphoreCreateMutex();
     fyGPSMutex = xSemaphoreCreateMutex();
 
-#ifndef NESSO_N1
-    // Init hardware GPS UART (Seeed L76K on D6/D7)
-    fyGPSSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
-#endif
+    ::boardGpsUartBegin(fyGPSSerial);
+    boardGpsApplyProfile(fyGPSSerial, GPS_PROFILE_COLLECT);
+    nessoUiSetGpsIndicator(NESSO_GPS_SEARCHING);
 
     // Init SPIFFS for session persistence
     if (SPIFFS.begin(true)) {
@@ -1633,70 +1803,71 @@ void setup() {
     printf("\n========================================\n");
     printf("  FLOCK-YOU Surveillance Detector\n");
     printf("  Buzzer: %s\n", fyBuzzerOn ? "ON" : "OFF");
-    printf("  GPS: auto-detect (L76K on D6/D7)\n");
+    printf("  GPS: auto-detect (%s)\n", ::boardGpsModuleName());
     printf("========================================\n");
 
-    // Init BLE scanner — start at ~100% duty (collect mode, WiFi off).
+    // Init BLE scanner and WiFi sniffer; radio scheduler starts first slice.
+    fyWiFiSniffInit();
     NimBLEDevice::init("");
     fyBLEScan = NimBLEDevice::getScan();
     fyBLEScan->setScanCallbacks(new FYBLECallbacks(), true);
     fyBLEScan->setActiveScan(true);
     fyBLEScan->setInterval(FY_BLE_SLOT_MS);
-    fyBLEScan->setWindow(FY_BLE_COLLECT_WINDOW_MS);
+    fyBLEScan->setWindow(FY_BLE_SLOT_MS);
 
-    // Kick off the first scan right away. NimBLE-Arduino 2.x start() takes
-    // milliseconds (0 = continuous); the original code passed seconds, so it
-    // only listened for ~2 ms per cycle and saw almost nothing.
 #ifdef FY_DIAG_DISABLE_BLE
     printf("[FLOCK-YOU] DIAG BUILD: BLE scanning DISABLED\n");
-#else
-    fyBLEScan->start(0, false);
-    fyLastBleScan = millis();
-    printf("[FLOCK-YOU] BLE scanning ACTIVE (collect mode, ~100%% duty)\n");
 #endif
 
-    // Crow calls play WHILE BLE is already scanning
     fyBootBeep();
 
     fyRadioProfile = FY_RADIO_COLLECT;
+    fyRadioSchedulerReset();
     nessoUiSetStatus("Collect mode");
-    printf("[FLOCK-YOU] WiFi AP off — double-click KEY1 (front) for dashboard\n");
+    printf("[FLOCK-YOU] Collect: 50/50 BLE+WiFi — double-click KEY1 for dashboard\n");
     printf("[FLOCK-YOU] Hold KEY1 ~1.5s for mode selector\n");
-    printf("[FLOCK-YOU] Detection methods: MAC prefix, device name, manufacturer ID, Raven UUID\n");
-    printf("[FLOCK-YOU] Ready - collecting BLE data\n\n");
+    printf("[FLOCK-YOU] BLE: MAC/name/mfr/Raven | WiFi: OUI/probe sniff\n");
+    printf("[FLOCK-YOU] Ready\n\n");
 }
 
 void loop() {
     fyPollKey1DoubleClick();
+    fyRadioSchedulerTick();
+    fyProcessWiFiAlerts();
 
     if (fyRadioProfile == FY_RADIO_DASHBOARD) {
         fyTryStartServer();
         if (fyDnsStarted) {
-            flockyouDNS.processNextRequest();  // Captive portal DNS
+            flockyouDNS.processNextRequest();
         }
+        fyProcessDashboardHardwareGPS();
+    } else {
+        fyProcessHardwareGPS();
     }
-    fyProcessHardwareGPS();
+
+    fyUpdateGpsIndicator();
     fyUpdatePixel();
 
     static unsigned long lastStatusLog = 0;
     if (millis() - lastStatusLog >= 30000) {
         lastStatusLog = millis();
-        printf("[FLOCK-YOU] status: hits=%d in_range=%s radio=%s server=%s\n",
+        printf("[FLOCK-YOU] status: hits=%d in_range=%s profile=%s slice=%s server=%s\n",
                fyDetCount,
                fyDeviceInRange ? "yes" : "no",
                fyRadioProfile == FY_RADIO_COLLECT ? "collect" : "dashboard",
+               fySliceName(fyCurrentSlice),
                (fyRadioProfile == FY_RADIO_DASHBOARD && fyServerStarted) ? "up" : "off");
     }
 
-    // BLE scanning cycle: keep a continuous scan running and periodically clear
-    // the cached results to bound memory (detection happens in the callback).
 #ifndef FY_DIAG_DISABLE_BLE
-    if (!fyBLEScan->isScanning()) {
-        fyBLEScan->start(0, false);
-    }
-    if (millis() - fyLastBleScan >= BLE_SCAN_INTERVAL) {
-        fyBLEScan->clearResults();
-        fyLastBleScan = millis();
+    if (fyCurrentSlice == FY_SLICE_BLE) {
+        if (fyBLEScan && !fyBLEScan->isScanning()) {
+            fyBLEScan->start(0, false);
+        }
+        if (fyBLEScan && millis() - fyLastBleScan >= BLE_SCAN_INTERVAL) {
+            fyBLEScan->clearResults();
+            fyLastBleScan = millis();
+        }
     }
 #endif
 

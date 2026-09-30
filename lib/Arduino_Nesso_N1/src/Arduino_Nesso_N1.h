@@ -81,6 +81,7 @@ public:
     BQ27220_AVG_POWER = 0x24,
     BQ27220_TEMPERATURE = 0x28,
     BQ27220_CYCLE_COUNT = 0x2A,
+    BQ27220_STATE_OF_CHARGE = 0x2C,
   };
 
   enum ChargeStatus {
@@ -122,6 +123,7 @@ public:
   void setHiZ(bool enable);                    // set Hi-Z mode, true: USB -x-> SYS, false: USB -> SYS
 
   // BQ27220 functions
+  void getBatteryStatus(float &volts, uint16_t &percent);  // filtered snapshot for display
   float getVoltage();         // get battery voltage in Volts
   float getCurrent();         // get battery current in Amperes
   uint16_t getChargeLevel();  // get battery charge level in percents

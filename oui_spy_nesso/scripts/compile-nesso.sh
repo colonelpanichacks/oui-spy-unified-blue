@@ -10,7 +10,7 @@ cd "$ROOT"
 # artifacts as sketch sources, and so the ELF path is deterministic.
 BUILD_PATH="$ROOT/../build-nesso"
 
-EXTRA_FLAGS="-DNESSO_N1=1 -DNESSO_DISPLAY_UI=1 -DCONFIG_BT_NIMBLE_ENABLED=1 -DCONFIG_LWIP_TCPIP_CORE_LOCKING=1 -Iraw"
+EXTRA_FLAGS="-DNESSO_N1=1 -DNESSO_DISPLAY_UI=1 -DNESSO_NO_FLOCKYOU=1 -DCONFIG_BT_NIMBLE_ENABLED=1 -DCONFIG_LWIP_TCPIP_CORE_LOCKING=1 -Iraw"
 
 # Find the connected ESP32 board's serial port. Prefer the Espressif USB
 # vendor id (0x303A) reported by arduino-cli; fall back to any port it has
@@ -84,10 +84,10 @@ if ! grep -qE 'projects/nesso/.*AsyncTCP' <<<"$ASYNCTCP_PATHS"; then
   exit 1
 fi
 
-if ! grep -qE ',spiffs,' "$BUILD_PATH/partitions.csv" 2>/dev/null; then
-  echo "ERROR: built partition table has no spiffs region — Flock-You sessions will not persist." >&2
+if ! grep -qiE '(^|[[:space:]]*)spiffs[[:space:]]*,' "$BUILD_PATH/partitions.csv" 2>/dev/null; then
+  echo "ERROR: built partition table has no spiffs region — mode sessions will not persist." >&2
   echo "       Expected oui_spy_nesso/partitions.csv from setup-arduino-user.sh." >&2
   exit 1
 fi
 
-echo "OK: partition table includes spiffs ($(grep spiffs "$BUILD_PATH/partitions.csv" | tr -d ' '))"
+echo "OK: partition table includes spiffs ($(grep -i spiffs "$BUILD_PATH/partitions.csv" | head -1 | tr -d ' '))"

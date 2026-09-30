@@ -1,0 +1,341 @@
+[
+  {
+    "added_include_path": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32"
+  },
+  {
+    "added_include_path": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/variants/arduino_nesso_n1"
+  },
+  {
+    "compile": {
+      "source_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged",
+      "depfile_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged.libsdetect.d"
+    },
+    "compile_task": {
+      "args": [
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp-rv32/2601/bin/riscv32-esp-elf-g++",
+        "-c",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/cpp_flags",
+        "-w",
+        "-Os",
+        "-Werror=return-type",
+        "-w",
+        "-x",
+        "c++",
+        "-E",
+        "-CC",
+        "-DF_CPU=160000000L",
+        "-DARDUINO=10607",
+        "-DARDUINO_ARDUINO_NESSO_N1",
+        "-DARDUINO_ARCH_ESP32",
+        "-DARDUINO_BOARD=\"ARDUINO_NESSO_N1\"",
+        "-DARDUINO_VARIANT=\"arduino_nesso_n1\"",
+        "-DARDUINO_PARTITION_app3M_fat9M_16MB",
+        "-DARDUINO_HOST_OS=\"macosx\"",
+        "-DARDUINO_FQBN=\"esp32:esp32:arduino_nesso_n1\"",
+        "-DESP32=ESP32",
+        "-DCORE_DEBUG_LEVEL=0",
+        "-DARDUINO_USB_MODE=1",
+        "-DARDUINO_USB_CDC_ON_BOOT=1",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/defines",
+        "-I/Users/nicholastenbrink/projects/nesso/test/spiffs_dump",
+        "-iprefix",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/include/",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/includes",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/qio_qspi/include",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/variants/arduino_nesso_n1",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/build_opt.h",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/file_opts",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged",
+        "-o",
+        "/dev/null",
+        "-MMD",
+        "-MF",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged.libsdetect.d"
+      ]
+    }
+  },
+  {
+    "missing_include_h": "SPIFFS.h"
+  },
+  {
+    "added_include_path": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src"
+  },
+  {
+    "compile": {
+      "source_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged",
+      "depfile_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged.libsdetect.d"
+    },
+    "compile_task": {
+      "args": [
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp-rv32/2601/bin/riscv32-esp-elf-g++",
+        "-c",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/cpp_flags",
+        "-w",
+        "-Os",
+        "-Werror=return-type",
+        "-w",
+        "-x",
+        "c++",
+        "-E",
+        "-CC",
+        "-DF_CPU=160000000L",
+        "-DARDUINO=10607",
+        "-DARDUINO_ARDUINO_NESSO_N1",
+        "-DARDUINO_ARCH_ESP32",
+        "-DARDUINO_BOARD=\"ARDUINO_NESSO_N1\"",
+        "-DARDUINO_VARIANT=\"arduino_nesso_n1\"",
+        "-DARDUINO_PARTITION_app3M_fat9M_16MB",
+        "-DARDUINO_HOST_OS=\"macosx\"",
+        "-DARDUINO_FQBN=\"esp32:esp32:arduino_nesso_n1\"",
+        "-DESP32=ESP32",
+        "-DCORE_DEBUG_LEVEL=0",
+        "-DARDUINO_USB_MODE=1",
+        "-DARDUINO_USB_CDC_ON_BOOT=1",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/defines",
+        "-I/Users/nicholastenbrink/projects/nesso/test/spiffs_dump",
+        "-iprefix",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/include/",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/includes",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/qio_qspi/include",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/variants/arduino_nesso_n1",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/build_opt.h",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/file_opts",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged",
+        "-o",
+        "/dev/null",
+        "-MMD",
+        "-MF",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged.libsdetect.d"
+      ]
+    }
+  },
+  {
+    "missing_include_h": "FS.h"
+  },
+  {
+    "added_include_path": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src"
+  },
+  {
+    "compile": {
+      "source_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged",
+      "depfile_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged.libsdetect.d"
+    },
+    "compile_task": {
+      "args": [
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp-rv32/2601/bin/riscv32-esp-elf-g++",
+        "-c",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/cpp_flags",
+        "-w",
+        "-Os",
+        "-Werror=return-type",
+        "-w",
+        "-x",
+        "c++",
+        "-E",
+        "-CC",
+        "-DF_CPU=160000000L",
+        "-DARDUINO=10607",
+        "-DARDUINO_ARDUINO_NESSO_N1",
+        "-DARDUINO_ARCH_ESP32",
+        "-DARDUINO_BOARD=\"ARDUINO_NESSO_N1\"",
+        "-DARDUINO_VARIANT=\"arduino_nesso_n1\"",
+        "-DARDUINO_PARTITION_app3M_fat9M_16MB",
+        "-DARDUINO_HOST_OS=\"macosx\"",
+        "-DARDUINO_FQBN=\"esp32:esp32:arduino_nesso_n1\"",
+        "-DESP32=ESP32",
+        "-DCORE_DEBUG_LEVEL=0",
+        "-DARDUINO_USB_MODE=1",
+        "-DARDUINO_USB_CDC_ON_BOOT=1",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/defines",
+        "-I/Users/nicholastenbrink/projects/nesso/test/spiffs_dump",
+        "-iprefix",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/include/",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/includes",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/qio_qspi/include",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/variants/arduino_nesso_n1",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/build_opt.h",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/file_opts",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged",
+        "-o",
+        "/dev/null",
+        "-MMD",
+        "-MF",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/sketch/spiffs_dump.ino.cpp.merged.libsdetect.d"
+      ]
+    }
+  },
+  {
+    "missing_include_h": ""
+  },
+  {
+    "compile": {
+      "source_path": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src/SPIFFS.cpp",
+      "depfile_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/libraries/SPIFFS/SPIFFS.cpp.libsdetect.d"
+    },
+    "compile_task": {
+      "args": [
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp-rv32/2601/bin/riscv32-esp-elf-g++",
+        "-c",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/cpp_flags",
+        "-w",
+        "-Os",
+        "-Werror=return-type",
+        "-w",
+        "-x",
+        "c++",
+        "-E",
+        "-CC",
+        "-DF_CPU=160000000L",
+        "-DARDUINO=10607",
+        "-DARDUINO_ARDUINO_NESSO_N1",
+        "-DARDUINO_ARCH_ESP32",
+        "-DARDUINO_BOARD=\"ARDUINO_NESSO_N1\"",
+        "-DARDUINO_VARIANT=\"arduino_nesso_n1\"",
+        "-DARDUINO_PARTITION_app3M_fat9M_16MB",
+        "-DARDUINO_HOST_OS=\"macosx\"",
+        "-DARDUINO_FQBN=\"esp32:esp32:arduino_nesso_n1\"",
+        "-DESP32=ESP32",
+        "-DCORE_DEBUG_LEVEL=0",
+        "-DARDUINO_USB_MODE=1",
+        "-DARDUINO_USB_CDC_ON_BOOT=1",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/defines",
+        "-I/Users/nicholastenbrink/projects/nesso/test/spiffs_dump",
+        "-iprefix",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/include/",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/includes",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/qio_qspi/include",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/variants/arduino_nesso_n1",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/build_opt.h",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/file_opts",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src/SPIFFS.cpp",
+        "-o",
+        "/dev/null",
+        "-MMD",
+        "-MF",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/libraries/SPIFFS/SPIFFS.cpp.libsdetect.d"
+      ]
+    }
+  },
+  {
+    "missing_include_h": ""
+  },
+  {
+    "compile": {
+      "source_path": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src/FS.cpp",
+      "depfile_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/libraries/FS/FS.cpp.libsdetect.d"
+    },
+    "compile_task": {
+      "args": [
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp-rv32/2601/bin/riscv32-esp-elf-g++",
+        "-c",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/cpp_flags",
+        "-w",
+        "-Os",
+        "-Werror=return-type",
+        "-w",
+        "-x",
+        "c++",
+        "-E",
+        "-CC",
+        "-DF_CPU=160000000L",
+        "-DARDUINO=10607",
+        "-DARDUINO_ARDUINO_NESSO_N1",
+        "-DARDUINO_ARCH_ESP32",
+        "-DARDUINO_BOARD=\"ARDUINO_NESSO_N1\"",
+        "-DARDUINO_VARIANT=\"arduino_nesso_n1\"",
+        "-DARDUINO_PARTITION_app3M_fat9M_16MB",
+        "-DARDUINO_HOST_OS=\"macosx\"",
+        "-DARDUINO_FQBN=\"esp32:esp32:arduino_nesso_n1\"",
+        "-DESP32=ESP32",
+        "-DCORE_DEBUG_LEVEL=0",
+        "-DARDUINO_USB_MODE=1",
+        "-DARDUINO_USB_CDC_ON_BOOT=1",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/defines",
+        "-I/Users/nicholastenbrink/projects/nesso/test/spiffs_dump",
+        "-iprefix",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/include/",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/includes",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/qio_qspi/include",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/variants/arduino_nesso_n1",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/build_opt.h",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/file_opts",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src/FS.cpp",
+        "-o",
+        "/dev/null",
+        "-MMD",
+        "-MF",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/libraries/FS/FS.cpp.libsdetect.d"
+      ]
+    }
+  },
+  {
+    "missing_include_h": ""
+  },
+  {
+    "compile": {
+      "source_path": "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src/vfs_api.cpp",
+      "depfile_path": "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/libraries/FS/vfs_api.cpp.libsdetect.d"
+    },
+    "compile_task": {
+      "args": [
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp-rv32/2601/bin/riscv32-esp-elf-g++",
+        "-c",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/cpp_flags",
+        "-w",
+        "-Os",
+        "-Werror=return-type",
+        "-w",
+        "-x",
+        "c++",
+        "-E",
+        "-CC",
+        "-DF_CPU=160000000L",
+        "-DARDUINO=10607",
+        "-DARDUINO_ARDUINO_NESSO_N1",
+        "-DARDUINO_ARCH_ESP32",
+        "-DARDUINO_BOARD=\"ARDUINO_NESSO_N1\"",
+        "-DARDUINO_VARIANT=\"arduino_nesso_n1\"",
+        "-DARDUINO_PARTITION_app3M_fat9M_16MB",
+        "-DARDUINO_HOST_OS=\"macosx\"",
+        "-DARDUINO_FQBN=\"esp32:esp32:arduino_nesso_n1\"",
+        "-DESP32=ESP32",
+        "-DCORE_DEBUG_LEVEL=0",
+        "-DARDUINO_USB_MODE=1",
+        "-DARDUINO_USB_CDC_ON_BOOT=1",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/defines",
+        "-I/Users/nicholastenbrink/projects/nesso/test/spiffs_dump",
+        "-iprefix",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/include/",
+        "@/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/flags/includes",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/tools/esp32c6-libs/3.3.10/qio_qspi/include",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/variants/arduino_nesso_n1",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/SPIFFS/src",
+        "-I/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/build_opt.h",
+        "@/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/file_opts",
+        "/Users/nicholastenbrink/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/FS/src/vfs_api.cpp",
+        "-o",
+        "/dev/null",
+        "-MMD",
+        "-MF",
+        "/Users/nicholastenbrink/projects/nesso/build-spiffs-dump/libraries/FS/vfs_api.cpp.libsdetect.d"
+      ]
+    }
+  },
+  {
+    "missing_include_h": ""
+  }
+]

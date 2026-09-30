@@ -1,0 +1,601 @@
+
+=== monitor start 2026-06-24 20:06:56 ===
+[MEGA-MAID] COLLECTION mode: AP up, 50/50 BLE/WiFi on AP channel
+[MEGA-MAID] Collect prep: AP kept up (HTTP off during collect)
+[MEGA-MAID] Web server stopped
+[MEGA-MAID] Captive DNS stopped
+[MEGA-MAID] BLE stack ready (heap=14536)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] COLLECT ready heap=14536
+[MEGA-MAID] status: hits=0 in_range=no profile=collection slice=BLE server=off save=idle
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 78:45:58:37:08:93  RSSI:-63 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"78:45:58:37:08:93","device_name":"","wifi_ssid":"The Shack","probed_ssids":["The Shack"],"rssi":-63,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 24:5a:4c:6b:7b:68  RSSI:-65 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"24:5a:4c:6b:7b:68","device_name":"","wifi_ssid":"The Shack","probed_ssids":["The Shack"],"rssi":-65,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] DETECTED: 70:2c:1f:5f:9a:52  RSSI:-84 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"70:2c:1f:5f:9a:52","device_name":"","wifi_ssid":"[range] Samsung","probed_ssids":["[range] Samsung"],"rssi":-84,"channel":1,"frequency":2412}
+[MEGA-MAID] DETECTED: 94:9f:3e:8b:0a:63  RSSI:-85 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"94:9f:3e:8b:0a:63","device_name":"","wifi_ssid":"Sonos_H9HfbIogo38mkVvoFCdan9ikqj","probed_ssids":["Sonos_H9HfbIogo38mkVvoFCdan9ikqj"],"rssi":-85,"channel":1,"frequency":2412}
+[MEGA-MAID] Session saved: 2 det, 385 bytes, crc=0x503DC575
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 94:9f:3e:8b:0a:62  RSSI:-84 [wifi_addr2] count:1
+{"detection_method":"wifi_addr2","protocol":"wifi_2_4ghz","mac_address":"94:9f:3e:8b:0a:62","device_name":"","rssi":-84,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 84:0b:7c:e0:66:08  RSSI:-94 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"84:0b:7c:e0:66:08","device_name":"","wifi_ssid":"Unit-B","probed_ssids":["Unit-B"],"rssi":-94,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 5c:86:c1:08:f7:86  RSSI:-82 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"5c:86:c1:08:f7:86","device_name":"","wifi_ssid":"SAMSUNGSMART","probed_ssids":["SAMSUNGSMART"],"rssi":-82,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+
+=== continuous monitor 2026-06-24 20:07:08 ===
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 22:b5:33:33:64:99  RSSI:-17 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"22:b5:33:33:64:99","device_name":"","rssi":-17,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] Session saved: 8 det, 1485 bytes, crc=0x639E4D91
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] Collect→Dashboard transition queued
+[MEGA-MAID] DASHBOARD mode: scan paused, AP stays up
+[MEGA-MAID] BLE scan paused (stack kept alive for AP)
+[MEGA-MAID] Dashboard ready — AP up, HTTP binds after 2000ms settle (heap=14536)
+[MEGA-MAID] Web server settle 1870ms remaining
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+
+=== monitor 2026-06-24 20:07:25 ===
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+
+=== monitor 2026-06-24 20:07:49 ===
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Web server waiting for heap (free=14536)
+[MEGA-MAID] Web server waiting for heap (free=14536)
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0x4 (DOWNLOAD(USB/UART0/SDIO_FEI_FEO))
+Saved PC:0x4080b670
+waiting for download
+
+    �  ��
+    �  �ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x408003ec
+SPIWP:0xee
+mode:DIO, clock div:2
+load:0x40875730,len:0x1278
+load:0x4086b910,len:0xdd0
+load:0x4086e610,len:0x3154
+entry 0x4086b910
+E (357) esp_core_dump_flash: No core dump partition found!
+E (357) esp_core_dump_flash: No core dump partition found!
+[  1804][E][AP.cpp:201] begin(): Failed to start AP!
+[  1809][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3002: ESP_ERR_WIFI_NOT_STARTED
+[MEGA-MAID] SPIFFS ready
+[MEGA-MAID] Prior session promoted from /megamaid_session.json (1542 bytes)
+[MEGA-MAID] Prior session on SPIFFS (1542 bytes) — export via dashboard HISTORY
+
+========================================
+  MEGA MAID BLE + WiFi MAC Collector
+  Build: 2026-06-24g
+  Buzzer: ON
+  GPS: auto-detect (L76K on D6/D7)
+========================================
+[MEGA-MAID] Boot sound (buzzer ON)
+[MEGA-MAID] *caw caw caw*
+[MEGA-MAID] DASHBOARD mode: scan paused, AP stays up
+[MEGA-MAID] BLE scan paused (stack kept alive for AP)
+[  6134][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3001: ESP_ERR_WIFI_NOT_INIT
+[MEGA-MAID] softAP up 192.168.4.1
+[MEGA-MAID] Dashboard ready — AP up, HTTP binds after 2000ms settle (heap=68676)
+[MEGA-MAID] Web server settle 1870ms remaining
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=51680
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] Dashboard: double-click KEY1 for collection mode
+[MEGA-MAID] Hold KEY1 ~1.5s for mode selector
+[MEGA-MAID] BLE: all advertisements | WiFi: MACs + SSIDs/probes
+[MEGA-MAID] Ready
+
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46872
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0x4 (DOWNLOAD(USB/UART0/SDIO_FEI_FEO))
+Saved PC:0x4080b670
+waiting for download
+
+=== monitor 2026-06-24 20:19:27 ===
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47300
+
+=== monitor 2026-06-24 20:22:35 ===
+[MEGA-MAID] COLLECTION mode: AP up, 50/50 BLE/WiFi on AP channel
+[MEGA-MAID] Collect prep: AP kept up (HTTP off during collect)
+[MEGA-MAID] Web server stopped
+[MEGA-MAID] Captive DNS stopped
+[MEGA-MAID] BLE stack ready (heap=14088)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] COLLECT ready heap=14088
+[MEGA-MAID] status: hits=0 in_range=no profile=collection slice=BLE server=off save=idle
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 78:45:58:37:08:93  RSSI:-63 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"78:45:58:37:08:93","device_name":"","wifi_ssid":"The Shack","probed_ssids":["The Shack"],"rssi":-63,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 70:2c:1f:5f:9a:52  RSSI:-86 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"70:2c:1f:5f:9a:52","device_name":"","wifi_ssid":"[range] Samsung","probed_ssids":["[range] Samsung"],"rssi":-86,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 84:0b:7c:e0:66:08  RSSI:-92 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"84:0b:7c:e0:66:08","device_name":"","wifi_ssid":"Unit-B","probed_ssids":["Unit-B"],"rssi":-92,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 24:5a:4c:6b:7b:68  RSSI:-76 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"24:5a:4c:6b:7b:68","device_name":"","wifi_ssid":"The Shack","probed_ssids":["The Shack"],"rssi":-76,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] Session saved: 4 det, 767 bytes, crc=0x20FE1683
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 94:9f:3e:8b:0a:62  RSSI:-85 [wifi_addr2] count:1
+{"detection_method":"wifi_addr2","protocol":"wifi_2_4ghz","mac_address":"94:9f:3e:8b:0a:62","device_name":"","rssi":-85,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 94:9f:3e:8b:0a:63  RSSI:-81 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"94:9f:3e:8b:0a:63","device_name":"","wifi_ssid":"Sonos_H9HfbIogo38mkVvoFCdan9ikqj","probed_ssids":["Sonos_H9HfbIogo38mkVvoFCdan9ikqj"],"rssi":-81,"channel":1,"frequency":2412}
+[MEGA-MAID] Session saved: 5 det, 913 bytes, crc=0x47149102
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 24:5a:4c:5d:5e:a4  RSSI:-85 [wifi_addr1] count:1
+{"detection_method":"wifi_addr1","protocol":"wifi_2_4ghz","mac_address":"24:5a:4c:5d:5e:a4","device_name":"","rssi":-85,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 5c:86:c1:08:f7:86  RSSI:-88 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"5c:86:c1:08:f7:86","device_name":"","wifi_ssid":"SAMSUNGSMART","probed_ssids":["SAMSUNGSMART"],"rssi":-88,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 24:4b:03:a1:11:08  RSSI:-68 [wifi_addr1] count:1
+{"detection_method":"wifi_addr1","protocol":"wifi_2_4ghz","mac_address":"24:4b:03:a1:11:08","device_name":"","rssi":-68,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] Session saved: 9 det, 1608 bytes, crc=0x717F4553
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] Collect→Dashboard transition queued
+[MEGA-MAID] DASHBOARD mode: scan paused, AP stays up
+[MEGA-MAID] BLE scan paused (stack kept alive for AP)
+[MEGA-MAID] Dashboard ready — AP up, HTTP binds after 2000ms settle (heap=14088)
+[MEGA-MAID] Web server settle 1870ms remaining
+[MEGA-MAID] status: hits=9 profile=dashboard server=off heap=14088
+[MEGA-MAID] Releasing BLE for HTTP (heap=14088)
+Guru Meditation Error: Core  0 panic'ed (Load access fault). Exception was unhandled.
+
+Core  0 register dump:
+MEPC    : 0x42031ad2  RA      : 0x42031722  SP      : 0x4085f350  GP      : 0x4081c064  
+TP      : 0x4085f4f0  T0      : 0x40022494  T1      : 0x40000c0c  T2      : 0xfff9f000  
+S0/FP   : 0x00000000  S1      : 0x40857000  A0      : 0x4087b360  A1      : 0xfefefefe  
+A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000000  A5      : 0x00000000  
+A6      : 0xa09a939d  A7      : 0x00000003  S2      : 0x40857000  S3      : 0x00000001  
+S4      : 0x40857000  S5      : 0x40857000  S6      : 0x00000000  S7      : 0x00000000  
+S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+T3      : 0xfefefeff  T4      : 0x00000000  T5      : 0x00000000  T6      : 0xfffff700  
+MSTATUS : 0x00001881  MTVEC   : 0x40800001  MCAUSE  : 0x00000005  MTVAL   : 0x0000006c  
+MHARTID : 0x00000000  
+
+Stack memory:
+4085f350: 0x40857000 0x00000001 0x00000000 0x420460d4 0x40857000 0x00000001 0x00000000 0x420316b4
+4085f370: 0x40880000 0x4087b3cc 0x40857260 0x4087b360 0x40857000 0x4087b3d4 0x40857260 0x00000001
+4085f390: 0x40857000 0x40857000 0x40857000 0x4201253c 0x00001c00 0x4087e16c 0x00000000 0x00000000
+4085f3b0: 0x00001000 0x00000000 0x00000000 0x00000000 0x00000001 0x00000000 0x4087e100 0x4080e9f4
+4085f3d0: 0x00000000 0x00000000 0x4087e100 0x4080f04a 0x00000000 0x00000000 0x00000000 0x00000000
+4085f3f0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x4087d69c
+4085f410: 0x00000001 0x00000043 0x4084ee44 0x42016f4e 0x00000043 0x4087d69c 0x4084ee44 0x42017084
+4085f430: 0x40856a5c 0x00000000 0x00000000 0x00000000 0x0000000f 0x00000043 0x4084f000 0x42016452
+4085f450: 0x00000000 0x42047000 0x00000000 0x42016942 0x0000000d 0x00000003 0x4084f000 0x66e7a49a
+4085f470: 0x00000000 0x42047000 0x40857000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+4085f490: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x42047000 0x40857000 0x420500c4
+4085f4b0: 0x00000000 0x00000000 0x00000000 0x4080fbde 0x00000000 0x00000000 0x00000000 0x00000000
+4085f4d0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+4085f4f0: 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xbaad5678 0x00000268 0xabba1234 0x0000025c 0x4085f568
+4085f510: 0x4085f608 0x4085f768 0x4085f5f8 0x00000000 0x4085f524 0xffffffff 0x4085f524 0x4085f524
+4085f530: 0x00000001 0x4085f538 0xffffffff 0x40860a0c 0x40860a0c 0x00000000 0x00000020 0x00000010
+4085f550: 0xc700ffff 0x00000000 0x00000101 0x42171200 0x0000002b 0x4086a08c 0x00000101 0x4218142c
+4085f570: 0x0000002b 0x4086a09c 0x00000000 0x4218142c 0x00000002 0x00000000 0x00000101 0x4218142c
+4085f590: 0x0000002b 0x4086b028 0x00000000 0x4218142c 0x0000000c 0x00000000 0x00000000 0x4218142c
+4085f5b0: 0x00000003 0x00000000 0x00000000 0x4218142c 0x0000000d 0x00000000 0x00000000 0x4218142c
+4085f5d0: 0x0000000c 0x00000000 0x00000000 0x4218142c 0x0000000d 0x00000000 0x00000000 0x4218142c
+4085f5f0: 0x0000000c 0x00000000 0x00000101 0x4218142c 0x0000002b 0x4087b410 0x00000101 0x42181334
+4085f610: 0x0000000e 0x4086f148 0x00000101 0x42180698 0x00000002 0x40875488 0x00000101 0x42181334
+4085f630: 0x0000000f 0x4086f180 0x00000101 0x42181334 0x0000002b 0x4087bda0 0x00000101 0x42181334
+4085f650: 0x0000002b 0x4087b864 0x00000000 0x42181334 0x0000000d 0x00000000 0xa480b891 0xebcd12e1
+4085f670: 0xca2ddeff 0xfcd8506e 0xde8825d2 0x8a2cebec 0xa861b02c 0xbc7fcc9b 0xea35b550 0xe37bbe4e
+4085f690: 0x25f403d7 0x1cc252ab 0xbe1cc9b7 0x242b1450 0x02584d80 0x69d1f37b 0xc285d400 0xe45f74fe
+4085f6b0: 0xd2c38d57 0x545d0876 0x575bce19 0x4408e50c 0x47a45220 0xbbe25acd 0xbe830d2d 0xb771df09
+4085f6d0: 0xcc154fea 0xea4c0e9a 0x86a84c68 0x0613bf34 0x8f7b411c 0x4dc3f96e 0xa203bbe0 0x37ff7727
+4085f6f0: 0xb391e3c5 0xfc39fb0f 0x98ecfb15 0x6e6180c6 0xae338803 0x7a2459bc 0x9eb80a48 0x877ce86f
+4085f710: 0xd1d20eb0 0x30c572c4 0xd37bf937 0xae621a20 0xc0133901 0x8b56a0e7 0x8866f002 0x7a4065b7
+4085f730: 0xf8f84cb9 0x93fd908c 0x177fe9bd 0xa1e8538d 0x6d5fe43c 0x353fa53c 0xe59f648f 0x9e26d70b
+
+
+
+ELF file SHA256: f03bc552b
+
+E (8886) esp_core_dump_flash: Core dump flash config is corrupted! CRC=0x7bd5c66f instead of 0x0
+E (8895) esp_core_dump_elf: Elf write init failed!
+E (8899) esp_core_dump_common: Core dump write failed with error=-1
+Rebooting...
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4001975a
+SPIWP:0xee
+mode:DIO, clock div:2
+load:0x40875730,len:0x1278
+load:0x4086b910,len:0xdd0
+load:0x4086e610,len:0x3154
+entry 0x4086b910
+E (702) esp_core_dump_flash: No core dump partition found!
+E (702) esp_core_dump_flash: No core dump partition found!
+[  1804][E][AP.cpp:201] begin(): Failed to start AP!
+[  1809][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3002: ESP_ERR_WIFI_NOT_STARTED
+[MEGA-MAID] SPIFFS ready
+[MEGA-MAID] Prior session promoted from /megamaid_session.json (1665 bytes)
+[MEGA-MAID] Prior session on SPIFFS (1665 bytes) — export via dashboard HISTORY
+
+========================================
+  MEGA MAID BLE + WiFi MAC Collector
+  Build: 2026-06-24h
+  Buzzer: ON
+  GPS: auto-detect (L76K on D6/D7)
+========================================
+[MEGA-MAID] Boot sound (buzzer ON)
+[MEGA-MAID] *caw caw caw*
+[MEGA-MAID] DASHBOARD mode: scan paused, AP stays up
+[MEGA-MAID] BLE scan paused (stack kept alive for AP)
+[  5717][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3001: ESP_ERR_WIFI_NOT_INIT
+[MEGA-MAID] softAP up 192.168.4.1
+[MEGA-MAID] Dashboard ready — AP up, HTTP binds after 2000ms settle (heap=68656)
+[MEGA-MAID] Web server settle 1870ms remaining
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=51660
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] Dashboard: double-click KEY1 for collection mode
+[MEGA-MAID] Hold KEY1 ~1.5s for mode selector
+[MEGA-MAID] BLE: all advertisements | WiFi: MACs + SSIDs/probes
+[MEGA-MAID] Ready
+
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46852
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0x4 (DOWNLOAD(USB/UART0/SDIO_FEI_FEO))
+Saved PC:0x4080b670
+waiting for download
+      ��      ��      ��      ��      �
+=== monitor 2026-06-24 20:30:43 build-i test ===
+[MEGA-MAID] softAP up 192.168.4.1
+[MEGA-MAID] Dashboard ready — AP up, HTTP binds after 2000ms settle (heap=69100)
+[MEGA-MAID] Web server settle 1870ms remaining
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=52104
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] Dashboard: double-click KEY1 for collection mode
+[MEGA-MAID] Hold KEY1 ~1.5s for mode selector
+[MEGA-MAID] BLE: all advertisements | WiFi: MACs + SSIDs/probes
+[MEGA-MAID] Ready
+
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=47296
+[MEGA-MAID] COLLECTION mode: AP up, 50/50 BLE/WiFi on AP channel
+[MEGA-MAID] Collect prep: AP kept up (HTTP off during collect)
+[MEGA-MAID] Web server stopped
+[MEGA-MAID] Captive DNS stopped
+[MEGA-MAID] BLE stack ready (heap=14536)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] COLLECT ready heap=14536
+[MEGA-MAID] status: hits=0 in_range=no profile=collection slice=BLE server=off save=idle
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 78:45:58:37:08:93  RSSI:-64 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"78:45:58:37:08:93","device_name":"","wifi_ssid":"The Shack","probed_ssids":["The Shack"],"rssi":-64,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 70:2c:1f:5f:9a:52  RSSI:-88 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"70:2c:1f:5f:9a:52","device_name":"","wifi_ssid":"[range] Samsung","probed_ssids":["[range] Samsung"],"rssi":-88,"channel":1,"frequency":2412}
+[MEGA-MAID] DETECTED: 84:0b:7c:e0:66:08  RSSI:-94 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"84:0b:7c:e0:66:08","device_name":"","wifi_ssid":"Unit-B","probed_ssids":["Unit-B"],"rssi":-94,"channel":1,"frequency":2412}
+[MEGA-MAID] DETECTED: 24:5a:4c:6b:7b:68  RSSI:-72 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"24:5a:4c:6b:7b:68","device_name":"","wifi_ssid":"The Shack","probed_ssids":["The Shack"],"rssi":-72,"channel":1,"frequency":2412}
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] Session saved: 1 det, 193 bytes, crc=0xA7697556
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 5c:86:c1:08:f7:86  RSSI:-88 [wifi_addr1] count:1
+{"detection_method":"wifi_addr1","protocol":"wifi_2_4ghz","mac_address":"5c:86:c1:08:f7:86","device_name":"","rssi":-88,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] DETECTED: 94:9f:3e:8b:0a:63  RSSI:-81 [wifi_probe] count:1
+{"detection_method":"wifi_probe","protocol":"wifi_2_4ghz","mac_address":"94:9f:3e:8b:0a:63","device_name":"","wifi_ssid":"Sonos_H9HfbIogo38mkVvoFCdan9ikqj","probed_ssids":["Sonos_H9HfbIogo38mkVvoFCdan9ikqj"],"rssi":-81,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 94:9f:3e:8b:0a:62  RSSI:-81 [wifi_addr2] count:1
+{"detection_method":"wifi_addr2","protocol":"wifi_2_4ghz","mac_address":"94:9f:3e:8b:0a:62","device_name":"","rssi":-81,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] Session saved: 7 det, 1306 bytes, crc=0x13921486
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] DETECTED: 24:4b:03:a1:11:08  RSSI:-69 [wifi_addr1] count:1
+{"detection_method":"wifi_addr1","protocol":"wifi_2_4ghz","mac_address":"24:4b:03:a1:11:08","device_name":"","rssi":-69,"channel":1,"frequency":2412}
+[MEGA-MAID] Detection alert!
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] slice=BLE (AP up)
+[MEGA-MAID] slice=WIFI ch=1 (AP up)
+[MEGA-MAID] Collect→Dashboard transition queued
+[MEGA-MAID] DASHBOARD mode: scan paused, AP stays up
+[MEGA-MAID] Saving 8 detections before dashboard...
+[MEGA-MAID] Session saved: 8 det, 1450 bytes, crc=0xA62682C4
+[MEGA-MAID] Session saved: 8 det, 1450 bytes, crc=0xA62682C4
+[MEGA-MAID] BLE scan paused (stack kept alive for AP)
+[MEGA-MAID] Dashboard ready — AP up, HTTP binds after 2000ms settle (heap=14536)
+[MEGA-MAID] Web server settle 1869ms remaining
+[MEGA-MAID] status: hits=8 profile=dashboard server=off heap=14536
+[MEGA-MAID] Low heap for HTTP — pausing AP to release BLE (heap=14536)
+Guru Meditation Error: Core  0 panic'ed (Load access fault). Exception was unhandled.
+
+Core  0 register dump:
+MEPC    : 0x42031b60  RA      : 0x420317b0  SP      : 0x4085f350  GP      : 0x4081c064  
+TP      : 0x4085f4f0  T0      : 0x40022494  T1      : 0x40000c0c  T2      : 0x00000200  
+S0/FP   : 0x00000000  S1      : 0x40857000  A0      : 0x4087c5b4  A1      : 0x000000fe  
+A2      : 0x00000008  A3      : 0x00000001  A4      : 0x00000000  A5      : 0x00000000  
+A6      : 0xa09a939d  A7      : 0x00000003  S2      : 0x40857000  S3      : 0x40857000  
+S4      : 0x40857000  S5      : 0x40857000  S6      : 0x00000000  S7      : 0x00000000  
+S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+T3      : 0xfefefeff  T4      : 0x84000000  T5      : 0x00000000  T6      : 0xfffff700  
+MSTATUS : 0x00001881  MTVEC   : 0x40800001  MCAUSE  : 0x00000005  MTVAL   : 0x0000006c  
+MHARTID : 0x00000000  
+
+Stack memory:
+4085f350: 0x40857000 0x00000001 0x00000000 0x42046162 0x40857000 0x00000001 0x00000000 0x42031742
+4085f370: 0x40880000 0x4087c5f0 0x40857260 0x4087c5b4 0x40857000 0x4087c5f8 0x40857260 0x40857000
+4085f390: 0x40857000 0x40857000 0x40857000 0x420125aa 0x00001c00 0x4087e16c 0x00000000 0x00000000
+4085f3b0: 0x00001000 0x00000000 0x00000000 0x00000000 0x00000001 0x00000000 0x4087e100 0x4080e9f4
+4085f3d0: 0x00000000 0x00000000 0x4087e100 0x4080f04a 0x00000000 0x00000000 0x00000000 0x00000000
+4085f3f0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x4087d69c
+4085f410: 0x00000001 0x00000043 0x4084ee44 0x42016fdc 0x00000043 0x4087d69c 0x4084ee44 0x42017112
+4085f430: 0x40856a5c 0x00000000 0x00000000 0x00000000 0x0000000f 0x00000043 0x4084f000 0x420164e0
+4085f450: 0x00000000 0x42047000 0x00000000 0x420169d0 0x0000000d 0x00000003 0x4084f000 0xa6f440c0
+4085f470: 0x00000000 0x42047000 0x40857000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+4085f490: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x42047000 0x40857000 0x42050152
+4085f4b0: 0x00000000 0x00000000 0x00000000 0x4080fbde 0x00000000 0x00000000 0x00000000 0x00000000
+4085f4d0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+4085f4f0: 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xbaad5678 0x00000268 0xabba1234 0x0000025c 0x4085f568
+4085f510: 0x4085f648 0x4085f768 0x4085f638 0x00000000 0x4085f524 0xffffffff 0x4085f524 0x4085f524
+4085f530: 0x00000001 0x4085f538 0xffffffff 0x40860a0c 0x40860a0c 0x00000000 0x00000020 0x00000010
+4085f550: 0xc700ffff 0x00000000 0x00000101 0x42171200 0x0000002b 0x4086a08c 0x00000101 0x42181460
+4085f570: 0x0000002b 0x4086a09c 0x00000000 0x42181460 0x00000002 0x00000000 0x00000101 0x42181460
+4085f590: 0x0000002b 0x4086b028 0x00000000 0x42181460 0x0000000c 0x00000000 0x00000000 0x42181460
+4085f5b0: 0x00000003 0x00000000 0x00000000 0x42181460 0x0000000d 0x00000000 0x00000000 0x42181460
+4085f5d0: 0x0000000c 0x00000000 0x00000000 0x42181460 0x0000000d 0x00000000 0x00000000 0x42181460
+4085f5f0: 0x0000000c 0x00000000 0x00000101 0x42181460 0x0000002b 0x50000760 0x00000000 0x42181460
+4085f610: 0x0000000d 0x00000000 0x00000101 0x42181460 0x0000002b 0x4086ec54 0x00000000 0x42181460
+4085f630: 0x0000000c 0x00000000 0x00000000 0x42181460 0x0000000d 0x00000000 0x00000101 0x42181334
+4085f650: 0x0000002b 0x4087b864 0x00000000 0x42181334 0x0000000d 0x00000000 0xa480b891 0xebcd12e1
+4085f670: 0xca2ddeff 0xfcd8506e 0xde8825d2 0x8a2cebec 0xa861b02c 0xbc7fcc9b 0xea35b550 0xe37bbe4e
+4085f690: 0x25f403d7 0x1cc252ab 0xbe1cc9b7 0x242b1450 0x02584d80 0x69d1f37b 0xc285d400 0xe45f74fe
+4085f6b0: 0xd2c38d57 0x545d0876 0x575bce19 0x4408e50c 0x47a45220 0xbbe25acd 0xbe830d2d 0xb771df09
+4085f6d0: 0xcc154fea 0xea4c0e9a 0x86a84c68 0x0613bf34 0x8f7b411c 0x4dc3f96e 0xa203bbe0 0x37ff7727
+4085f6f0: 0xb391e3c5 0xfc39fb0f 0x98ecfb15 0x6e6180c6 0xae338803 0x7a2459bc 0x9eb80a48 0x877ce86f
+4085f710: 0xd1d20eb0 0x30c572c4 0xd37bf937 0xae621a20 0xc0133901 0x8b56a0e7 0x8866f002 0x7a4065b7
+4085f730: 0xf8f84cb9 0x93fd908c 0x177fe9bd 0xa1e8538d 0x6d5fe43c 0x353fa53c 0xe59f648f 0x9e26d70b
+
+
+
+ELF file SHA256: 769e71933
+
+E (23668) esp_core_dump_flash: Core dump flash config is corrupted! CRC=0x7bd5c66f instead of 0x0
+E (23677) esp_core_dump_elf: Elf write init failed!
+E (23681) esp_core_dump_common: Core dump write failed with error=-1
+Rebooting...
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4001975a
+SPIWP:0xee
+mode:DIO, clock div:2
+load:0x40875730,len:0x1278
+load:0x4086b910,len:0xdd0
+load:0x4086e610,len:0x3154
+entry 0x4086b910
+E (702) esp_core_dump_flash: No core dump partition found!
+E (702) esp_core_dump_flash: No core dump partition found!
+[  1804][E][AP.cpp:201] begin(): Failed to start AP!
+[  1809][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3002: ESP_ERR_WIFI_NOT_STARTED
+[MEGA-MAID] SPIFFS ready
+[MEGA-MAID] Prior session promoted from /megamaid_session.json (1507 bytes)
+[MEGA-MAID] Prior session on SPIFFS (1507 bytes) — export via dashboard HISTORY
+
+========================================
+  MEGA MAID BLE + WiFi MAC Collector
+  Build: 2026-06-24i
+  Buzzer: ON
+  GPS: auto-detect (L76K on D6/D7)
+========================================
+[MEGA-MAID] Boot sound (buzzer ON)
+[MEGA-MAID] *caw caw caw*
+[MEGA-MAID] DASHBOARD mode: scan paused, AP stays up
+[MEGA-MAID] BLE scan paused (stack kept alive for AP)
+[  5509][E][STA.cpp:540] disconnect(): STA disconnect failed! 0x3001: ESP_ERR_WIFI_NOT_INIT
+[MEGA-MAID] softAP up 192.168.4.1
+[MEGA-MAID] Dashboard ready — AP up, HTTP binds after 2000ms settle (heap=68640)
+[MEGA-MAID] Web server settle 1870ms remaining
+[MEGA-MAID] Web server started on port 80 (192.168.4.1) heap=51644
+[MEGA-MAID] Captive portal DNS started
+[MEGA-MAID] Dashboard: double-click KEY1 for collection mode
+[MEGA-MAID] Hold KEY1 ~1.5s for mode selector
+[MEGA-MAID] BLE: all advertisements | WiFi: MACs + SSIDs/probes
+[MEGA-MAID] Ready
+
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+[MEGA-MAID] status: hits=0 profile=dashboard server=up heap=46836
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0x4 (DOWNLOAD(USB/UART0/SDIO_FEI_FEO))
+Saved PC:0x4080b670
+waiting for download
+ �H��    �ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0x4 (DOWNLOAD(USB/UART0/SDIO_FEI_FEO))
+Saved PC:0x4002f454
+waiting for download
+      ��      ��      ��      ��      ��      ��      ��      �ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x15 (USB_UART_HPSYS),boot:0x4 (DOWNLOAD(USB/UART0/SDIO_FEI_FEO))
+Saved PC:0x40022f94
+waiting for download
+      ��      ��      ��      � �H��    �

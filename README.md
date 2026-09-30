@@ -1,8 +1,8 @@
 # OUI SPY
 
-Multi-mode surveillance detection and BLE intelligence firmware for the **Seeed Studio XIAO ESP32-S3**.
+Multi-mode surveillance detection and BLE intelligence firmware for the **Nesso N1** (primary target). Legacy **Seeed Studio XIAO ESP32-S3** support remains in the repo but is not built by default.
 
-One device. Four firmware modes. Select from a boot menu, reboot, and go.
+One device. Four firmware modes on Nesso (Detector, Foxhunter, Sky Spy, Mega_Maid). Select from a boot menu, reboot, and go.
 
 ---
 
@@ -34,9 +34,11 @@ RSSI-based proximity tracker for hunting down a specific BLE device. Lock onto a
 - Audio feedback rate scales inversely with distance
 - Web interface for target selection and RSSI monitoring
 
-### Mode 3: Flock-You
+### Mode 4: Flock-You (legacy — not in Nesso build)
 
-Detects Flock Safety surveillance cameras, Raven gunshot detectors, and related monitoring hardware using BLE-only heuristics. All detections are stored in memory and can be exported as JSON or CSV for later analysis.
+> **Note:** Flock-You is retained in the repo for reference and XIAO builds, but is **excluded from the Nesso N1 firmware**. Use **Mega_Maid** (mode 6) for wardriving and MAC collection on Nesso.
+
+Detects Flock Safety surveillance cameras, Raven gunshot detectors, and related monitoring hardware using BLE and WiFi promiscuous sniffing. All detections are stored in memory and can be exported as JSON or CSV for later analysis.
 
 **Detection methods:**
 
@@ -48,11 +50,13 @@ Detects Flock Safety surveillance cameras, Raven gunshot detectors, and related 
 
 **Features:**
 
-- AP: `flockyou` / password: `flockyou123`
+- Collect mode: 50/50 BLE + WiFi promiscuous time-sliced scan (no AP)
+- Dashboard mode: double-click KEY1 for time-sliced AP + web export
 - Web dashboard at `192.168.4.1` with live detection feed, full pattern database browser, and export tools
-- **GPS wardriving** — uses your phone's GPS via the browser Geolocation API to tag every detection with coordinates
+- **GPS wardriving** — on Nesso with an [M5 Unit GPS v1.1](docs/hardware/m5stack-unit-gps-v1.1.md) on the Grove port, detections use the module fix automatically; otherwise uses your phone's GPS via the browser Geolocation API
 - JSON and CSV export of all detections (MAC, name, RSSI, detection method, timestamps, count, Raven status, firmware version, GPS coordinates)
-- JSON-formatted serial output (with GPS) for live ingestion by the companion Flask dashboard
+- Detection `first` / `last` (and CSV `first_seen_ms` / `last_seen_ms`) are **UTC epoch milliseconds** when the GPS module has synced time this session; `0` before the first GPS time fix. Internal capture uses boot uptime and converts retroactively once GPS UTC is available.
+- JSON-formatted serial output (with GPS) for ingestion by external post-capture analysis tools
 - Thread-safe detection storage (up to 200 unique devices) with FreeRTOS mutex
 
 **Enabling GPS (Android Chrome):**
@@ -65,11 +69,11 @@ The phone's GPS is used to geotag detections. Because the dashboard is served ov
 4. Set the flag to **Enabled**
 5. Tap **Relaunch**
 
-After relaunching, connect to the `flockyou` AP, open `192.168.4.1`, and tap the **GPS** card in the stats bar to grant location permission. Detections will be tagged with coordinates automatically.
+After relaunching, connect to the mode AP (`megamaid` on Nesso), open `192.168.4.1`, and tap the **GPS** card in the stats bar to grant location permission. Detections will be tagged with coordinates automatically.
 
 > **Note:** iOS Safari does not support Geolocation over HTTP. GPS wardriving requires Android with Chrome.
 
-### Mode 4: Sky Spy
+### Mode 5: Sky Spy
 
 Passive drone detection via FAA Remote ID (Open Drone ID) WiFi beacon monitoring. Listens in promiscuous mode for ASTM F3411 compliant broadcasts and extracts drone telemetry.
 
@@ -78,6 +82,25 @@ Passive drone detection via FAA Remote ID (Open Drone ID) WiFi beacon monitoring
 - Parses all ODID message types: Basic ID, Location, Authentication, Self-ID, System, Operator ID
 - Real-time logging of all detected drones
 - Dedicated FreeRTOS buzzer task for non-blocking audio alerts
+
+### Mode 6: Mega_Maid
+
+Passive BLE + WiFi MAC/OUI collector — records every seen BLE advertisement and WiFi unicast MAC address with no watchlist filtering.
+
+**Features:**
+
+- **Dashboard mode** (default on boot): softAP `megamaid` / `megamaid123` at `192.168.4.1` for web export only — no active scanning (ESP32-C6 single radio)
+- **Collect mode** (double-click KEY1 from dashboard): AP off, 50/50 BLE + WiFi promiscuous time-sliced scan across **WiFi channels 1–14**
+- Double-click KEY1 again when done collecting to return to dashboard, save session, and export JSON/CSV/KML
+- Web dashboard with live feed, unique OUI summary, and export tools
+- GPS wardriving — hardware GNSS on Nesso (Grove) when fitted; otherwise phone browser Geolocation API (Chrome flag workaround below)
+- Timestamps (`first` / `last`) use GPS UTC epoch ms when synced; see Flock-You notes above
+- Beeps on each new unique MAC address
+- Up to 250 unique devices in RAM on Nesso N1 (500 on other boards)
+- **Export:** current session downloads from live RAM; prior session downloads from SPIFFS (PREV tab / history endpoints)
+- **Multi-location GPS:** moving APs/clients can record **`gps_sights`** (array of `{ lat, lon, acc, t }`) alongside the latest `gps` fix; import JSON into the detections platform for map movement tracks
+
+**Workflow:** boot → dashboard → KEY1 x2 → collect (walk/drive) → KEY1 x2 → dashboard → connect phone → export
 
 ---
 
@@ -93,8 +116,9 @@ Each mode creates its own AP. When switching modes, **your phone/laptop will aut
 | **Boot Selector** | `oui-spy` | `ouispy123` | `192.168.4.1` | Configurable from selector UI, saved to NVS |
 | **Detector** | `snoopuntothem` | `astheysnoopuntous` | `192.168.4.1` | Configurable from web dashboard, saved to NVS |
 | **Foxhunter** | `foxhunter` | `foxhunter` | `192.168.4.1` | Fixed credentials |
-| **Flock-You** | `flockyou` | `flockyou123` | `192.168.4.1` | Fixed credentials |
+| **Flock-You** | `flockyou` | `flockyou123` | `192.168.4.1` | Legacy / XIAO only — not in Nesso build |
 | **Sky Spy** | *none* | — | — | No AP — passive scanner, serial JSON output only |
+| **Mega_Maid** | `megamaid` | `megamaid123` | `192.168.4.1` | Dashboard for export; Collect (KEY1 x2) turns AP off |
 
 > **Tip:** If you can't reach the dashboard after a mode switch, check which WiFi network you're connected to. Your device may have auto-joined a previously saved OUI-SPY AP from a different mode.
 
@@ -133,6 +157,8 @@ The script creates `.arduino-cli-user/` (symlinks to your global libs) and links
 | **Power/reset** | Side (separate from KEY1/KEY2) | Single press = reboot; long press = bootloader |
 | Display | Front | Mode name, battery, hits/RSSI, alerts |
 | Buzzer | Internal | Alert tones (mode-specific) |
+
+**Optional GNSS (M5 Unit GPS v1.1):** Connect to the **HY2.0-4P Grove** port with the unit’s included cable. Firmware powers the Grove 5 V rail and reads NMEA at **115200** on UART1 (see [docs/hardware/m5stack-unit-gps-v1.1.md](docs/hardware/m5stack-unit-gps-v1.1.md)). **Flock-You** and **Mega_Maid** prefer the module’s fix for geotagging; without a fix, Android Chrome phone GPS still works as before.
 
 Default boot mode on Nesso: **Flock-You**. Hold **KEY1 (front)** during power-on to force the web mode selector instead.
 
