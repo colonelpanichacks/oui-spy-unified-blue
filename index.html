@@ -7,17 +7,17 @@
 <meta name="description" content="OUI-SPY Unified Blue firmware installer — plug in your XIAO ESP32-S3, click Flash, done.">
 <style>
   :root {
-    --bg:        #030805;
-    --bg-grid:   #0a2015;
-    --panel:     rgba(6, 14, 10, 0.82);
+    --bg:        #03060a;
+    --bg-grid:   #0a1420;
+    --panel:     rgba(6, 10, 16, 0.82);
     --cyan:      #00e5ff;
     --cyan-dim:  #0a5566;
     --magenta:   #ff2bd6;
-    --green:     #00ff66;
-    --green-dim: #0a3a20;
+    --green:     #3ea6ff;
+    --green-dim: #0a2236;
     --lime:      #a8ff3e;
-    --text:      #cfe8d8;
-    --muted:     #6a8878;
+    --text:      #cfe0e8;
+    --muted:     #6a7d88;
     --white:     #ffffff;
 
     --amber:     #ffb000;
@@ -36,14 +36,14 @@
   }
   body {
     background:
-      radial-gradient(ellipse at 50% 0%, rgba(0,255,102,0.04), transparent 60%),
+      radial-gradient(ellipse at 50% 0%, rgba(62,166,255,0.04), transparent 60%),
       linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 44px 44px,
       linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 44px 44px,
       var(--bg);
     padding: 0 16px 48px;
   }
   main { max-width: 780px; margin: 0 auto; }
-  a { color: var(--green); text-decoration: none; border-bottom: 1px dotted rgba(0,255,102,0.4); }
+  a { color: var(--green); text-decoration: none; border-bottom: 1px dotted rgba(62,166,255,0.4); }
   a:hover { color: var(--white); border-bottom-color: var(--white); }
   b { color: var(--white); font-weight: normal; }
 
@@ -95,15 +95,15 @@
 
   /* ─── CYBER SECTIONS ─── */
   .panel {
-    border: 1px solid rgba(0,255,102,0.22);
+    border: 1px solid rgba(62,166,255,0.22);
     background: var(--panel);
     margin: 24px auto;
     max-width: 720px;
   }
   .panel > header {
     padding: 10px 20px;
-    background: rgba(0,255,102,0.06);
-    border-bottom: 1px solid rgba(0,255,102,0.22);
+    background: rgba(62,166,255,0.06);
+    border-bottom: 1px solid rgba(62,166,255,0.22);
     color: var(--green);
     letter-spacing: 4px;
     text-transform: uppercase;
@@ -123,7 +123,7 @@
     align-items: center;
     gap: 8px;
     padding: 18px 0;
-    border-bottom: 1px dashed rgba(0,255,102,0.12);
+    border-bottom: 1px dashed rgba(62,166,255,0.12);
   }
   .step:last-child { border-bottom: none; }
   .step .n {
@@ -135,7 +135,7 @@
     color: var(--green);
     font-size: 18px;
     font-weight: 700;
-    background: rgba(0,255,102,0.04);
+    background: rgba(62,166,255,0.04);
     border-radius: 50%;
   }
   .step h3 {
@@ -185,7 +185,7 @@
   /* ─── MODES ─── */
   .mode {
     padding: 22px 0;
-    border-bottom: 1px dashed rgba(0,255,102,0.12);
+    border-bottom: 1px dashed rgba(62,166,255,0.12);
   }
   .mode:last-child { border-bottom: none; }
   .mode .tag {
@@ -196,7 +196,7 @@
     letter-spacing: 2px;
     padding: 2px 12px;
     border: 1px solid var(--green);
-    background: rgba(0,255,102,0.04);
+    background: rgba(62,166,255,0.04);
     margin-bottom: 10px;
   }
   .mode h3 {
@@ -220,8 +220,8 @@
     gap: 4px 18px;
     text-align: left;
     padding: 10px 16px;
-    background: rgba(0,255,102,0.03);
-    border: 1px solid rgba(0,255,102,0.18);
+    background: rgba(62,166,255,0.03);
+    border: 1px solid rgba(62,166,255,0.18);
     font-size: 13px;
     margin: 4px auto 0;
   }
@@ -241,7 +241,7 @@
     padding: 1px 8px;
     border: 1px solid var(--green);
     color: var(--white);
-    background: rgba(0,255,102,0.05);
+    background: rgba(62,166,255,0.05);
     font-size: 12px;
     letter-spacing: 1px;
   }
@@ -259,7 +259,7 @@
     letter-spacing: 3px;
     margin-top: 32px;
     padding-top: 20px;
-    border-top: 1px dashed rgba(0,255,102,0.12);
+    border-top: 1px dashed rgba(62,166,255,0.12);
   }
 
   @media (max-width: 520px) {
