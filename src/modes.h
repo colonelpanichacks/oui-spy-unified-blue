@@ -42,4 +42,9 @@ void blesniff_setup();
 void blesniff_loop();
 void blesniff_stop();
 
+// Mode 7: Visual Scout — GPS + Deflock DB proximity + Camera stream for Pi/Coral
+void visual_scout_setup();
+void visual_scout_loop();
+void visual_scout_stop();
+
 #endif // MODES_H
