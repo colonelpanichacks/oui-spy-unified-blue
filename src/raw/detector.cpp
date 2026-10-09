@@ -1555,12 +1555,16 @@ static const size_t PRESET_META_COUNT = sizeof(PRESET_META) / sizeof(PRESET_META
 // Axon body cameras (Body 3/4, Fleet dash, Taser 7/10).
 // Uses all three signal types: dedicated IEEE OUI 00:25:DF ("Axon
 // Enterprise, Inc."), Bluetooth SIG company ID 0x034D ("TASER
-// International, Inc." — Axon's earlier registered name), and service
-// UUID 0xFC81 ("Axon Enterprise, Inc."). All three uniquely attributable.
+// International, Inc." — Axon's earlier registered name), and the three
+// 16-bit service UUIDs owned by Axon/TASER in the BT SIG member registry:
+// 0xFC81 ("Axon Enterprise, Inc."), 0xFE6B and 0xFE6C ("TASER
+// International, Inc."). All uniquely attributable.
 static const PresetEntry PRESET_AXON[] = {
     { FT_MAC_PREFIX,      "0025DF", "Axon Enterprise OUI (IEEE)" },
     { FT_COMPANY_ID,      "034D",   "TASER International CID (Axon body cams)" },
     { FT_SERVICE_UUID_16, "FC81",   "Axon Enterprise service UUID" },
+    { FT_SERVICE_UUID_16, "FE6B",   "TASER International service UUID" },
+    { FT_SERVICE_UUID_16, "FE6C",   "TASER International service UUID" },
 };
 static const size_t PRESET_AXON_COUNT = sizeof(PRESET_AXON) / sizeof(PRESET_AXON[0]);
 
@@ -2213,7 +2217,7 @@ DD:EE:FF
                     </details>
                     <details>
                     <summary><b>AXON</b> <code>1 OUI</code></summary>
-                    <div class="oui-entries"><code>00:25:DF</code> <code>CID 0x034D</code> <code>UUID 0xFC81</code></div>
+                    <div class="oui-entries"><code>00:25:DF</code> <code>CID 0x034D</code> <code>UUID 0xFC81</code> <code>UUID 0xFE6B</code> <code>UUID 0xFE6C</code></div>
                     <button type="button" class="oui-add-btn" onclick="addVendor('axon','AXON','00:25:DF')">+ Add all signatures</button>
                     <div class="oui-meta"><strong>Category:</strong> Body Camera / Law Enforcement</div>
                     <div class="oui-meta"><strong>Detection Range:</strong> Short-range BLE/WiFi</div>
@@ -2839,7 +2843,9 @@ DD:EE:FF:ab:cd:ef
 
             var VENDOR_SIGS = {
                 axon:   [ {t:'cid',  v:'0x034D', l:'CID'},
-                          {t:'uuid', v:'0xFC81', l:'UUID'} ],
+                          {t:'uuid', v:'0xFC81', l:'UUID'},
+                          {t:'uuid', v:'0xFE6B', l:'UUID'},
+                          {t:'uuid', v:'0xFE6C', l:'UUID'} ],
                 meta:   [ {t:'meta', v:'0x0D53+0xFD5F', l:'COMPOSITE'} ]
             };
 

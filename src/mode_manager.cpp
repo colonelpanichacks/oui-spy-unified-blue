@@ -27,6 +27,8 @@ const ModeDef kModes[] = {
       skyspy_setup,               skyspy_loop,               skyspy_stop },
     { "blesniff",  "BLE SNIFF",      "Passive BLE advertising capture (Wireshark-ready)",
       blesniff_setup,             blesniff_loop,             blesniff_stop },
+    { "axeoff",    "AXEOFF",         "Headless Axon detector (beep-only)",
+      axeoff_setup,               axeoff_loop,               axeoff_stop },
 };
 constexpr int kModeCount = sizeof(kModes) / sizeof(kModes[0]);
 

@@ -2,7 +2,7 @@
 
 Multi-mode surveillance detection and BLE intelligence firmware for the **Seeed Studio XIAO ESP32-S3**.
 
-One device. Six firmware modes. Select from a boot menu, reboot, and go.
+One device. Seven firmware modes. Select from a boot menu, reboot, and go.
 
 ---
 
@@ -46,11 +46,11 @@ all signatures**:
 
 | Vendor | Signatures |
 |---|---|
-| **AXON** | OUI `00:25:DF`, company ID `0x034D` (TASER International), service UUID `0xFC81` |
+| **AXON** | OUI `00:25:DF`, company ID `0x034D` (TASER International), service UUIDs `0xFC81`, `0xFE6B`, `0xFE6C` (BT SIG member registry) |
 | **META / RAY-BAN** | Composite: company ID `0x0D53` + service UUID `0xFD5F` in the same advert, or name `Ray-Ban` / `Wayfarer` / `Oakley Meta` |
 
 OUIs alone are the weakest signal — Axon hardware may never expose its OUI
-in an advertisement, so the company ID and service UUID do most of the work.
+in an advertisement, so the company ID and service UUIDs do most of the work.
 Each added vendor renders one colour-coded line under the OUI box with an
 `x` to remove. Manual OUI entry is unaffected.
 
@@ -163,6 +163,18 @@ Passive BLE advertising capture. Listens on the three BLE advertising channels (
 - Vendor identify against the OUI Database (same list surfaced by PCAP and Detector)
 - The USB PCAP binary streaming path (previously extcap / pipe helpers) has been removed — ESP32-S3 Arduino USB CDC is not reliable for high-rate binary streaming. Use the dashboard **Save PCAP** button instead; the download parses cleanly in Wireshark regardless of capture rate.
 
+### Mode 7: AXEOFF
+
+Headless Axon detector. No AP, no dashboard, no config — power on, hear four
+ascending beeps, and the board is already scanning for Axon gear. The buzzer
+is the entire UX. Port of the standalone [axeoff](https://github.com/colonelpanichacks/axeoff)
+firmware; same signatures, same audio semantics.
+
+- Detects: BLE MAC prefix `00:25:DF`, mfr company ID `0x034D` (TASER International), service UUIDs `0xFC81` / `0xFE6B` / `0xFE6C`, WiFi probe + beacon from OUI `00:25:DF`
+- Fully passive — BLE passive scan (no `SCAN_REQ`) + WiFi promiscuous listen only; the radio never transmits
+- Sounds: boot = 4 ascending beeps · detection = 8-bit ascending arpeggio · heartbeat = lub-dub whose rate encodes proximity (~2 s far → ~250 ms close) · lost = descending 2-beep
+- Tracks up to 8 Axon MACs; serial debug at 115200 (`=== AXEOFF — Axon detector ===`)
+
 ---
 
 ## WiFi Access Points
@@ -181,6 +193,7 @@ Each mode creates its own AP. When switching modes, **your phone/laptop will aut
 | **PCAP** | `ouispy-pcap` | `packetsniffer` | `192.168.4.1` | Configurable from mode dashboard, saved to NVS. Hop mode disables the AP — radio is dedicated to sniffing; use USB-CDC then |
 | **Sky Spy** | *none* | — | — | No AP — passive scanner, serial JSON output only |
 | **BLE Sniff** | `ouispy-blesniff` | `sniffuntothem` | `192.168.4.1` | Configurable from mode dashboard, saved to NVS |
+| **AXEOFF** | *none* | — | — | No AP — fully passive headless detector; buzzer-only UI, serial debug at 115200 |
 
 > **Tip:** If you can't reach the dashboard after a mode switch, check which WiFi network you're connected to. Your device may have auto-joined a previously saved OUI-SPY AP from a different mode.
 
@@ -372,6 +385,7 @@ Each firmware is available as a standalone project:
 | **[OUI-SPY Detector](https://github.com/colonelpanichacks/ouispy-detector)** | Targeted BLE scanner with OUI filtering | ESP32-S3 |
 | **[OUI-SPY Foxhunter](https://github.com/colonelpanichacks/ouispy-foxhunter)** | RSSI-based proximity tracker | ESP32-S3 |
 | **[Flock You](https://github.com/colonelpanichacks/flock-you)** | Flock Safety / Raven surveillance detection | ESP32-S3 |
+| **[AXEOFF](https://github.com/colonelpanichacks/axeoff)** | Headless Axon surveillance detector (beep-only) | ESP32-S3 |
 | **[Sky-Spy](https://github.com/colonelpanichacks/Sky-Spy)** | Drone Remote ID detection | ESP32-S3 / ESP32-C5 |
 | **[Remote-ID-Spoofer](https://github.com/colonelpanichacks/Remote-ID-Spoofer)** | WiFi Remote ID spoofer & simulator with swarm mode | ESP32-S3 |
 | **[OUI-SPY UniPwn](https://github.com/colonelpanichacks/Oui-Spy-UniPwn)** | Unitree robot exploitation system | ESP32-S3 |

@@ -42,4 +42,9 @@ void blesniff_setup();
 void blesniff_loop();
 void blesniff_stop();
 
+// Mode 7: AXEOFF — headless Axon detector (beep-only)
+void axeoff_setup();
+void axeoff_loop();
+void axeoff_stop();
+
 #endif // MODES_H

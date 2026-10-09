@@ -1689,7 +1689,7 @@ o888bood8P'  o888ooooood8 o888ooooood8 8""88888P'  o8o        `8  o888o o888o   
       cids:['0171'], svcs:[], names:['Ring'] },
     { id:'axon',   name:'AXON',   color:'var(--v-axon)',
       ouis:['00:25:df'],
-      cids:['034d'], svcs:['fc81'], names:[] },
+      cids:['034d'], svcs:['fc81','fe6b','fe6c'], names:[] },
     { id:'flock',  name:'FLOCK',  color:'var(--v-flock)',
       ouis:['a4:cf:12','24:6f:28','3c:71:bf','48:e7:29','98:cd:ac'],
       cids:[], svcs:[], names:['Flock','Falcon','Raven'] },
