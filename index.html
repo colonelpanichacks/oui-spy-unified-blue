@@ -315,7 +315,7 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
 </section>
 
 <section class="panel">
-  <header><span>Modes</span><span class="right">Boot Selector + 6 tools</span></header>
+  <header><span>Modes</span><span class="right">Boot Selector + 7 tools</span></header>
   <div class="body">
 
     <div class="mode">
@@ -390,6 +390,16 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
         <dt>Wi-Fi</dt><dd>ouispy-blesniff</dd>
         <dt>Password</dt><dd>sniffuntothem</dd>
         <dt>Open</dt><dd class="url">http://192.168.4.1</dd>
+      </dl>
+    </div>
+
+    <div class="mode">
+      <span class="tag">[ 7 ]</span>
+      <h3>AXEOFF</h3>
+      <p>Headless Axon detector — no AP, no dashboard, no config. Power on, hear four ascending beeps, and it's already scanning. Catches body cams, Taser 7/10, Signal sidearm, and Axon Fleet via BLE MAC prefix <b>00:25:DF</b>, mfr company ID <b>0x034D</b>, service UUIDs <b>0xFC81 / 0xFE6B / 0xFE6C</b>, and WiFi probe/beacon OUI <b>00:25:DF</b>. Fully passive — it never transmits. Detection = 8-bit ascending arpeggio, heartbeat rate encodes proximity, lost target = descending 2-beep. Port of the standalone <a href="https://github.com/colonelpanichacks/axeoff">axeoff</a> firmware.</p>
+      <dl class="creds">
+        <dt>Wi-Fi</dt><dd class="none">no AP</dd>
+        <dt>Access</dt><dd>buzzer-only + serial debug 115200</dd>
       </dl>
     </div>
 
