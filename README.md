@@ -401,3 +401,7 @@ Each firmware is available as a standalone project:
 ## Disclaimer
 
 For research purposes only. Use at your own risk: you assume all responsibility for how you use it, and the authors accept no liability. Provided as is, with no warranty. Follow your local laws, and don't do anything illegal or stupid.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The bundled OpenDroneID files (`opendroneid.c`, `opendroneid.h`, `odid_wifi.h`, `wifi.c`) are Copyright Intel Corporation and stay under the Apache License 2.0, as their headers state. The UniPwn mode (`src/raw/unipwn_web.cpp`) is based on [Bin4ry/UniPwn](https://github.com/Bin4ry/UniPwn), which publishes no software license; parts derived from it stay under its author's terms.
