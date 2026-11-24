@@ -1,0 +1,17 @@
+{
+  "name": "OUI SPY (app version)",
+  "version": "build Nov 24 2026",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 0,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "bootloader.bin", "offset": 0 },
+        { "path": "partitions.bin", "offset": 32768 },
+        { "path": "boot_app0.bin", "offset": 57344 },
+        { "path": "ouispyblue.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

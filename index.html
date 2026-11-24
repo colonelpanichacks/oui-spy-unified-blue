@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OUI-SPY // Web Flasher</title>
-<meta name="description" content="OUI-SPY Unified Blue firmware installer — plug in your XIAO ESP32-S3, click Flash, done.">
+<meta name="description" content="OUI-SPY web flasher: the firmware for the OUI SPY Recon app (recommended), or the standalone Unified Blue firmware. Plug in your XIAO ESP32-S3, click Flash, done.">
 <style>
   :root {
     --bg:        #03060a;
@@ -264,7 +264,61 @@
 
   .fineprint { margin: 28px auto 0; max-width: 560px; text-align: center; font-size: 11px; color: var(--text); opacity: 0.6; }
 
+  /* ─── TABS: the app's firmware (recommended) or Unified Blue ─── */
+  .tabs {
+    display: flex;
+    max-width: 720px;
+    margin: 0 auto;
+    border: 1px solid rgba(62,166,255,0.35);
+    background: var(--panel);
+  }
+  .tabs button {
+    flex: 1 1 0;
+    background: transparent;
+    color: var(--muted);
+    border: 0;
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 10px;
+    cursor: pointer;
+  }
+  .tabs button + button { border-left: 1px solid rgba(62,166,255,0.35); }
+  .tabs button:hover { color: var(--text); }
+  .tabs button[aria-selected="true"] {
+    color: var(--white);
+    background: rgba(62,166,255,0.14);
+    box-shadow: inset 0 -2px 0 var(--green);
+  }
+  .tabs .rec {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--lime);
+    border: 1px solid var(--lime);
+    vertical-align: middle;
+  }
+  .pane[hidden] { display: none; }
+  .pane-note { max-width: 720px; margin: 18px auto 0; font-size: 13px; color: var(--text); }
+  .lead { margin: 0 auto 16px; max-width: 540px; font-size: 14px; color: var(--text); }
+  a.dl {
+    display: inline-block;
+    padding: 12px 26px;
+    border: 1px solid var(--lime);
+    color: var(--lime);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 14px;
+  }
+  a.dl:hover { background: var(--lime); color: #050f08; border-color: var(--lime); }
+  .dl-note { margin: 12px auto 0; font-size: 12px; color: var(--muted); max-width: 520px; }
+
   @media (max-width: 520px) {
+    .tabs button { font-size: 10px; letter-spacing: 2px; padding: 12px 6px; }
+    .tabs .rec { display: block; margin: 5px auto 0; width: max-content; }
     .banner { font-size: 7px; }
     .subtitle { letter-spacing: 3px; font-size: 11px; }
   }
@@ -280,10 +334,90 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
 888      888 888       8   888                  `"Y88b  888              `888'
 `88b    d88' `88.    .8'   888             oo     .d8P  888               888
  `Y8bood8P'    `YbodP'    o888o            8""88888P'  o888o             o888o</pre>
-  <div class="subtitle">UNIFIED <span class="blue">BLUE</span><span class="sep">//</span>WEB FLASHER<span class="sep">//</span>XIAO ESP32-S3</div>
+  <div class="subtitle">WEB FLASHER<span class="sep">//</span>APP <span class="sep">+</span> UNIFIED <span class="blue">BLUE</span><span class="sep">//</span>XIAO ESP32-S3</div>
 </header>
 
 <main>
+
+<nav class="tabs" role="tablist" aria-label="Which firmware">
+  <button type="button" role="tab" id="tab-app" data-pane="app" aria-controls="pane-app" aria-selected="true">App version<span class="rec">Recommended</span></button>
+  <button type="button" role="tab" id="tab-unified-blue" data-pane="unified-blue" aria-controls="pane-unified-blue" aria-selected="false" tabindex="-1">OUI SPY Unified Blue</button>
+</nav>
+
+<!-- ─── APP VERSION: the firmware for the OUI SPY Recon app ─── -->
+<div class="pane" id="pane-app" role="tabpanel" aria-labelledby="tab-app">
+
+<section class="panel">
+  <header><span>Get the app</span><span class="right">Android + macOS</span></header>
+  <div class="body">
+    <p class="lead">The <b>OUI SPY Recon</b> app is your OUI SPY's screen: the surveillance gear and drones it detects, the live map, wardriving and the mesh. Get it first.</p>
+    <a class="dl" href="https://github.com/colonelpanichacks/oui-spy-recon-app/releases/latest">Download the app</a>
+    <p class="dl-note">Android 9 or newer, and macOS. The app updates itself from GitHub after that. <a href="https://github.com/colonelpanichacks/oui-spy-recon-app">About the app</a></p>
+  </div>
+</section>
+
+<section class="panel">
+  <header><span>Install</span><span class="right">for the app</span></header>
+  <div class="body">
+
+    <div class="step">
+      <div class="n">1</div>
+      <h3>Plug the board in</h3>
+      <p>Use a real USB-C <b>data</b> cable — charge-only cables won't show up as a serial port. If it's your first flash, hold the <span class="kbd">BOOT</span> button while plugging in.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">2</div>
+      <h3>Click Flash</h3>
+      <p>Chrome, Edge, or Opera on desktop. Pick the XIAO in the list of serial ports. This installs the <b>OUI SPY firmware for the app</b> (build Nov 24 2026). The installer asks whether to erase the board first: on a first install, say yes.</p>
+
+      <esp-web-install-button id="flashAppBtn" manifest="./app/manifest.json">
+        <button slot="activate">&gt;&gt; CONNECT &amp; FLASH &lt;&lt;</button>
+        <span slot="unsupported" class="unsupported">Your browser doesn't support Web Serial. Open this page in Chrome, Edge, or Opera on a desktop.</span>
+        <span slot="not-allowed" class="not-allowed">This page must be served over HTTPS. GitHub Pages handles that automatically.</span>
+      </esp-web-install-button>
+    </div>
+
+    <div class="step">
+      <div class="n">3</div>
+      <h3>Pair it in the app</h3>
+      <p>Unplug the board and power it again. In the app, go to <b>Settings &gt; Connections</b>, switch on <b>Board over Bluetooth</b> and tap it to pick <b>OUI-SPY &lt;id&gt;</b>. The first time, it asks for the board's PIN: <b>123456</b> (change it with <span class="kbd">blepin</span> in the app's Console while the board is on USB).</p>
+    </div>
+
+    <div class="step">
+      <div class="n">4</div>
+      <h3>Updates come over the air</h3>
+      <p>Later firmware comes from the app, over Bluetooth, USB or the mesh. USB is only for this first install.</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="panel">
+  <header><span>Troubleshooting</span><span class="right">common snags</span></header>
+  <div class="body trouble">
+
+    <div class="step">
+      <div class="n">?</div>
+      <h3>Nothing shows up in the port picker</h3>
+      <p>Try a different USB-C cable (charge-only won't work), install CH340 or CP210x drivers if your OS doesn't auto-detect, or hold <span class="kbd">BOOT</span> while plugging in to force download mode.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">?</div>
+      <h3>The app can't find it</h3>
+      <p>Unplug it and plug it back in so it starts the new firmware, and keep it near your phone or computer.</p>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<!-- ─── OUI SPY UNIFIED BLUE: the standalone firmware ─── -->
+<div class="pane" id="pane-unified-blue" role="tabpanel" aria-labelledby="tab-unified-blue" hidden>
+
+<p class="pane-note">The standalone firmware: pick a mode from its own Wi-Fi boot menu, no app. Using the OUI SPY Recon app? Flash the <a href="#app">App version</a> instead.</p>
 
 <section class="panel">
   <header><span>Install</span><span class="right">3 steps</span></header>
@@ -439,14 +573,72 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
   </div>
 </section>
 
+</div>
+
 <p class="fineprint" id="disclaimer">For research purposes only. Use at your own risk: you assume all responsibility for how you use it, and the authors accept no liability. Provided as is, with no warranty. Follow your local laws, and don't do anything illegal or stupid.</p>
 
 <footer>
-  Source &middot; <a href="https://github.com/colonelpanichacks/oui-spy-unified-blue">github.com/colonelpanichacks/oui-spy-unified-blue</a>
+  App &middot; <a href="https://github.com/colonelpanichacks/oui-spy-recon-app">github.com/colonelpanichacks/oui-spy-recon-app</a><br>
+  Unified Blue source &middot; <a href="https://github.com/colonelpanichacks/oui-spy-unified-blue">github.com/colonelpanichacks/oui-spy-unified-blue</a>
 </footer>
 
 </main>
 
-<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+<script>
+  // two tabs: the App version (the default, recommended) or Unified Blue; #app and #unified-blue
+  // link straight to either
+  (function () {
+    var tabs = document.querySelectorAll('.tabs [role="tab"]');
+    function show(name, write) {
+      tabs.forEach(function (t) {
+        var on = t.getAttribute('data-pane') === name;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById('pane-' + t.getAttribute('data-pane')).hidden = !on;
+      });
+      if (write && location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    }
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () { show(t.getAttribute('data-pane'), true); });
+    });
+    function fromHash() { show(location.hash === '#unified-blue' ? 'unified-blue' : 'app', false); }
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
+  })();
+</script>
+
+<!-- ESP Web Tools 10.4.0: every file it can load is pinned by its hash (README.md says how to update) -->
+<script type="importmap">
+{
+  "integrity": {
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32-DNPRK0Ay.js": "sha384-1mT/sUZ9QQrZft8TM1YK7RfyIUggyewqL0w7GrOvQ0aHk1JPIsMsmZeUKcWGWX3G",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32c2-CQ3ns5Nm.js": "sha384-AcOQBXWICST0TTlwGYbYA8cElKuXwrwW0L10NSF0YBe1PkndGs5RhsuDzTR/OZhi",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32c3-2tchr35W.js": "sha384-JF+4Kgy21HYqVI0DI+S5SAUyxRrWHKN/yvQ2TzxFzvi3V4IzoyW0WXPscyrzIjwE",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32c5-CeCSizBL.js": "sha384-LWYGviHcz1q8xMq+rBhgcOPSu9V6bB8VO5BMCIeTNIsIUtdzs2FCsTip6Tk37b1f",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32c6-DolpfL0e.js": "sha384-IGupIjC1Vbm+EvBSu+rNvcYGQxssjhOw2APdj4cIGAdevBe86rTUYaO21v8RNywO",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32c61-C8HktcOt.js": "sha384-ufZuP5/DSChHLVHLQ7MYes8HllWFxgbwL5y4C5gi9OXhaYHvdF6KEMOpv+iY/JeE",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32h2-L0n5WuSo.js": "sha384-RU6vJZEaAJLviiv0938vlTobFJZHLEXoIG++VEHufT8z4evp3AeasaMzTemz2DMr",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32p4-MR0ikcda.js": "sha384-xBu/wvVzwGAyBFMKgxeER3FJpFRbEy9ibHOmTdVa/k2B4khQPRq3pfmGZQYRCGpX",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32s2-w9SUkb7o.js": "sha384-NNkQOYG+wsZHOXo+Yam3d6ks8/Bai0cN9MKjMU6U1PaxHjdOJC5ZqhDZcnQ2nL/N",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/esp32s3-DQt_R3ZE.js": "sha384-IcqNvrgnrdlIMX/N8Fb2+T/TGyZHbVAqp8iyoP9cH/E+VSlV6h3Uug3ykbyr1We6",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/index-Dt9w-IG1.js": "sha384-qDnmUz4Vrcy5l9ZV4nrPjsyYSeFTtX4OJNYJEEeZixp894cbdDwh+jeO/d//X/6I",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-dialog-im156JnI.js": "sha384-wMJi9BXikLp2SPdWr7OYNwSRpoiEgrPRT3APdi1KY6iYiMRoYO8vD5vBrBScG5j+",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32-BLbsWvxO.js": "sha384-NwVOvN4wk0BwWgOx1vGDv+MQEVpiXoaexYjJg/MDYH4rXwzOFpTiPC4Ga+GHl1Z+",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32c2-wLQhZItC.js": "sha384-kWdvhLR37pGIIpanPvPbGanK2DxuRVrb0Dx4tOYWcL2SpD3OGuC04mKxDgKLF9nT",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32c3-DmSvHQKL.js": "sha384-CXQHSBDY3+uIPzPcDoj56lAdidofn2R9+kcq6RkXjgVSM/6ZizTnZY4/AJ0tUODp",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32c5-D1WK4DyB.js": "sha384-3RLmDq3JDolM+Vvwua7Kb5r99y3mw9ptmdAuGKoiXuiQWuSLfAqTtSDO0zryPZm2",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32c6-ZuxjUVr4.js": "sha384-195M9duTV1A72oX1BdPqPyF0KufvSvbkTOXlVLYg0eZSdx6DCcGwL38RSMxvsU3j",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32c61-DeKkw9vN.js": "sha384-ocwIY7vRGNYbB3pDHtXRXo9e1wPmTmJKEkN+xGCwIDSxrAcMxnqTeyzcfqYmC99I",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32h2-CZ4EIL3w.js": "sha384-Whdgv4c66UKEmSqtqwBnxgw56V2kaJd4NQ8gpghwzEuXDotvVxaDzcKQNyacCgNZ",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32p4-CpHBYEwI.js": "sha384-Ugb2U81Kg2CAS1mQ6avdnzyJ0c7ux8Qmyivx2E7RXmu1bFVZxk8JUENABFAX/YYU",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32p4rc1-DyGqUAeZ.js": "sha384-obLWbHzQko//5KcdaalAr28oxQcTdbFPIxFr56WrxPPhkCJiDF6mlwnYCtiYHNtz",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32s2-CrsP1231.js": "sha384-QKrtaJgMb+aG+s5+Kp6hO/mnIOYkYniXOuViJGg5flhCGHb4EEaeASBikr5hnhLp",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_32s3-CiJyd6Fk.js": "sha384-RW8irjkoLiZ6a4u+YbIjMSDqrFlM01oByNK52WD4te9CvRiEh9+631+aOtT9w8uh",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/stub_flasher_8266-CQFcqJ_a.js": "sha384-xPe4ucyto336SN2lbHdv4M0V1RV8+oLpWoYiht75/O/r6N8sOYvIPbGne54oKxla",
+    "https://unpkg.com/esp-web-tools@10.4.0/dist/web/styles-sT2V1cOw.js": "sha384-77x+BOw+Zw9kRRNMOF4W5I/luoc5EGHclPXlMwdlEpdWjh2qItAMrOMlzLJzVO9y"
+  }
+}
+</script>
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js" integrity="sha384-9XfyvAabgkISlB/Xb3OpshGKpZx0TOt5Mmu78SeiNU3so/p4o2s9m66vy6Utdnom" crossorigin="anonymous"></script>
 </body>
 </html>
