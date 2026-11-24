@@ -3,25 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OUI-SPY // Web Flasher</title>
-<meta name="description" content="OUI-SPY web flasher: the firmware for the OUI SPY Recon app (recommended), or the standalone Unified Blue firmware. Plug in your XIAO ESP32-S3, click Flash, done.">
+<title>OUI SPY // Web Flasher</title>
+<meta name="description" content="Get the OUI SPY Recon app, then install the OUI SPY firmware on your OUI SPY from Chrome or Edge on a computer.">
+<meta name="theme-color" content="#050706">
+<link rel="icon" href="app/art/moon.png">
 <style>
   :root {
-    --bg:        #03060a;
-    --bg-grid:   #0a1420;
-    --panel:     rgba(6, 10, 16, 0.82);
-    --cyan:      #00e5ff;
-    --cyan-dim:  #0a5566;
-    --magenta:   #ff2bd6;
-    --green:     #3ea6ff;
-    --green-dim: #0a2236;
-    --lime:      #a8ff3e;
-    --text:      #cfe0e8;
-    --muted:     #6a7d88;
+    --bg:        #050706;
+    --bg-grid:   #0b130f;
+    --panel:     rgba(6, 10, 8, 0.84);
+    --lit:       #a3ffc4;            /* the app's pale neon green */
+    --lit-rgb:   163, 255, 196;
+    --hot:       #ff3da8;            /* the app's hot pink: small touches only */
+    --hot-rgb:   255, 61, 168;
+    --text:      #d4e5db;
+    --muted:     #6f857a;
+    --title:     #e8edf3;
     --white:     #ffffff;
-
-    --amber:     #ffb000;
-    --amber-bg:  #0a0600;
+    --ink:       #04100a;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -35,76 +34,140 @@
     text-align: center;
   }
   body {
+    position: relative;
     background:
-      radial-gradient(ellipse at 50% 0%, rgba(62,166,255,0.04), transparent 60%),
+      radial-gradient(ellipse at 50% 0%, rgba(var(--lit-rgb), 0.05), transparent 60%),
       linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 44px 44px,
       linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 44px 44px,
       var(--bg);
     padding: 0 16px 48px;
   }
-  main { max-width: 780px; margin: 0 auto; }
-  a { color: var(--green); text-decoration: none; border-bottom: 1px dotted rgba(62,166,255,0.4); }
+  main { max-width: 780px; margin: 0 auto; position: relative; z-index: 1; }
+  a { color: var(--lit); text-decoration: none; border-bottom: 1px dotted rgba(var(--lit-rgb), 0.45); }
   a:hover { color: var(--white); border-bottom-color: var(--white); }
   b { color: var(--white); font-weight: normal; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-  /* ─── TERMINAL HEADER ─── */
-  .terminal {
-    background: var(--amber-bg);
-    color: var(--amber);
-    padding: 28px 16px 22px;
-    margin: 0 -16px 32px;
-    border-bottom: 1px solid var(--amber);
-    text-shadow: 0 0 4px rgba(255,176,0,0.4);
+  /* --- HEADER: the app's own, built from the board's art --- */
+  .hdr {
+    margin: 0 -16px;
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+    background: var(--bg);
+    border-bottom: 1px solid rgba(var(--lit-rgb), 0.30);
+    box-shadow: 0 1px 22px rgba(var(--lit-rgb), 0.07);
+  }
+  /* The app's header geometry: the art is a 60 mm strip, the moon (4.6 mm) sits in a band
+     13.2 mm down it, the OUI SPY RECON title just above the band. */
+  .art {
+    --W:  min(100vw, 720px);
+    --tw: clamp(240px, calc(var(--W) * 0.8), 420px);
+    --tt: clamp(14px, calc(var(--W) * 0.04), 28px);
+    --th: calc(var(--tw) * 199 / 1620 + 6px);
+    --bh: clamp(46px, calc(var(--W) * 6.4 / 60), 60px);
+    --bc: calc(var(--tt) + var(--th) + var(--bh) / 2);
+    --md: calc(var(--W) * 4.6 / 60);
+    --at: calc(var(--bc) - var(--W) * 13.2 / 60);
+    --ah: calc(var(--W) * 1293 / 2640);
     position: relative;
     overflow: hidden;
+    width: var(--W);
+    height: calc(var(--bc) + var(--W) * 0.12);
+    margin: 0 auto;
   }
-  .terminal::before {
+  .art::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: calc(var(--W) * 0.06);
+    background: linear-gradient(rgba(5, 7, 6, 0), var(--bg));
+  }
+  .rings, .scene {
+    position: absolute; left: 0; top: var(--at);
+    width: 100%; height: var(--ah);
+  }
+  /* the rings: light grey at the moon, darker out to the edges */
+  .rings {
+    background: linear-gradient(90deg, #262b32 4%, #9aa1aa 50%, #262b32 96%);
+    -webkit-mask: url(app/art/header.png) 0 0 / 100% 100% no-repeat;
+            mask: url(app/art/header.png) 0 0 / 100% 100% no-repeat;
+    opacity: 0.6;
+  }
+  .moon {
+    position: absolute; left: 50%; top: var(--bc);
+    width: var(--md); height: var(--md);
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(var(--lit-rgb), 0.32), 0 0 36px rgba(var(--lit-rgb), 0.14);
+  }
+  .moon::before {
     content: "";
     position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse at center, rgba(255,176,0,0.06), transparent 60%),
-      repeating-linear-gradient(0deg,
-        transparent 0 2px,
-        rgba(0,0,0,0.4) 3px 3px);
-    pointer-events: none;
+    background: rgba(var(--lit-rgb), 0.92);
+    -webkit-mask: url(app/art/moon.png) 0 0 / 100% 100% no-repeat;
+            mask: url(app/art/moon.png) 0 0 / 100% 100% no-repeat;
   }
-  .banner {
-    color: #00e7ff;
-    text-shadow: 0 0 8px #00e7ff;
-    font-size: 10px;
-    line-height: 1.05;
-    white-space: pre;
-    margin: 0 auto;
-    display: inline-block;
-    text-align: left;
-    position: relative;
+  /* the ridge: dark below the ridge line (it hides the moon's foot), dots in pale green */
+  .scene .land, .scene .glow, .scene .dots { position: absolute; inset: 0; }
+  .scene .land {
+    background: var(--bg);
+    -webkit-mask: url(app/art/mtns-land.png) 0 0 / 100% 100% no-repeat;
+            mask: url(app/art/mtns-land.png) 0 0 / 100% 100% no-repeat;
+  }
+  .scene .glow { filter: drop-shadow(0 0 2px rgba(var(--lit-rgb), 0.4)); }
+  .scene .dots {
+    background: var(--lit);
+    opacity: 0.8;
+    -webkit-mask: url(app/art/mtns.png) 0 0 / 100% 100% no-repeat;
+            mask: url(app/art/mtns.png) 0 0 / 100% 100% no-repeat;
+  }
+  /* the board's dot-matrix banner: OUI SPY in white, RECON in the pale green */
+  .title {
+    position: absolute; left: 50%; top: calc(var(--tt) + 6px);
+    width: var(--tw); aspect-ratio: 1620 / 199;
+    transform: translateX(-50%);
+    background-image: linear-gradient(90deg, var(--title) 0 54.5%, var(--lit) 54.5% 100%), url(app/art/title.png);
+    background-size: 100% 100%, 100% 100%;
+    background-repeat: no-repeat;
+    background-blend-mode: multiply;
+    -webkit-mask: url(app/art/title.png) 0 0 / 100% 100% no-repeat;
+            mask: url(app/art/title.png) 0 0 / 100% 100% no-repeat;
   }
   .subtitle {
-    color: #fff4d0;
+    position: relative;
+    color: #effff4;
     letter-spacing: 5px;
     font-size: 12px;
-    margin: 12px 0 0;
-    text-shadow: 0 0 6px rgba(255,176,0,0.6);
-    position: relative;
+    margin: 0;
+    padding: 2px 16px 20px;
+    text-shadow: 0 0 8px rgba(var(--lit-rgb), 0.45);
+    text-wrap: balance;
   }
-  .subtitle .blue {
-    color: var(--magenta);
-    text-shadow: 0 0 8px var(--magenta);
+  .subtitle .sep { color: var(--lit); margin: 0 10px; opacity: 0.6; }
+  .subtitle .ver { color: var(--lit); text-shadow: 0 0 8px var(--lit); }
+  @media (min-width: 721px) {
+    /* wider than the art: the ridge fades out at its ends instead of stopping */
+    .scene {
+      -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+              mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    }
   }
-  .subtitle .sep { color: var(--amber); margin: 0 10px; opacity: 0.6; }
 
-  /* ─── CYBER SECTIONS ─── */
+  /* --- PANELS --- */
   .panel {
-    border: 1px solid rgba(62,166,255,0.22);
+    border: 1px solid rgba(var(--lit-rgb), 0.22);
     background: var(--panel);
     margin: 24px auto;
     max-width: 720px;
   }
   .panel > header {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     padding: 10px 20px;
-    background: rgba(62,166,255,0.06);
-    border-bottom: 1px solid rgba(62,166,255,0.22);
-    color: var(--green);
+    background: rgba(var(--lit-rgb), 0.06);
+    border-bottom: 1px solid rgba(var(--lit-rgb), 0.22);
+    color: var(--lit);
     letter-spacing: 4px;
     text-transform: uppercase;
     font-size: 11px;
@@ -112,31 +175,154 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.45);
   }
-  .panel > header .right { color: var(--muted); font-size: 10px; letter-spacing: 2px; }
+  /* the board's corner contours behind each bar, as on the app's tab bar */
+  .panel > header::before {
+    content: "";
+    position: absolute; inset: 0;
+    z-index: -1;
+    background: rgba(var(--lit-rgb), 0.16);
+    -webkit-mask: url(app/art/topo.png) center / cover no-repeat;
+            mask: url(app/art/topo.png) center / cover no-repeat;
+  }
+  .panel > header .right { color: var(--muted); font-size: 10px; letter-spacing: 2px; text-shadow: none; }
   .panel > .body { padding: 24px 22px; }
 
-  /* ─── STEPS ─── */
+  .lead { max-width: 600px; margin: 0 auto 18px; color: var(--text); font-size: 14px; }
+
+  /* --- GET THE APP --- */
+  .getapp > .body { padding: 18px 22px; }
+  .getapp .lead { margin-bottom: 14px; }
+  /* the same outlined button as Connect below */
+  .dl {
+    display: inline-block;
+    max-width: 100%;
+    padding: 13px 28px;
+    background: var(--ink);
+    color: var(--lit);
+    border: 1px solid var(--lit);
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 14px;
+    box-shadow: 0 0 14px rgba(var(--lit-rgb), 0.28), inset 0 0 12px rgba(var(--lit-rgb), 0.08);
+    text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.7);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .dl:hover, .dl:focus-visible {
+    background: var(--lit);
+    color: var(--ink);
+    border-color: var(--lit);
+    text-shadow: none;
+    outline: none;
+    box-shadow: 0 0 24px rgba(var(--lit-rgb), 0.55);
+  }
+  .dl-meta { margin: 7px 0 0; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+  .dl-alt {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .dl2 {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid rgba(var(--lit-rgb), 0.5);
+    color: var(--lit);
+    background: rgba(var(--lit-rgb), 0.04);
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.45);
+  }
+  .dl2:hover, .dl2:focus-visible { color: var(--ink); background: var(--lit); border-color: var(--lit); text-shadow: none; outline: none; }
+  .dl2 .meta { font-size: 11px; letter-spacing: 0.5px; text-transform: none; opacity: 0.7; }
+  .dl-note { margin: 12px auto 0; color: var(--muted); font-size: 13px; max-width: 520px; }
+
+  /* --- THE BOARD'S ANIMALS --- */
+  .frieze {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(10px, 3.2vw, 26px);
+    margin: 30px auto;
+    filter: drop-shadow(0 0 5px rgba(var(--lit-rgb), 0.45));
+  }
+  .frieze i {
+    display: block;
+    width: clamp(22px, 7vw, 34px);
+    aspect-ratio: 1;
+    background: var(--lit);
+    opacity: 0.62;
+    -webkit-mask: var(--m) center / contain no-repeat;
+            mask: var(--m) center / contain no-repeat;
+  }
+  .frieze .marmot   { --m: url(app/art/marker-marmot.png); }
+  .frieze .spider   { --m: url(app/art/marker-spider.png); }
+  .frieze .squirrel { --m: url(app/art/marker-squirrel.png); }
+  .frieze .raccoon  { --m: url(app/art/marker-raccoon.png); }
+  .frieze .jar      { --m: url(app/art/marker-jar.png); }
+  .frieze .crow     { --m: url(app/art/marker-crow.png); }
+  .frieze .bear     { --m: url(app/art/marker-bear.png); }
+  .frieze .hawk     { --m: url(app/art/marker-hawk.png); }
+  .frieze .mavic    { --m: url(app/art/marker-mavic.png); }
+
+  /* --- WHAT YOU NEED --- */
+  .needs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 660px;
+    margin: 0 auto 8px;
+    text-align: left;
+  }
+  .need {
+    border: 1px solid rgba(var(--lit-rgb), 0.22);
+    background: rgba(var(--lit-rgb), 0.03);
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  .need .ph {
+    display: block;
+    color: var(--lit);
+    letter-spacing: 2px;
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.5);
+  }
+  .need h4 { margin: 0 0 4px; color: var(--white); font-weight: 500; font-size: 14px; letter-spacing: 1px; }
+  .need p { margin: 0; color: var(--muted); }
+
+  /* --- STEPS --- */
   .step {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
     padding: 18px 0;
-    border-bottom: 1px dashed rgba(62,166,255,0.12);
+    border-bottom: 1px dashed rgba(var(--lit-rgb), 0.12);
   }
-  .step:last-child { border-bottom: none; }
+  .step:first-child { padding-top: 4px; }
+  .step:last-child { border-bottom: none; padding-bottom: 4px; }
+  .needs + .step { padding-top: 22px; }
   .step .n {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 40px; height: 40px;
-    border: 1px solid var(--green);
-    color: var(--green);
+    border: 1px solid var(--lit);
+    color: var(--lit);
     font-size: 18px;
     font-weight: 700;
-    background: rgba(62,166,255,0.04);
+    background: rgba(var(--lit-rgb), 0.04);
     border-radius: 50%;
+    box-shadow: 0 0 12px rgba(var(--lit-rgb), 0.22);
+    text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.6);
   }
   .step h3 {
     margin: 4px 0 0;
@@ -150,108 +336,121 @@
     margin: 0;
     color: var(--text);
     font-size: 14px;
-    max-width: 520px;
+    max-width: 540px;
+  }
+  .step p.hint { color: var(--muted); font-size: 13px; }
+
+  .kbd {
+    display: inline-block;
+    padding: 0 8px;
+    border: 1px solid var(--lit);
+    color: var(--white);
+    background: rgba(var(--lit-rgb), 0.05);
+    font-size: 12px;
+    letter-spacing: 1px;
+    line-height: 1.6;
   }
 
-  /* ─── FLASH BUTTON ─── */
-  .dev-warn b { color: var(--amber); }
-  esp-web-install-button { display: inline-block; margin-top: 10px; }
-  esp-web-install-button::part(button) {
-    background: #050f08;
-    color: var(--green);
-    border: 1px solid var(--green);
-    padding: 12px 26px;
+  /* --- INSTALL BUTTON --- */
+  esp-web-install-button { display: inline-block; margin-top: 12px; }
+  esp-web-install-button button[slot=activate] {
+    background: var(--ink);
+    color: var(--lit);
+    border: 1px solid var(--lit);
+    padding: 13px 28px;
     font-family: inherit;
     font-weight: 500;
     letter-spacing: 3px;
     text-transform: uppercase;
     font-size: 14px;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    box-shadow: 0 0 14px rgba(var(--lit-rgb), 0.28), inset 0 0 12px rgba(var(--lit-rgb), 0.08);
+    text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.7);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
-  esp-web-install-button::part(button):hover {
-    background: var(--green);
-    color: #050f08;
+  esp-web-install-button button[slot=activate]:hover,
+  esp-web-install-button button[slot=activate]:focus-visible {
+    background: var(--lit);
+    color: var(--ink);
+    text-shadow: none;
+    outline: none;
+    box-shadow: 0 0 24px rgba(var(--lit-rgb), 0.55);
   }
+  /* until the installer has loaded, show the button only */
+  esp-web-install-button:not(:defined) > [slot=unsupported],
+  esp-web-install-button:not(:defined) > [slot=not-allowed] { display: none; }
   .unsupported, .not-allowed {
-    color: var(--magenta);
+    color: var(--hot);
     padding: 10px 14px;
-    border: 1px dashed var(--magenta);
+    border: 1px dashed var(--hot);
     display: inline-block;
     font-size: 13px;
     max-width: 520px;
   }
-
-  /* ─── MODES ─── */
-  .mode {
-    padding: 22px 0;
-    border-bottom: 1px dashed rgba(62,166,255,0.12);
+  /* the installer's own dialog, in the same dark */
+  ewt-install-dialog {
+    --roboto-font: 'IBM Plex Mono', 'JetBrains Mono', 'Courier New', ui-monospace, monospace;
+    --text-color: rgba(212, 229, 219, 0.78);
+    --danger-color: #ff3da8;
+    --md-sys-color-primary: #a3ffc4;
+    --md-sys-color-on-primary: #04100a;
+    --md-sys-color-surface: #0a0f0c;
+    --md-sys-color-surface-container: #0a0f0c;
+    --md-sys-color-surface-container-high: #0a0f0c;
+    --md-sys-color-surface-container-highest: #16211b;
+    --md-sys-color-secondary-container: #1b2a21;
+    --md-sys-color-on-surface: #e8f3ec;
+    --md-sys-color-on-surface-variant: #a6b9ad;
+    --md-sys-color-outline: #4d6155;
+    --md-sys-color-outline-variant: #26342c;
+    --md-sys-color-scrim: #000000;
   }
-  .mode:last-child { border-bottom: none; }
-  .mode .tag {
+
+  /* --- TROUBLE --- */
+  .trouble .n {
+    border-color: var(--hot);
+    color: var(--hot);
+    background: rgba(var(--hot-rgb), 0.05);
+    box-shadow: 0 0 12px rgba(var(--hot-rgb), 0.2);
+    text-shadow: 0 0 6px rgba(var(--hot-rgb), 0.6);
+  }
+
+  /* --- RECON TEASER --- */
+  .tag {
     display: inline-block;
-    color: var(--green);
+    color: var(--lit);
     font-weight: 700;
     font-size: 13px;
     letter-spacing: 2px;
     padding: 2px 12px;
-    border: 1px solid var(--green);
-    background: rgba(62,166,255,0.04);
+    border: 1px solid var(--lit);
+    background: rgba(var(--lit-rgb), 0.04);
+    box-shadow: 0 0 10px rgba(var(--lit-rgb), 0.18);
+    text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.6);
     margin-bottom: 10px;
   }
-  .mode h3 {
-    margin: 6px 0 4px;
+  .recon h3 {
+    margin: 6px 0 6px;
     color: var(--white);
     font-size: 16px;
     letter-spacing: 3px;
     text-transform: uppercase;
     font-weight: 500;
   }
-  .mode p {
-    margin: 0 auto 12px;
-    max-width: 560px;
-    color: var(--text);
-    font-size: 13px;
-    line-height: 1.6;
+  .recon p { margin: 0 auto; max-width: 560px; color: var(--text); font-size: 14px; }
+  .recon-shot {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    margin: -10px auto 2px;
+    filter: brightness(0.9) contrast(1.06);
+    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 46% 53%, #000 55%, transparent 100%);
+            mask-image: radial-gradient(ellipse 50% 50% at 46% 53%, #000 55%, transparent 100%);
   }
-  .creds {
-    display: inline-grid;
-    grid-template-columns: auto auto;
-    gap: 4px 18px;
-    text-align: left;
-    padding: 10px 16px;
-    background: rgba(62,166,255,0.03);
-    border: 1px solid rgba(62,166,255,0.18);
-    font-size: 13px;
-    margin: 4px auto 0;
-  }
-  .creds dt {
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-size: 11px;
-    align-self: center;
-  }
-  .creds dd { margin: 0; color: var(--green); }
-  .creds dd.url { color: var(--text); }
-  .creds dd.none { color: var(--magenta); }
+  .nw { white-space: nowrap; }
 
-  .kbd {
-    display: inline-block;
-    padding: 1px 8px;
-    border: 1px solid var(--green);
-    color: var(--white);
-    background: rgba(62,166,255,0.05);
-    font-size: 12px;
-    letter-spacing: 1px;
-  }
-
-  /* ─── TROUBLE ─── */
-  .trouble .n {
-    border-color: var(--magenta);
-    color: var(--magenta);
-    background: rgba(255,43,214,0.05);
-  }
+  .fineprint { margin: 28px auto 0; max-width: 560px; font-size: 11px; color: var(--text); opacity: 0.6; }
 
   footer {
     color: var(--muted);
@@ -259,135 +458,187 @@
     letter-spacing: 3px;
     margin-top: 32px;
     padding-top: 20px;
-    border-top: 1px dashed rgba(62,166,255,0.12);
+    border-top: 1px dashed rgba(var(--lit-rgb), 0.12);
   }
 
-  .fineprint { margin: 28px auto 0; max-width: 560px; text-align: center; font-size: 11px; color: var(--text); opacity: 0.6; }
+  /* desktop: the board's contours run down both sides */
+  @media (min-width: 1180px) {
+    body::before, body::after {
+      content: "";
+      position: absolute; top: 0; bottom: 0;
+      width: 94px;
+      background: rgba(var(--lit-rgb), 0.10);
+      -webkit-mask: url(app/art/topo-rail.png) 0 0 / 100% auto repeat-y;
+              mask: url(app/art/topo-rail.png) 0 0 / 100% auto repeat-y;
+      pointer-events: none;
+    }
+    body::before { left: 0; }
+    body::after { right: 0; transform: scaleX(-1); }
+  }
 
-  /* ─── TABS: the app's firmware (recommended) or Unified Blue ─── */
+  @media (max-width: 620px) {
+    .needs { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .subtitle { letter-spacing: 3px; font-size: 11px; }
+    .subtitle .sep { margin: 0 6px; }
+    .subtitle .sep.last { display: none; }
+    .subtitle .ver { display: block; margin-top: 2px; }
+    .panel > .body { padding: 20px 16px; }
+    .getapp > .body { padding: 16px; }
+    .panel > header { padding: 10px 14px; letter-spacing: 3px; }
+    .dl { padding: 12px 20px; letter-spacing: 2px; }
+    esp-web-install-button button[slot=activate] { padding: 12px 20px; letter-spacing: 2px; }
+    footer { letter-spacing: 1px; }
+  }
+  @media (max-width: 360px) {
+    .dl { letter-spacing: 1px; }
+  }
+
+  /* ─── TABS: this page is the App version; Unified Blue is the other tab ─── */
   .tabs {
     display: flex;
     max-width: 720px;
-    margin: 0 auto;
-    border: 1px solid rgba(62,166,255,0.35);
+    margin: 14px auto 0;
+    border: 1px solid rgba(var(--lit-rgb), 0.35);
     background: var(--panel);
+    position: relative;
+    z-index: 3;
   }
-  .tabs button {
+  .tabs a.tab {
     flex: 1 1 0;
-    background: transparent;
+    padding: 12px 10px;
     color: var(--muted);
     border: 0;
-    font: inherit;
     font-size: 12px;
     letter-spacing: 3px;
     text-transform: uppercase;
-    padding: 14px 10px;
-    cursor: pointer;
   }
-  .tabs button + button { border-left: 1px solid rgba(62,166,255,0.35); }
-  .tabs button:hover { color: var(--text); }
-  .tabs button[aria-selected="true"] {
-    color: var(--white);
-    background: rgba(62,166,255,0.14);
-    box-shadow: inset 0 -2px 0 var(--green);
-  }
+  .tabs a.tab + a.tab { border-left: 1px solid rgba(var(--lit-rgb), 0.35); }
+  .tabs a.tab:hover { color: var(--text); }
+  .tabs a.tab.on { color: var(--title); background: rgba(var(--lit-rgb), 0.12); box-shadow: inset 0 -2px 0 var(--lit); }
   .tabs .rec {
     display: inline-block;
     margin-left: 8px;
     padding: 1px 6px;
     font-size: 9px;
     letter-spacing: 2px;
-    color: var(--lime);
-    border: 1px solid var(--lime);
+    color: var(--lit);
+    border: 1px solid var(--lit);
     vertical-align: middle;
   }
-  .pane[hidden] { display: none; }
-  .pane-note { max-width: 720px; margin: 18px auto 0; font-size: 13px; color: var(--text); }
-  .lead { margin: 0 auto 16px; max-width: 540px; font-size: 14px; color: var(--text); }
-  a.dl {
-    display: inline-block;
-    padding: 12px 26px;
-    border: 1px solid var(--lime);
-    color: var(--lime);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    font-size: 14px;
-  }
-  a.dl:hover { background: var(--lime); color: #050f08; border-color: var(--lime); }
-  .dl-note { margin: 12px auto 0; font-size: 12px; color: var(--muted); max-width: 520px; }
-
   @media (max-width: 520px) {
-    .tabs button { font-size: 10px; letter-spacing: 2px; padding: 12px 6px; }
+    .tabs a.tab { font-size: 10px; letter-spacing: 2px; padding: 10px 6px; }
     .tabs .rec { display: block; margin: 5px auto 0; width: max-content; }
-    .banner { font-size: 7px; }
-    .subtitle { letter-spacing: 3px; font-size: 11px; }
   }
 </style>
 </head>
 <body>
+<script>
+  // the old one-page flasher's link to Unified Blue: its own page now
+  if (location.hash === '#unified-blue') location.replace('unified-blue/');
+</script>
 
-<header class="terminal">
-  <pre class="banner"> .oooooo.   ooooo     ooo ooooo             .oooooo..o ooooooooo.   oooooo   oooo
-d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
-888      888 888       8   888   ______    Y88bo.       888   .d88'   `888. .8'
-888      888 888       8   888  |______|    `"Y8888o.   888ooo88P'     `888.8'
-888      888 888       8   888                  `"Y88b  888              `888'
-`88b    d88' `88.    .8'   888             oo     .d8P  888               888
- `Y8bood8P'    `YbodP'    o888o            8""88888P'  o888o             o888o</pre>
-  <div class="subtitle">WEB FLASHER<span class="sep">//</span>APP <span class="sep">+</span> UNIFIED <span class="blue">BLUE</span><span class="sep">//</span>XIAO ESP32-S3</div>
+<nav class="tabs" aria-label="Which firmware">
+  <a class="tab on" href="./" aria-current="page">App version<span class="rec">Recommended</span></a>
+  <a class="tab" href="unified-blue/">OUI SPY Unified Blue</a>
+</nav>
+
+<header class="hdr">
+  <h1 class="vh">OUI SPY web flasher</h1>
+  <div class="art" aria-hidden="true">
+    <div class="rings"></div>
+    <div class="moon"></div>
+    <div class="scene"><div class="land"></div><div class="glow"><div class="dots"></div></div></div>
+    <div class="title"></div>
+  </div>
+  <div class="subtitle"><span class="nw">OUI SPY FIRMWARE</span><wbr><span class="sep">//</span><wbr><span class="nw">WEB FLASHER</span><span class="sep last">//</span><span class="ver">BUILD NOV 24 2026</span></div>
 </header>
 
 <main>
 
-<nav class="tabs" role="tablist" aria-label="Which firmware">
-  <button type="button" role="tab" id="tab-app" data-pane="app" aria-controls="pane-app" aria-selected="true">App version<span class="rec">Recommended</span></button>
-  <button type="button" role="tab" id="tab-unified-blue" data-pane="unified-blue" aria-controls="pane-unified-blue" aria-selected="false" tabindex="-1">OUI SPY Unified Blue</button>
-</nav>
-
-<!-- ─── APP VERSION: the firmware for the OUI SPY Recon app ─── -->
-<div class="pane" id="pane-app" role="tabpanel" aria-labelledby="tab-app">
-
-<section class="panel">
-  <header><span>Get the app</span><span class="right">Android + macOS</span></header>
+<section class="panel getapp">
+  <header><span>Get the app</span><span class="right">OUI SPY Recon</span></header>
   <div class="body">
-    <p class="lead">The <b>OUI SPY Recon</b> app is your OUI SPY's screen: the surveillance gear and drones it detects, the live map, wardriving and the mesh. Get it first.</p>
-    <a class="dl" href="https://github.com/colonelpanichacks/oui-spy-recon-app/releases/latest">Download the app</a>
-    <p class="dl-note">Android 9 or newer, and macOS. The app updates itself from GitHub after that. <a href="https://github.com/colonelpanichacks/oui-spy-recon-app">About the app</a></p>
+    <p class="lead">The <b>OUI SPY Recon</b> app is your OUI SPY's screen. Get it first.</p>
+    <a class="dl" id="dl-apk" href="https://github.com/colonelpanichacks/oui-spy-recon-app/releases/latest">Download for Android (APK)</a>
+    <p class="dl-meta" id="dl-apk-meta">latest release</p>
+    <div class="dl-alt">
+      <a class="dl2" id="dl-mac" href="https://github.com/colonelpanichacks/oui-spy-recon-app/releases/latest">macOS <span class="meta" id="dl-mac-meta">zip</span></a>
+    </div>
+    <p class="dl-note">Android 9 or newer. The app updates itself from GitHub after that.</p>
   </div>
 </section>
 
+<div class="frieze" aria-hidden="true">
+  <i class="marmot"></i><i class="spider"></i><i class="squirrel"></i><i class="raccoon"></i><i class="jar"></i><i class="crow"></i><i class="bear"></i><i class="hawk"></i><i class="mavic"></i>
+</div>
+
 <section class="panel">
-  <header><span>Install</span><span class="right">for the app</span></header>
+  <header><span>Flash your OUI SPY</span><span class="right">3 steps</span></header>
   <div class="body">
+
+    <p class="lead">This installs the <b>OUI SPY firmware</b> (build <b>Nov 24 2026</b>) for the OUI SPY Recon app, over USB. You need:</p>
+
+    <div class="needs">
+      <div class="need">
+        <span class="ph">01 &middot; Board</span>
+        <h4>An OUI SPY</h4>
+        <p>The XIAO ESP32-S3 board.</p>
+      </div>
+      <div class="need">
+        <span class="ph">02 &middot; Cable</span>
+        <h4>A USB-C data cable</h4>
+        <p>Charge-only cables show no port.</p>
+      </div>
+      <div class="need">
+        <span class="ph">03 &middot; Browser</span>
+        <h4>Chrome or Edge</h4>
+        <p>On Windows, macOS or Linux. Phones can't install.</p>
+      </div>
+    </div>
 
     <div class="step">
       <div class="n">1</div>
-      <h3>Plug the board in</h3>
-      <p>Use a real USB-C <b>data</b> cable — charge-only cables won't show up as a serial port. If it's your first flash, hold the <span class="kbd">BOOT</span> button while plugging in.</p>
+      <h3>Plug it in</h3>
+      <p>Plug the OUI SPY into your computer with a USB-C <b>data</b> cable.</p>
     </div>
 
     <div class="step">
       <div class="n">2</div>
-      <h3>Click Flash</h3>
-      <p>Chrome, Edge, or Opera on desktop. Pick the XIAO in the list of serial ports. This installs the <b>OUI SPY firmware for the app</b> (build Nov 24 2026). The installer asks whether to erase the board first: on a first install, say yes.</p>
-
-      <esp-web-install-button id="flashAppBtn" manifest="./app/manifest.json">
-        <button slot="activate">&gt;&gt; CONNECT &amp; FLASH &lt;&lt;</button>
-        <span slot="unsupported" class="unsupported">Your browser doesn't support Web Serial. Open this page in Chrome, Edge, or Opera on a desktop.</span>
-        <span slot="not-allowed" class="not-allowed">This page must be served over HTTPS. GitHub Pages handles that automatically.</span>
+      <h3>Connect</h3>
+      <p>Click Connect and pick the OUI SPY's port in the list. It usually reads <b>USB JTAG/serial debug unit</b>.</p>
+      <esp-web-install-button manifest="./app/manifest.json">
+        <button slot="activate">&gt;&gt; CONNECT &lt;&lt;</button>
+        <span slot="unsupported" class="unsupported">This browser can't install firmware. Open this page in Chrome or Edge on a computer.</span>
+        <span slot="not-allowed" class="not-allowed">The installer only runs on a secure (HTTPS) page.</span>
       </esp-web-install-button>
+      <p class="hint">No port in the list? Unplug the OUI SPY, hold <span class="kbd">BOOT</span> while you plug it back in, let go, and click Connect again.</p>
     </div>
 
     <div class="step">
       <div class="n">3</div>
-      <h3>Pair it in the app</h3>
-      <p>Unplug the board and power it again. In the app, go to <b>Settings &gt; Connections</b>, switch on <b>Board over Bluetooth</b> and tap it to pick <b>OUI-SPY &lt;id&gt;</b>. The first time, it asks for the board's PIN: <b>123456</b> (change it with <span class="kbd">blepin</span> in the app's Console while the board is on USB).</p>
+      <h3>Install</h3>
+      <p>Choose <b>Install OUI SPY</b>. On a first install tick <b>Erase device</b>, then click <b>Install</b>. Leave it plugged in until it says <b>Installation complete</b>, about a minute.</p>
     </div>
+
+  </div>
+</section>
+
+<section class="panel">
+  <header><span>After install</span><span class="right">the app</span></header>
+  <div class="body">
 
     <div class="step">
       <div class="n">4</div>
+      <h3>Pair it in the app</h3>
+      <p>Unplug the OUI SPY and power it again, from the computer or any USB charger. Open the <b>OUI SPY Recon</b> app and pair the OUI SPY over Bluetooth.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">5</div>
       <h3>Updates come over the air</h3>
-      <p>Later firmware comes from the app, over Bluetooth, USB or the mesh. USB is only for this first install.</p>
+      <p>Later firmware updates come from the app, over the air. USB is only for this first install.</p>
     </div>
 
   </div>
@@ -399,8 +650,20 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
 
     <div class="step">
       <div class="n">?</div>
-      <h3>Nothing shows up in the port picker</h3>
-      <p>Try a different USB-C cable (charge-only won't work), install CH340 or CP210x drivers if your OS doesn't auto-detect, or hold <span class="kbd">BOOT</span> while plugging in to force download mode.</p>
+      <h3>No port in the list</h3>
+      <p>Try another cable: charge-only cables show no port. Then unplug the OUI SPY, hold <span class="kbd">BOOT</span> while you plug it back in, let go, and click Connect again.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">?</div>
+      <h3>On Linux</h3>
+      <p>If Connect lists no port or the port won't open, add your user to the <b>dialout</b> group (<b>uucp</b> on Arch), then log out and back in.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">?</div>
+      <h3>The install stopped partway</h3>
+      <p>Hold <span class="kbd">BOOT</span> while you plug the OUI SPY back in, then install again with <b>Erase device</b> ticked.</p>
     </div>
 
     <div class="step">
@@ -412,198 +675,59 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
   </div>
 </section>
 
-</div>
-
-<!-- ─── OUI SPY UNIFIED BLUE: the standalone firmware ─── -->
-<div class="pane" id="pane-unified-blue" role="tabpanel" aria-labelledby="tab-unified-blue" hidden>
-
-<p class="pane-note">The standalone firmware: pick a mode from its own Wi-Fi boot menu, no app. Using the OUI SPY Recon app? Flash the <a href="#app">App version</a> instead.</p>
-
-<section class="panel">
-  <header><span>Install</span><span class="right">3 steps</span></header>
+<section class="panel recon">
+  <header><span>OUI SPY Recon</span><span class="right">coming</span></header>
   <div class="body">
-
-    <div class="step">
-      <div class="n">1</div>
-      <h3>Plug the board in</h3>
-      <p>Use a real USB-C <b>data</b> cable — charge-only cables won't show up as a serial port. If it's your first flash, hold the <span class="kbd">BOOT</span> button while plugging in.</p>
-    </div>
-
-    <div class="step">
-      <div class="n">2</div>
-      <h3>Click Flash</h3>
-      <p>Chrome, Edge, or Opera on desktop. Your browser will show a list of serial ports — pick the XIAO. The install takes about 30 seconds and wipes the board clean before installing.</p>
-
-      <esp-web-install-button id="flashBtn" manifest="./manifest.json">
-        <button slot="activate">&gt;&gt; CONNECT &amp; FLASH &lt;&lt;</button>
-        <span slot="unsupported" class="unsupported">Your browser doesn't support Web Serial. Open this page in Chrome, Edge, or Opera on a desktop.</span>
-        <span slot="not-allowed" class="not-allowed">This page must be served over HTTPS. GitHub Pages handles that automatically.</span>
-      </esp-web-install-button>
-    </div>
-
-    <div class="step">
-      <div class="n">3</div>
-      <h3>Listen for 4 ascending beeps</h3>
-      <p>The board reboots on its own. Four beeps means the firmware is up. You'll land in the <b>Boot Selector</b> — join the Wi-Fi below, open the dashboard, and pick a mode.</p>
-    </div>
-
+    <img class="recon-shot" src="app/art/recon.jpg" alt="The OUI SPY Recon in its clear case" width="1200" height="826" loading="lazy">
+    <span class="tag">[ COMING ]</span>
+    <h3>OUI SPY Recon</h3>
+    <p>The OUI SPY Recon adds a screen, a second radio chip for <span class="nw">5 GHz Wi-Fi</span>, 802.15.4 and <span class="nw">5.8 GHz</span> FPV video, and Grove sensors. It is also the home of the mesh.</p>
   </div>
 </section>
 
-<section class="panel">
-  <header><span>Modes</span><span class="right">Boot Selector + 7 tools</span></header>
-  <div class="body">
-
-    <div class="mode">
-      <span class="tag">[ 0 ]</span>
-      <h3>Boot Selector</h3>
-      <p>The menu you land in after every flash. Pick a mode, edit AP credentials, reboot into it. Hold <span class="kbd">BOOT</span> ~1.5s from any mode to come back here.</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd>oui-spy</dd>
-        <dt>Password</dt><dd>ouispy123</dd>
-        <dt>Open</dt><dd class="url">http://192.168.4.1</dd>
-      </dl>
-    </div>
-
-    <div class="mode">
-      <span class="tag">[ 1 ]</span>
-      <h3>Detector</h3>
-      <p>BLE watchlist — alerts on OUI prefix, full MAC, device name, 16-bit service UUID, and company ID. Ships with the OUI Database: Ring, Axon, Flock Safety, DJI, Parrot, Skydio, and Meta/Ray-Ban.</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd>snoopuntothem</dd>
-        <dt>Password</dt><dd>astheysnoopuntous</dd>
-        <dt>Open</dt><dd class="url">http://192.168.4.1</dd>
-      </dl>
-    </div>
-
-    <div class="mode">
-      <span class="tag">[ 2 ]</span>
-      <h3>Foxhunter</h3>
-      <p>RSSI proximity tracker for a locked BLE target. Buzzer cadence speeds up as you close — like a Geiger counter for Bluetooth.</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd>foxhunter</dd>
-        <dt>Password</dt><dd>foxhunter</dd>
-        <dt>Open</dt><dd class="url">http://192.168.4.1</dd>
-      </dl>
-    </div>
-
-    <div class="mode">
-      <span class="tag">[ 3 ]</span>
-      <h3>Flock-You WiFi</h3>
-      <p>Passive 2.4&nbsp;GHz promiscuous sniffer for Flock Safety cameras. addr2 OUI, addr1 OUI, and the DeFlockJoplin wildcard-probe signature. SPIFFS-persisted with USB-CDC dump commands for the Flask dashboard.</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd class="none">no AP</dd>
-        <dt>Access</dt><dd>USB-CDC + Flask dashboard</dd>
-      </dl>
-    </div>
-
-    <div class="mode">
-      <span class="tag">[ 4 ]</span>
-      <h3>PCAP</h3>
-      <p>Passive 2.4&nbsp;GHz WiFi packet capture. Wireshark-ready pcap (linktype 127, radiotap) over USB-CDC, live dashboard with vendor colouring and chip filters, rolling 2&nbsp;MB in-PSRAM session pcap the browser can download at any time. Locked-channel (AP up) or hop mode (AP down, USB only).</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd>ouispy-pcap</dd>
-        <dt>Password</dt><dd>packetsniffer</dd>
-        <dt>Open</dt><dd class="url">http://192.168.4.1</dd>
-      </dl>
-    </div>
-
-    <div class="mode">
-      <span class="tag">[ 5 ]</span>
-      <h3>Sky Spy</h3>
-      <p>FAA Remote ID / Open Drone ID (ASTM F3411) beacon capture. Pulls serial, operator ID, lat/lon, altitude, speed, and heading from every ODID message type.</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd class="none">no AP</dd>
-        <dt>Access</dt><dd>serial JSON out</dd>
-      </dl>
-    </div>
-
-    <div class="mode">
-      <span class="tag">[ 6 ]</span>
-      <h3>BLE Sniff</h3>
-      <p>Passive BLE advertising capture across channels 37/38/39. Wireshark-ready pcap (linktype 256, LE&nbsp;LL with PHDR) over USB-CDC, live dashboard with vendor identify against the OUI Database (RING / AXON / FLOCK / DJI / PARROT / SKYDIO / META&nbsp;/&nbsp;Ray-Ban) matched on MAC OUI, Bluetooth SIG company ID, service UUID, or name substring. Advertisements only — connected-device pairing traffic needs an nRF52 sniffer.</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd>ouispy-blesniff</dd>
-        <dt>Password</dt><dd>sniffuntothem</dd>
-        <dt>Open</dt><dd class="url">http://192.168.4.1</dd>
-      </dl>
-    </div>
-
-    <div class="mode">
-      <span class="tag">[ 7 ]</span>
-      <h3>AXEOFF</h3>
-      <p>Headless Axon detector — no AP, no dashboard, no config. Power on, hear four ascending beeps, and it's already scanning. Catches body cams, Taser 7/10, Signal sidearm, and Axon Fleet via BLE MAC prefix <b>00:25:DF</b>, mfr company ID <b>0x034D</b>, service UUIDs <b>0xFC81 / 0xFE6B / 0xFE6C</b>, and WiFi probe/beacon OUI <b>00:25:DF</b>. Fully passive — it never transmits. Detection = 8-bit ascending arpeggio, heartbeat rate encodes proximity, lost target = descending 2-beep. Port of the standalone <a href="https://github.com/colonelpanichacks/axeoff">axeoff</a> firmware.</p>
-      <dl class="creds">
-        <dt>Wi-Fi</dt><dd class="none">no AP</dd>
-        <dt>Access</dt><dd>buzzer-only + serial debug 115200</dd>
-      </dl>
-    </div>
-
-  </div>
-</section>
-
-<section class="panel">
-  <header><span>Troubleshooting</span><span class="right">common snags</span></header>
-  <div class="body trouble">
-
-    <div class="step">
-      <div class="n">?</div>
-      <h3>Nothing shows up in the port picker</h3>
-      <p>Try a different USB-C cable (charge-only won't work), install CH340 or CP210x drivers if your OS doesn't auto-detect, or hold <span class="kbd">BOOT</span> while plugging in to force download mode.</p>
-    </div>
-
-    <div class="step">
-      <div class="n">?</div>
-      <h3>Flash finished but I hear no beeps</h3>
-      <p>The buzzer might be muted on the selector page. The board is fine — join the <b>oui-spy</b> Wi-Fi and confirm the dashboard loads at <a href="http://192.168.4.1">192.168.4.1</a>.</p>
-    </div>
-
-    <div class="step">
-      <div class="n">?</div>
-      <h3>Wrong dashboard after switching modes</h3>
-      <p>Your phone auto-reconnected to a saved OUI-SPY network from a different mode. Forget the old network in Wi-Fi settings, or disable auto-connect for all OUI-SPY APs.</p>
-    </div>
-
-    <div class="step">
-      <div class="n">?</div>
-      <h3>Detector AP disappeared after locking config</h3>
-      <p>That's intentional — locking is a one-way seal. Hold <span class="kbd">BOOT</span> during power-on to clear the lock and restore the config AP. Reflashing does <b>not</b> unlock it; NVS survives a reflash.</p>
-    </div>
-
-  </div>
-</section>
-
-</div>
-
-<p class="fineprint" id="disclaimer">For research purposes only. Use at your own risk: you assume all responsibility for how you use it, and the authors accept no liability. Provided as is, with no warranty. Follow your local laws, and don't do anything illegal or stupid.</p>
+<p class="fineprint">For research purposes only. Use at your own risk: you assume all responsibility for how you use it, and the authors accept no liability. Provided as is, with no warranty. Follow your local laws, and don't do anything illegal or stupid.</p>
 
 <footer>
-  App &middot; <a href="https://github.com/colonelpanichacks/oui-spy-recon-app">github.com/colonelpanichacks/oui-spy-recon-app</a><br>
-  Unified Blue source &middot; <a href="https://github.com/colonelpanichacks/oui-spy-unified-blue">github.com/colonelpanichacks/oui-spy-unified-blue</a>
+  App &middot; <a href="https://github.com/colonelpanichacks/oui-spy-recon-app">github.com/colonelpanichacks/<wbr><span class="nw">oui-spy-recon-app</span></a>
 </footer>
 
 </main>
 
 <script>
-  // two tabs: the App version (the default, recommended) or Unified Blue; #app and #unified-blue
-  // link straight to either
+  // Point the download buttons straight at the latest release's files. Without an answer
+  // (no release yet, rate limited, offline) they stay on the releases page.
   (function () {
-    var tabs = document.querySelectorAll('.tabs [role="tab"]');
-    function show(name, write) {
-      tabs.forEach(function (t) {
-        var on = t.getAttribute('data-pane') === name;
-        t.setAttribute('aria-selected', on ? 'true' : 'false');
-        t.tabIndex = on ? 0 : -1;
-        document.getElementById('pane-' + t.getAttribute('data-pane')).hidden = !on;
-      });
-      if (write && location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    var repo = 'colonelpanichacks/oui-spy-recon-app';
+    var files = 'https://github.com/' + repo + '/releases/download/';
+    var wanted = [
+      { id: 'dl-apk', end: '.apk' },
+      { id: 'dl-mac', end: '-macos.zip' }
+    ];
+    function size(bytes) {
+      return bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
     }
-    tabs.forEach(function (t) {
-      t.addEventListener('click', function () { show(t.getAttribute('data-pane'), true); });
-    });
-    function fromHash() { show(location.hash === '#unified-blue' ? 'unified-blue' : 'app', false); }
-    window.addEventListener('hashchange', fromHash);
-    fromHash();
+    function version(name, end, tag) {
+      var m = name.slice(0, -end.length).match(/(\d+\.\d+\.\d+)$/);
+      return m ? m[1] : String(tag || '').replace(/^\D+/, '');
+    }
+    if (!window.fetch) return;
+    fetch('https://api.github.com/repos/' + repo + '/releases/latest')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (rel) {
+        var assets = (rel && Array.isArray(rel.assets)) ? rel.assets : [];
+        wanted.forEach(function (w) {
+          var a = assets.filter(function (x) {
+            return x && typeof x.name === 'string' && x.name.slice(-w.end.length) === w.end &&
+                   typeof x.browser_download_url === 'string' && x.browser_download_url.indexOf(files) === 0;
+          })[0];
+          var link = document.getElementById(w.id);
+          if (!a || !link) return;
+          link.href = a.browser_download_url;
+          var meta = document.getElementById(w.id + '-meta'), v = version(a.name, w.end, rel.tag_name);
+          if (meta && typeof a.size === 'number') meta.textContent = (v ? 'v' + v + ' \u00b7 ' : '') + size(a.size);
+        });
+      })
+      .catch(function () {});
   })();
 </script>
 
