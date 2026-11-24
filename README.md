@@ -14,6 +14,8 @@ Flash straight from the browser — no Python, no PlatformIO, no drivers to thin
 
 Chrome, Edge, or Opera on desktop (Web Serial API). Plug in the XIAO ESP32-S3 with a USB-C data cable, click **Connect & Flash**, pick the serial port. The page always serves the latest firmware committed to `master`.
 
+The page has two tabs. **App version** (recommended) installs the firmware for the [OUI SPY Recon app](https://github.com/colonelpanichacks/oui-spy-recon-app), your OUI SPY's screen on Android and macOS. **OUI SPY Unified Blue** installs this firmware: the seven modes and their boot menu, no app. The App version is the page's front ([colonelpanichacks.github.io/oui-spy-unified-blue](https://colonelpanichacks.github.io/oui-spy-unified-blue/)), and Unified Blue has its own page ([colonelpanichacks.github.io/oui-spy-unified-blue/unified-blue](https://colonelpanichacks.github.io/oui-spy-unified-blue/unified-blue/)).
+
 ---
 
 ## Quick Connect
