@@ -304,6 +304,22 @@
     .banner { font-size: 7px; }
     .subtitle { letter-spacing: 3px; font-size: 11px; }
   }
+  /* --- remote nodes pointer, thanks --- */
+  .thanks-list {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    max-width: 560px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .thanks-list li { padding-left: 18px; position: relative; }
+  .thanks-list li::before { content: "//"; position: absolute; left: 0; color: var(--cyan); opacity: 0.7; font-size: 12px; top: 1px; }
+  .shouts { margin: 16px auto 0; max-width: 560px; color: var(--text); font-size: 14px; }
+  .nodes-note { margin: 0 auto; max-width: 600px; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -479,6 +495,26 @@ d8P'  `Y8b  `888'     `8' `888'            d8P'    `Y8 `888   `Y88.  `888.   .8'
       <p>That's intentional — locking is a one-way seal. Hold <span class="kbd">BOOT</span> during power-on to clear the lock and restore the config AP. Reflashing does <b>not</b> unlock it; NVS survives a reflash.</p>
     </div>
 
+  </div>
+</section>
+
+<section class="panel">
+  <header><span>Remote mesh nodes</span><span class="right">for the app</span></header>
+  <div class="body">
+    <p class="nodes-note">Building a fleet run from the <b>OUI SPY Recon app</b>? The <a href="../#detector">App version</a> page installs remote mesh nodes (<b>Detector</b>, <b>Sky-Spy</b>, <b>Wardriver</b>) and sets each one up on your fleet's mesh over the same USB cable: channel, fleet key and name.</p>
+  </div>
+</section>
+
+<section class="panel">
+  <header><span>Thanks</span><span class="right">shout-outs</span></header>
+  <div class="body">
+    <ul class="thanks-list">
+      <li><b>DeFlock Joplin</b>, for the wildcard probe-request detection research.</li>
+      <li><b>NitekryDPaul</b>, for the many OUI submissions: <a href="https://github.com/nitekry/nite-oui-collection">nite-oui-collection</a>.</li>
+      <li><a href="https://wigle.net">WiGLE</a>, the wardriving database.</li>
+      <li><b>cybertiger</b> at the <a href="https://www.eff.org">EFF</a>.</li>
+    </ul>
+    <p class="shouts">Shout-outs to <b>the wrew</b>, <b>dz_az</b> and <b>h4d35x0</b>.</p>
   </div>
 </section>
 
