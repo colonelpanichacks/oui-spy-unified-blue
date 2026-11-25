@@ -340,6 +340,9 @@
     max-width: 540px;
   }
   .step p.hint { color: var(--muted); font-size: 13px; }
+  /* the default Bluetooth PIN: easy to find, no shouting */
+  .step p.pin { color: var(--muted); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+  .step p.pin .kbd { margin-left: 8px; padding: 2px 10px; font-size: 15px; letter-spacing: 3px; text-shadow: 0 0 6px rgba(var(--lit-rgb), 0.5); }
 
   .kbd {
     display: inline-block;
@@ -785,7 +788,7 @@
     <details class="fleet-how" open>
       <summary>A fleet in three steps</summary>
       <ol>
-        <li><b>The board on your phone.</b> Install <b>OUI SPY for the app</b> and pair it. In the app, <b>Fleet &gt; Board &gt; Mesh</b>: type a fleet key (any 8 to 63 characters, no spaces) and switch the mesh on. Then make it the home: <b>Fleet &gt; Control &gt; Home node</b>.</li>
+        <li><b>The board on your phone.</b> Install <b>OUI SPY for the app</b> and pair it (Bluetooth PIN <b>123456</b>). In the app, <b>Fleet &gt; Board &gt; Mesh</b>: type a fleet key (any 8 to 63 characters, no spaces) and switch the mesh on. Then make it the home: <b>Fleet &gt; Control &gt; Home node</b>.</li>
         <li><b>Every other board.</b> Pick its job here (<b>Detector</b>, <b>Sky-Spy</b> or <b>Wardriver</b>), install it, and set it up on the same channel with the same fleet key.</li>
         <li><b>Run them all from the app.</b> <b>Fleet</b> lists every node. Filters and firmware updates reach them over the mesh.</li>
       </ol>
@@ -877,7 +880,9 @@
     <div class="step">
       <div class="n">4</div>
       <h3>Pair it in the app</h3>
-      <p>Unplug the OUI SPY and power it again, from the computer or any USB charger. Open the <b>OUI SPY Recon</b> app and pair the OUI SPY over Bluetooth.</p>
+      <p>Unplug the OUI SPY and power it again, from the computer or any USB charger. Open the <b>OUI SPY Recon</b> app and pair the OUI SPY over Bluetooth: <b>Settings &gt; Connections &gt; Board over Bluetooth</b>.</p>
+      <p class="pin">Bluetooth PIN <span class="kbd">123456</span></p>
+      <p class="hint">The app asks for it the first time. To change it, type <b>blepin</b> and six new digits (not starting with 0) in the app's <b>Console</b> while the board is on USB.</p>
     </div>
 
     <div class="step">
