@@ -16,6 +16,21 @@ Chrome, Edge, or Opera on desktop (Web Serial API). Plug in the XIAO ESP32-S3 wi
 
 The page has two tabs. **App version** (recommended) installs the firmware for the [OUI SPY Recon app](https://github.com/colonelpanichacks/oui-spy-recon-app), your OUI SPY's screen on Android and macOS. **OUI SPY Unified Blue** installs this firmware: the seven modes and their boot menu, no app. The App version is the page's front ([colonelpanichacks.github.io/oui-spy-unified-blue](https://colonelpanichacks.github.io/oui-spy-unified-blue/)), and Unified Blue has its own page ([colonelpanichacks.github.io/oui-spy-unified-blue/unified-blue](https://colonelpanichacks.github.io/oui-spy-unified-blue/unified-blue/)).
 
+### Remote mesh nodes
+
+The App version also makes an OUI SPY a **remote node** of your fleet: a board with no phone of its own that reports over the long-range ESP-NOW mesh to the board on your phone, where the app runs the whole fleet. Pick what it will be before you install:
+
+| Pick | What it does |
+|------|--------------|
+| **OUI SPY for the app** (default) | Every mode, switched from the app, which is its screen. The board on your phone, and the fleet's home. |
+| **Detector** (remote node) | Watches for the device signatures the app sends it and reports every hit over the mesh. |
+| **Sky-Spy** (remote node) | Drone Remote ID: every drone it hears and its pilot, over the mesh. |
+| **Wardriver** (remote node) | Logs every Wi-Fi network and Bluetooth device it hears and shares them over the mesh. |
+
+After a remote node installs, the page sets it up over the same USB cable: its mesh channel, the fleet key (typed or generated on the page, sent only over USB to the node, shown afterwards only as its fingerprint) and an optional name, and it can lock the node so it starts in the mesh after every power cut. Every node of a fleet needs the same channel and the same fleet key, the board on your phone too (in the app: **Fleet > Board > Mesh**). From then on the app lists the node under **Fleet**, sends it filters and updates its firmware over the mesh. Links: [#detector](https://colonelpanichacks.github.io/oui-spy-unified-blue/#detector), [#skyspy](https://colonelpanichacks.github.io/oui-spy-unified-blue/#skyspy), [#wardrive](https://colonelpanichacks.github.io/oui-spy-unified-blue/#wardrive) open the page on that node.
+
+The remote node builds are the [OUI-SPY Detector](https://github.com/colonelpanichacks/ouispy-detector) family, the same images the app carries to update them over the mesh. They speak the same mesh as the OUI SPY app firmware and the OUI SPY Recon: one fleet, one key.
+
 ---
 
 ## Quick Connect
@@ -372,6 +387,15 @@ cp .pio/build/seeed_xiao_esp32s3/firmware.bin firmware/oui-spy-unified-blue.bin
 ---
 
 ## Acknowledgments
+
+Thanks and a shout-out to:
+
+- **DeFlock Joplin**, for the wildcard probe-request detection research.
+- **NitekryDPaul**, for the many OUI submissions: [nite-oui-collection](https://github.com/nitekry/nite-oui-collection).
+- **[WiGLE](https://wigle.net)**, the wardriving database the OUI SPY Recon app uploads to.
+- **cybertiger** at the [EFF](https://www.eff.org).
+
+Shout-outs to **the wrew**, **dz_az** and **h4d35x0**.
 
 **Will Greenberg** ([@wgreenberg](https://github.com/wgreenberg)) — His [flock-you](https://github.com/wgreenberg/flock-you) fork was instrumental in improving the Flock Safety detection heuristics. The BLE manufacturer company ID detection method (`0x09C8` XUNTONG) was sourced directly from his work and shipped in the Flock-You BLE mode; that mode has since been retired in favour of the promiscuous WiFi edition, but the structured pattern-management approach it introduced still informs the detection architecture. Thank you for the research and for making it open.
 
