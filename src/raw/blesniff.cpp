@@ -1683,27 +1683,30 @@ o888bood8P'  o888ooooood8 o888ooooood8 8""88888P'  o8o        `8  o888o o888o   
   // Match on any of: MAC OUI, Bluetooth SIG company ID (in mfr data),
   // 16-bit service UUID, or a case-insensitive substring of the local name.
   // BLE MACs randomize often -- CID / UUID / name are the reliable signals.
+  // Each OUI and company ID here is registered to that very company (IEEE MA-L, Bluetooth SIG; checked
+  // 2026-11-25). A radio maker's (Espressif, Liteon, Telink) or a parent's (Amazon) would tag every
+  // device built on it as the brand.
   const VENDORS = [
     { id:'ring',   name:'RING',   color:'var(--v-ring)',
-      ouis:['00:0d:c5','14:cc:20','a4:77:33','b0:09:da','7c:8c:6c'],
-      cids:['0171'], svcs:[], names:['Ring'] },
+      ouis:['00:b4:63','18:7f:88','24:2b:d6','34:3e:a4','50:e4:67','54:e0:19','5c:47:5e','64:9a:63','90:48:6c','9c:76:13','ac:9f:c3','c4:db:ad','cc:3b:fb'],
+      cids:[], svcs:[], names:['Ring'] },
     { id:'axon',   name:'AXON',   color:'var(--v-axon)',
       ouis:['00:25:df'],
       cids:['034d'], svcs:['fc81','fe6b','fe6c'], names:[] },
     { id:'flock',  name:'FLOCK',  color:'var(--v-flock)',
-      ouis:['a4:cf:12','24:6f:28','3c:71:bf','48:e7:29','98:cd:ac'],
+      ouis:['b4:1e:52'],
       cids:[], svcs:[], names:['Flock','Falcon','Raven'] },
     { id:'dji',    name:'DJI',    color:'var(--v-dji)',
-      ouis:['0c:9a:e6','8c:58:23','04:a8:5a','58:b8:58','e4:7a:2c','60:60:1f','48:1c:b9','34:d2:62'],
-      cids:['0bf3'], svcs:[], names:['DJI','Mavic','Phantom','Inspire'] },
+      ouis:['0c:9a:e6','8c:58:23','04:a8:5a','58:b8:58','e4:7a:2c','60:60:1f','48:1c:b9','34:d2:62','4c:43:f6','88:29:85'],
+      cids:['08aa'], svcs:[], names:['DJI','Mavic','Phantom','Inspire'] },
     { id:'parrot', name:'PARROT', color:'var(--v-parrot)',
       ouis:['00:12:1c','00:26:7e','90:03:b7','90:3a:e6','a0:14:3d'],
-      cids:['004d'], svcs:[], names:['Parrot','Anafi','Bebop'] },
+      cids:[], svcs:[], names:['Parrot','Anafi','Bebop'] },
     { id:'skydio', name:'SKYDIO', color:'var(--v-skydio)',
-      ouis:['38:1d:14','24:69:8e'],
+      ouis:['38:1d:14'],
       cids:[], svcs:[], names:['Skydio'] },
     { id:'meta',   name:'META',   color:'var(--v-meta)',
-      ouis:['7c:2a:9e','cc:66:0a','f4:03:43','5c:e9:1e','98:59:49','80:aa:1c','38:47:12','a4:c1:38','58:d5:6e','2c:41:a1','44:d9:e7','9c:d9:17'],
+      ouis:['2c:26:17','48:05:60','48:57:dd','50:99:03','78:c4:fa','80:f3:ef','84:57:f7','88:25:08','94:f9:29','a4:0e:2b','b4:17:a8','c0:dd:8a','cc:a1:74','d0:b3:c2','d4:d6:59','f4:4e:35','38:47:12','80:aa:1c','98:59:49'],
       cids:['0d53'], svcs:['fd5f'], names:['Ray-Ban','Wayfarer','Oakley Meta'] },
   ];
   const vendorEnabled = new Set(VENDORS.map(v => v.id));
