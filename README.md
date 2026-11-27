@@ -395,7 +395,7 @@ Thanks and a shout-out to:
 - **[WiGLE](https://wigle.net)**, the wardriving database the OUI SPY Recon app uploads to.
 - **cybertiger** at the [EFF](https://www.eff.org).
 
-Shout-outs to **the wrew**, **dz_az** and **h4d35x0**.
+Shout-outs to **the wrew**, **dz_az**, **h4d35x0** and **Luke Switzer**.
 
 **Will Greenberg** ([@wgreenberg](https://github.com/wgreenberg)) — His [flock-you](https://github.com/wgreenberg/flock-you) fork was instrumental in improving the Flock Safety detection heuristics. The BLE manufacturer company ID detection method (`0x09C8` XUNTONG) was sourced directly from his work and shipped in the Flock-You BLE mode; that mode has since been retired in favour of the promiscuous WiFi edition, but the structured pattern-management approach it introduced still informs the detection architecture. Thank you for the research and for making it open.
 
